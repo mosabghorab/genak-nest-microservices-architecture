@@ -4,7 +4,7 @@ import { Attachment, CustomClientsModule, DatabaseModule, StorageMicroserviceCon
 import { AttachmentsService } from './v1/services/attachments.service';
 
 @Module({
-  imports: [DatabaseModule.forFeature([Attachment]), CustomClientsModule.register(StorageMicroserviceConstants.MICROSERVICE_NAME, StorageMicroserviceConstants.MICROSERVICE_CONFIG_NAME)],
+  imports: [DatabaseModule.forFeature([Attachment]), CustomClientsModule.register(StorageMicroserviceConstants.NAME, StorageMicroserviceConstants.CONFIG_NAME)],
   controllers: [AttachmentsController],
   providers: [AttachmentsService],
 })

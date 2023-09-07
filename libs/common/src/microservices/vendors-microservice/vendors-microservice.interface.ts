@@ -1,4 +1,4 @@
-import { FindOneByIdDto, FindOneByPhoneDto, FindOneOrFailByIdDto, FindOneOrFailByPhoneDto, Vendor, VendorSignUpDto, VendorUploadDocumentsDto } from '@app/common';
+import { FindOneByIdDto, FindOneByPhoneDto, FindOneOrFailByIdDto, FindOneOrFailByPhoneDto, Vendor, VendorSignUpDto, VendorUpdateProfileDto, VendorUploadDocumentsDto } from '@app/common';
 
 export interface IVendorsMicroservice {
   findOneById(findOneByIdDto: FindOneByIdDto<Vendor>): Promise<Vendor | null>;
@@ -14,4 +14,6 @@ export interface IVendorsMicroservice {
   removeOneByInstance(vendor: Vendor): Promise<Vendor>;
 
   uploadDocuments(vendorUploadDocumentsDto: VendorUploadDocumentsDto): Promise<Vendor>;
+
+  updateProfile(vendorUpdateProfileDto: VendorUpdateProfileDto): Promise<Vendor>;
 }

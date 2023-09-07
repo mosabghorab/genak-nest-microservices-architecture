@@ -1,8 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { FindOptionsRelations } from 'typeorm/browser';
-import { Role, RolesPermissions } from '@app/common';
+import { FindOneByIdDto, FindOneOrFailByIdDto, Role, RolesPermissions } from '@app/common';
 import { RolesPermissionsService } from './roles-permissions.service';
 import { CreateRoleDto } from '../dtos/create-role.dto';
 import { UpdateRoleDto } from '../dtos/update-role.dto';
@@ -35,25 +34,31 @@ export class RolesService {
   }
 
   // find one by id.
-  findOneById(id: number, relations?: FindOptionsRelations<Role>): Promise<Role> {
+  findOneById(findOneByIdDto: FindOneByIdDto<Role>): Promise<Role> {
     return this.roleRepository.findOne({
-      where: { id },
-      relations,
+      where: { id: findOneByIdDto.id },
+      relations: findOneByIdDto.relations,
     });
   }
 
   // find one or fail by id.
-  async findOneOrFailById(id: number, failureMessage?: string, relations?: FindOptionsRelations<Role>): Promise<Role> {
-    const role: Role = await this.findOneById(id, relations);
+  async findOneOrFailById(findOneOrFailByIdDto: FindOneOrFailByIdDto<Role>): Promise<Role> {
+    const role: Role = await this.findOneById(<FindOneByIdDto<Role>>{
+      id: findOneOrFailByIdDto.id,
+      relations: findOneOrFailByIdDto.relations,
+    });
     if (!role) {
-      throw new NotFoundException(failureMessage || 'Role not found.');
+      throw new NotFoundException(findOneOrFailByIdDto.failureMessage || 'Role not found.');
     }
     return role;
   }
 
   // update.
   async update(id: number, updateRoleDto: UpdateRoleDto): Promise<Role> {
-    const role: Role = await this.findOneOrFailById(id, null, { rolesPermissions: true });
+    const role: Role = await this.findOneOrFailById(<FindOneOrFailByIdDto<Role>>{
+      id,
+      relations: { rolesPermissions: true },
+    });
     if (updateRoleDto.permissionsIds) {
       await this.rolesPermissionsService.removeAllByRoleId(role.id);
       role.rolesPermissions = updateRoleDto.permissionsIds.map(
@@ -70,7 +75,10 @@ export class RolesService {
 
   // remove.
   async remove(id: number): Promise<Role> {
-    const role: Role = await this.findOneOrFailById(id);
+    const role: Role = await this.findOneOrFailById(<FindOneOrFailByIdDto<Role>>{
+      id,
+      relations: { rolesPermissions: true },
+    });
     return this.roleRepository.remove(role);
   }
 }

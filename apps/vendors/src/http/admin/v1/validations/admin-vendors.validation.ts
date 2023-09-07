@@ -9,6 +9,7 @@ import {
   DocumentsMicroserviceImpl,
   DocumentType,
   FindAllDocumentsDto,
+  FindOneByPhoneDto,
   FindOneOrFailByIdDto,
   Location,
   LocationsMicroserviceConstants,
@@ -29,9 +30,9 @@ export class AdminVendorsValidation {
   constructor(
     @Inject(forwardRef(() => AdminVendorsService))
     private readonly adminVendorsService: AdminVendorsService,
-    @Inject(LocationsMicroserviceConstants.MICROSERVICE_NAME)
+    @Inject(LocationsMicroserviceConstants.NAME)
     private readonly locationsMicroservice: ClientProxy,
-    @Inject(DocumentsMicroserviceConstants.MICROSERVICE_NAME)
+    @Inject(DocumentsMicroserviceConstants.NAME)
     private readonly documentsMicroservice: ClientProxy,
   ) {
     this.locationsMicroserviceImpl = new LocationsMicroserviceImpl(locationsMicroservice, Constants.LOCATIONS_MICROSERVICE_VERSION);
@@ -40,7 +41,9 @@ export class AdminVendorsValidation {
 
   // validate creation.
   async validateCreation(createVendorDto: CreateVendorDto): Promise<Location> {
-    const vendor: Vendor = await this.adminVendorsService.findOneByPhone(createVendorDto.phone);
+    const vendor: Vendor = await this.adminVendorsService.findOneByPhone(<FindOneByPhoneDto<Location>>{
+      phone: createVendorDto.phone,
+    });
     if (vendor) {
       throw new BadRequestException('Phone is already exists.');
     }
@@ -121,12 +124,17 @@ export class AdminVendorsValidation {
 
   // validate update.
   async validateUpdate(vendorId: number, updateVendorDto: UpdateVendorDto): Promise<Vendor> {
-    const vendor: Vendor = await this.adminVendorsService.findOneOrFailById(vendorId, null, {
-      attachments: true,
-      locationsVendors: true,
+    const vendor: Vendor = await this.adminVendorsService.findOneOrFailById(<FindOneOrFailByIdDto<Vendor>>{
+      id: vendorId,
+      relations: {
+        attachments: true,
+        locationsVendors: true,
+      },
     });
     if (updateVendorDto.phone) {
-      const vendor: Vendor = await this.adminVendorsService.findOneByPhone(updateVendorDto.phone);
+      const vendor: Vendor = await this.adminVendorsService.findOneByPhone(<FindOneByPhoneDto<Vendor>>{
+        phone: updateVendorDto.phone,
+      });
       if (vendor) {
         throw new BadRequestException('Phone is already exists.');
       }

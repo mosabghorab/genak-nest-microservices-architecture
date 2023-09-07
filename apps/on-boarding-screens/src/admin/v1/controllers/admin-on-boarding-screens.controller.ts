@@ -1,5 +1,5 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UploadedFile, UseInterceptors } from '@nestjs/common';
-import { AdminMustCanDo, AllowFor, Helpers, OnBoardingScreen, OnBoardingScreenDto, PermissionAction, PermissionGroup, PermissionsTarget, Serialize, UserType } from '@app/common';
+import { AdminMustCanDo, AllowFor, FindOneOrFailByIdDto, Helpers, OnBoardingScreen, OnBoardingScreenDto, PermissionAction, PermissionGroup, PermissionsTarget, Serialize, UserType } from '@app/common';
 import { AdminOnBoardingScreensService } from '../services/admin-on-boarding-screens.service';
 import { CreateOnBoardingScreenDto } from '../dtos/create-on-boarding-screen.dto';
 import { FindAllOnBoardingScreensDto } from '../dtos/find-all-on-boarding-screens.dto';
@@ -31,7 +31,9 @@ export class AdminOnBoardingScreensController {
   @Serialize(OnBoardingScreenDto, 'One on boarding screen.')
   @Get(':id')
   findOne(@Param('id') id: number): Promise<OnBoardingScreen> {
-    return this.adminOnBoardingScreensService.findOneOrFailById(id);
+    return this.adminOnBoardingScreensService.findOneOrFailById(<FindOneOrFailByIdDto<OnBoardingScreen>>{
+      id,
+    });
   }
 
   @AdminMustCanDo(PermissionAction.UPDATE)

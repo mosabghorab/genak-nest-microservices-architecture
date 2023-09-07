@@ -1,5 +1,4 @@
-import { Attachment } from '@app/common/entities';
-import { FindAllAttachmentsByVendorIdAndDocumentIdDto } from '@app/common';
+import { Attachment, FindAllAttachmentsByVendorIdAndDocumentIdDto } from '@app/common';
 
 export interface IAttachmentsMicroservice {
   // find all by vendor id and document id.

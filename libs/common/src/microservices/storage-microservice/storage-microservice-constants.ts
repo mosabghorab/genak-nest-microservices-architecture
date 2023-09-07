@@ -1,7 +1,7 @@
 export abstract class StorageMicroserviceConstants {
-  static MICROSERVICE_NAME = 'storageMicroservice';
-  static MICROSERVICE_CONFIG_NAME = 'STORAGE';
+  static NAME = 'storage';
+  static CONFIG_NAME = 'STORAGE';
 
-  static MICROSERVICE_FUNCTION_UPLOAD_FILE = 'uploadFile';
-  static MICROSERVICE_FUNCTION_DELETE_FILE = 'deleteFile';
+  static STORAGE_SERVICE_UPLOAD_FILE_MESSAGE_PATTERN = 'storageService.uploadFile';
+  static STORAGE_SERVICE_DELETE_FILE_MESSAGE_PATTERN = 'storageService.deleteFile';
 }

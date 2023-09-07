@@ -6,8 +6,8 @@ import { VendorsService } from './v1/services/vendors.service';
 @Module({
   imports: [
     DatabaseModule.forFeature([Vendor]),
-    CustomClientsModule.register(AttachmentsMicroserviceConstants.MICROSERVICE_NAME, AttachmentsMicroserviceConstants.MICROSERVICE_CONFIG_NAME),
-    CustomClientsModule.register(StorageMicroserviceConstants.MICROSERVICE_NAME, StorageMicroserviceConstants.MICROSERVICE_CONFIG_NAME),
+    CustomClientsModule.register(AttachmentsMicroserviceConstants.NAME, AttachmentsMicroserviceConstants.CONFIG_NAME),
+    CustomClientsModule.register(StorageMicroserviceConstants.NAME, StorageMicroserviceConstants.CONFIG_NAME),
   ],
   controllers: [VendorsController],
   providers: [VendorsService],

@@ -8,9 +8,9 @@ export class StorageMicroserviceImpl implements IStorageMicroservice {
   // upload file.
   uploadFile(uploadFileDto: UploadFileDto): Promise<string> {
     return firstValueFrom<string>(
-      this.storageMicroservice.send(
+      this.storageMicroservice.send<string, UploadFileDto>(
         {
-          cmd: `${StorageMicroserviceConstants.MICROSERVICE_FUNCTION_UPLOAD_FILE}/v${this.version}`,
+          cmd: `${StorageMicroserviceConstants.STORAGE_SERVICE_UPLOAD_FILE_MESSAGE_PATTERN}/v${this.version}`,
         },
         uploadFileDto,
       ),
@@ -20,9 +20,9 @@ export class StorageMicroserviceImpl implements IStorageMicroservice {
   // delete file.
   deleteFile(deleteFileDto: DeleteFileDto): Promise<boolean> {
     return firstValueFrom<boolean>(
-      this.storageMicroservice.send(
+      this.storageMicroservice.send<boolean, DeleteFileDto>(
         {
-          cmd: `${StorageMicroserviceConstants.MICROSERVICE_FUNCTION_DELETE_FILE}/v${this.version}`,
+          cmd: `${StorageMicroserviceConstants.STORAGE_SERVICE_DELETE_FILE_MESSAGE_PATTERN}/v${this.version}`,
         },
         deleteFileDto,
       ),

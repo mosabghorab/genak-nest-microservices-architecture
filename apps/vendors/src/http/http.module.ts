@@ -20,10 +20,10 @@ import { CustomerVendorsValidation } from './customer/v1/validations/customer-ve
 @Module({
   imports: [
     DatabaseModule.forFeature([Vendor, LocationVendor]),
-    CustomClientsModule.register(LocationsMicroserviceConstants.MICROSERVICE_NAME, LocationsMicroserviceConstants.MICROSERVICE_CONFIG_NAME),
-    CustomClientsModule.register(DocumentsMicroserviceConstants.MICROSERVICE_NAME, DocumentsMicroserviceConstants.MICROSERVICE_CONFIG_NAME),
-    CustomClientsModule.register(AttachmentsMicroserviceConstants.MICROSERVICE_NAME, AttachmentsMicroserviceConstants.MICROSERVICE_CONFIG_NAME),
-    CustomClientsModule.register(StorageMicroserviceConstants.MICROSERVICE_NAME, StorageMicroserviceConstants.MICROSERVICE_CONFIG_NAME),
+    CustomClientsModule.register(LocationsMicroserviceConstants.NAME, LocationsMicroserviceConstants.CONFIG_NAME),
+    CustomClientsModule.register(DocumentsMicroserviceConstants.NAME, DocumentsMicroserviceConstants.CONFIG_NAME),
+    CustomClientsModule.register(AttachmentsMicroserviceConstants.NAME, AttachmentsMicroserviceConstants.CONFIG_NAME),
+    CustomClientsModule.register(StorageMicroserviceConstants.NAME, StorageMicroserviceConstants.CONFIG_NAME),
   ],
   controllers: [AdminVendorsController, CustomerVendorsController],
   providers: [AdminVendorsService, AdminVendorsValidation, CustomerVendorsService, CustomerVendorsValidation, LocationsVendorsService],

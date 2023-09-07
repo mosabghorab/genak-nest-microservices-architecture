@@ -1,8 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Admin, AdminUpdatePasswordDto, FindOneByIdDto } from '@app/common';
-import { FindOneByEmailDto } from '@app/common/dtos/find-one-by-email.dto';
+import { Admin, AdminUpdatePasswordDto, AdminUpdateProfileDto, FindOneByEmailDto, FindOneByIdDto } from '@app/common';
 
 @Injectable()
 export class AdminsService {
@@ -33,6 +32,15 @@ export class AdminsService {
       id: adminUpdatePasswordDto.adminId,
     });
     admin.password = adminUpdatePasswordDto.newPassword;
+    return this.adminRepository.save(admin);
+  }
+
+  // update profile.
+  async updateProfile(adminUpdateProfileDto: AdminUpdateProfileDto): Promise<Admin> {
+    const admin: Admin = await this.findOneById(<FindOneByIdDto<Admin>>{
+      id: adminUpdateProfileDto.adminId,
+    });
+    Object.assign(admin, adminUpdateProfileDto);
     return this.adminRepository.save(admin);
   }
 }

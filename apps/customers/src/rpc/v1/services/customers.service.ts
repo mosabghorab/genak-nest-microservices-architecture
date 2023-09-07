@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Customer, CustomerSignUpDto, FindOneByIdDto, FindOneByPhoneDto } from '@app/common';
+import { Customer, CustomerSignUpDto, CustomerUpdateProfileDto, FindOneByIdDto, FindOneByPhoneDto } from '@app/common';
 
 @Injectable()
 export class CustomersService {
@@ -31,19 +31,14 @@ export class CustomersService {
     return this.customerRepository.save(await this.customerRepository.create(customerSignUpDto));
   }
 
-  // update.
-  // async update(
-  //   customerId: number,
-  //   updateCustomerDto: UpdateCustomerDto,
-  // ): Promise<Customer> {
-  //   const customer: Customer =
-  //     await this.customerCustomersValidation.validateUpdate(
-  //       customerId,
-  //       updateCustomerDto,
-  //     );
-  //   Object.assign(customer, updateCustomerDto);
-  //   return this.customerRepository.save(customer);
-  // }
+  // update profile.
+  async updateProfile(customerUpdateProfileDto: CustomerUpdateProfileDto): Promise<Customer> {
+    const customer: Customer = await this.findOneById(<FindOneByIdDto<Customer>>{
+      id: customerUpdateProfileDto.customerId,
+    });
+    Object.assign(customer, customerUpdateProfileDto);
+    return this.customerRepository.save(customer);
+  }
 
   // remove one by instance.
   removeOneByInstance(customer: Customer): Promise<Customer> {

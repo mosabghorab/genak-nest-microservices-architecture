@@ -8,3 +8,6 @@ export * from './vendors-microservice';
 export * from './storage-microservice';
 export * from './reasons-microservice';
 export * from './products-microservice';
+export * from './notifications-microservice';
+export * from './auth-microservice';
+export * from './orders-microservice';

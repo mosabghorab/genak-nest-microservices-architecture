@@ -1,5 +1,5 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UploadedFiles, UseInterceptors } from '@nestjs/common';
-import { AdminMustCanDo, AllowFor, PermissionAction, PermissionGroup, PermissionsTarget, Serialize, UserType, Vendor, VendorDto } from '@app/common';
+import { AdminMustCanDo, AllowFor, FindOneOrFailByIdDto, PermissionAction, PermissionGroup, PermissionsTarget, Serialize, UserType, Vendor, VendorDto } from '@app/common';
 import { AdminVendorsService } from '../services/admin-vendors.service';
 import { CreateVendorDto } from '../dtos/create-vendor.dto';
 import { VendorsPaginationDto } from '../dtos/vendors-pagination.dto';
@@ -42,10 +42,13 @@ export class AdminVendorsController {
   @Serialize(VendorDto, 'One vendor.')
   @Get(':id')
   findOne(@Param('id') id: number): Promise<Vendor> {
-    return this.adminVendorsService.findOneOrFailById(id, null, {
-      governorate: true,
-      locationsVendors: { location: true },
-      attachments: { document: true },
+    return this.adminVendorsService.findOneOrFailById(<FindOneOrFailByIdDto<Vendor>>{
+      id,
+      relations: {
+        governorate: true,
+        locationsVendors: { location: true },
+        attachments: { document: true },
+      },
     });
   }
 

@@ -11,6 +11,10 @@ import {
   DateHelpers,
   DeleteFileDto,
   FindAllAttachmentsByVendorIdAndDocumentIdDto,
+  FindOneByIdDto,
+  FindOneByPhoneDto,
+  FindOneOrFailByIdDto,
+  FindOneOrFailByPhoneDto,
   Location,
   LocationVendor,
   OrderByType,
@@ -40,9 +44,9 @@ export class AdminVendorsService {
     private readonly locationsVendorsService: LocationsVendorsService,
     @Inject(forwardRef(() => AdminVendorsValidation))
     private readonly adminVendorsValidation: AdminVendorsValidation,
-    @Inject(AttachmentsMicroserviceConstants.MICROSERVICE_NAME)
+    @Inject(AttachmentsMicroserviceConstants.NAME)
     private readonly attachmentsMicroservice: ClientProxy,
-    @Inject(StorageMicroserviceConstants.MICROSERVICE_NAME)
+    @Inject(StorageMicroserviceConstants.NAME)
     private readonly storageMicroservice: ClientProxy,
   ) {
     this.attachmentsMicroserviceImpl = new AttachmentsMicroserviceImpl(attachmentsMicroservice, Constants.ATTACHMENTS_MICROSERVICE_VERSION);
@@ -50,32 +54,38 @@ export class AdminVendorsService {
   }
 
   // find one by id.
-  findOneById(id: number, relations?: FindOptionsRelations<Vendor>): Promise<Vendor | null> {
-    return this.vendorRepository.findOne({ where: { id }, relations });
+  findOneById(findOneByIdDto: FindOneByIdDto<Vendor>): Promise<Vendor | null> {
+    return this.vendorRepository.findOne({ where: { id: findOneByIdDto.id }, relations: findOneByIdDto.relations });
   }
 
   // find one or fail by id.
-  async findOneOrFailById(id: number, failureMessage?: string, relations?: FindOptionsRelations<Vendor>): Promise<Vendor> {
-    const vendor: Vendor = await this.findOneById(id, relations);
+  async findOneOrFailById(findOneOrFailByIdDto: FindOneOrFailByIdDto<Vendor>): Promise<Vendor> {
+    const vendor: Vendor = await this.findOneById(<FindOneByIdDto<Vendor>>{
+      id: findOneOrFailByIdDto.id,
+      relations: findOneOrFailByIdDto.relations,
+    });
     if (!vendor) {
-      throw new NotFoundException(failureMessage || 'Vendor not found.');
+      throw new NotFoundException(findOneOrFailByIdDto.failureMessage || 'Vendor not found.');
     }
     return vendor;
   }
 
   // find one by phone.
-  findOneByPhone(phone: string, relations?: FindOptionsRelations<Vendor>): Promise<Vendor | null> {
+  findOneByPhone(findOneByPhoneDto: FindOneByPhoneDto<Vendor>): Promise<Vendor | null> {
     return this.vendorRepository.findOne({
-      where: { phone },
-      relations,
+      where: { phone: findOneByPhoneDto.phone },
+      relations: findOneByPhoneDto.relations,
     });
   }
 
   // find one or fail by phone.
-  async findOneOrFailByPhone(phone: string, failureMessage?: string, relations?: FindOptionsRelations<Vendor>): Promise<Vendor> {
-    const vendor: Vendor = await this.findOneByPhone(phone, relations);
+  async findOneOrFailByPhone(findOneOrFailByPhoneDto: FindOneOrFailByPhoneDto<Vendor>): Promise<Vendor> {
+    const vendor: Vendor = await this.findOneByPhone(<FindOneByPhoneDto<Vendor>>{
+      phone: findOneOrFailByPhoneDto.phone,
+      relations: findOneOrFailByPhoneDto.relations,
+    });
     if (!vendor) {
-      throw new NotFoundException(failureMessage || 'Vendor not found.');
+      throw new NotFoundException(findOneOrFailByPhoneDto.failureMessage || 'Vendor not found.');
     }
     return vendor;
   }
@@ -260,7 +270,9 @@ export class AdminVendorsService {
 
   // remove.
   async remove(id: number): Promise<Vendor> {
-    const vendor: Vendor = await this.findOneOrFailById(id);
+    const vendor: Vendor = await this.findOneOrFailById(<FindOneOrFailByIdDto<Vendor>>{
+      id,
+    });
     return this.vendorRepository.remove(vendor);
   }
 

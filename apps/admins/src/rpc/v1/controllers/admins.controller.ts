@@ -1,8 +1,7 @@
 import { Controller } from '@nestjs/common';
-import { Admin, AdminsMicroserviceConstants, AdminUpdatePasswordDto, FindOneByIdDto } from '@app/common';
+import { Admin, AdminsMicroserviceConstants, AdminUpdatePasswordDto, AdminUpdateProfileDto, FindOneByEmailDto, FindOneByIdDto } from '@app/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { AdminsService } from '../services/admins.service';
-import { FindOneByEmailDto } from '@app/common/dtos/find-one-by-email.dto';
 
 const VERSION = '1';
 
@@ -11,23 +10,30 @@ export class AdminsController {
   constructor(private readonly adminsService: AdminsService) {}
 
   @MessagePattern({
-    cmd: `${AdminsMicroserviceConstants.MICROSERVICE_FUNCTION_FIND_ONE_BY_ID}/v${VERSION}`,
+    cmd: `${AdminsMicroserviceConstants.ADMINS_SERVICE_FIND_ONE_BY_ID_MESSAGE_PATTERN}/v${VERSION}`,
   })
   findOneById(@Payload() findOneByIdDto: FindOneByIdDto<Admin>): Promise<Admin | null> {
     return this.adminsService.findOneById(findOneByIdDto);
   }
 
   @MessagePattern({
-    cmd: `${AdminsMicroserviceConstants.MICROSERVICE_FUNCTION_FIND_ONE_BY_EMAIL}/v${VERSION}`,
+    cmd: `${AdminsMicroserviceConstants.ADMINS_SERVICE_FIND_ONE_BY_EMAIL_MESSAGE_PATTERN}/v${VERSION}`,
   })
   findOneByPhone(@Payload() findOneByEmailDto: FindOneByEmailDto<Admin>): Promise<Admin | null> {
     return this.adminsService.findOneByEmail(findOneByEmailDto);
   }
 
   @MessagePattern({
-    cmd: `${AdminsMicroserviceConstants.MICROSERVICE_FUNCTION_UPDATE_PASSWORD}/v${VERSION}`,
+    cmd: `${AdminsMicroserviceConstants.ADMINS_SERVICE_UPDATE_PASSWORD_MESSAGE_PATTERN}/v${VERSION}`,
   })
   updatePassword(@Payload() adminUpdatePasswordDto: AdminUpdatePasswordDto): Promise<Admin> {
     return this.adminsService.updatePassword(adminUpdatePasswordDto);
+  }
+
+  @MessagePattern({
+    cmd: `${AdminsMicroserviceConstants.ADMINS_SERVICE_UPDATE_PROFILE_MESSAGE_PATTERN}/v${VERSION}`,
+  })
+  updateProfile(@Payload() adminUpdateProfileDto: AdminUpdateProfileDto): Promise<Admin> {
+    return this.adminsService.updateProfile(adminUpdateProfileDto);
   }
 }

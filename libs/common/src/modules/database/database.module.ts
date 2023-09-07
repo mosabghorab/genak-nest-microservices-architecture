@@ -12,6 +12,7 @@ import {
   FcmToken,
   Location,
   LocationVendor,
+  Notification,
   OnBoardingScreen,
   Order,
   OrderItem,
@@ -25,7 +26,7 @@ import {
   Setting,
   Vendor,
   VerificationCode,
-} from '@app/common/entities';
+} from '@app/common';
 
 @Module({})
 export class DatabaseModule {
@@ -65,6 +66,7 @@ export class DatabaseModule {
                 Setting,
                 FcmToken,
                 VerificationCode,
+                Notification,
               ],
               synchronize: true,
             };

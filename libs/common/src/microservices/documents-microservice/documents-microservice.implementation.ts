@@ -8,9 +8,9 @@ export class DocumentsMicroserviceImpl implements IDocumentsMicroservice {
   // find all.
   findAll(findAllDocumentsDto: FindAllDocumentsDto): Promise<Document[]> {
     return firstValueFrom<Document[]>(
-      this.documentsMicroservice.send(
+      this.documentsMicroservice.send<Document[], FindAllDocumentsDto>(
         {
-          cmd: `${DocumentsMicroserviceConstants.MICROSERVICE_FUNCTION_FIND_ALL}/v${this.version}`,
+          cmd: `${DocumentsMicroserviceConstants.DOCUMENTS_SERVICE_FIND_ALL_MESSAGE_PATTERN}/v${this.version}`,
         },
         findAllDocumentsDto,
       ),

@@ -21,3 +21,4 @@ export * from './roles-permissions.entity';
 export * from './setting.entity';
 export * from './vendor.entity';
 export * from './verification-code.entity';
+export * from './notification.entity';

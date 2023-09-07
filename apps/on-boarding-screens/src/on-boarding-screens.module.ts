@@ -12,7 +12,7 @@ import { APP_GUARD } from '@nestjs/core';
     CustomAuthModule,
     DatabaseModule.forRoot(),
     DatabaseModule.forFeature([OnBoardingScreen]),
-    CustomClientsModule.register(StorageMicroserviceConstants.MICROSERVICE_NAME, StorageMicroserviceConstants.MICROSERVICE_CONFIG_NAME),
+    CustomClientsModule.register(StorageMicroserviceConstants.NAME, StorageMicroserviceConstants.CONFIG_NAME),
   ],
   controllers: [AdminOnBoardingScreensController, OnBoardingScreensController],
   providers: [

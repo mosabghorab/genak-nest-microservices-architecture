@@ -1,8 +1,18 @@
-import { FindOneByIdDto, FindOneByPhoneDto, FindOneOrFailByIdDto, FindOneOrFailByPhoneDto, Vendor, VendorSignUpDto, VendorsMicroserviceConstants, VendorUploadDocumentsDto } from '@app/common';
+import {
+  FindOneByIdDto,
+  FindOneByPhoneDto,
+  FindOneOrFailByIdDto,
+  FindOneOrFailByPhoneDto,
+  IVendorsMicroservice,
+  Vendor,
+  VendorSignUpDto,
+  VendorsMicroserviceConstants,
+  VendorUpdateProfileDto,
+  VendorUploadDocumentsDto,
+} from '@app/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { NotFoundException } from '@nestjs/common';
-import { IVendorsMicroservice } from '@app/common/microservices/vendors-microservice/vendors-microservice.interface';
 
 export class VendorsMicroserviceImpl implements IVendorsMicroservice {
   constructor(private readonly vendorsMicroservice: ClientProxy, private readonly version: string) {}
@@ -10,9 +20,9 @@ export class VendorsMicroserviceImpl implements IVendorsMicroservice {
   // find one by id.
   findOneById(findOneByIdDto: FindOneByIdDto<Vendor>): Promise<Vendor | null> {
     return firstValueFrom<Vendor>(
-      this.vendorsMicroservice.send(
+      this.vendorsMicroservice.send<Vendor, FindOneByIdDto<Vendor>>(
         {
-          cmd: `${VendorsMicroserviceConstants.MICROSERVICE_FUNCTION_FIND_ONE_BY_ID}/v${this.version}`,
+          cmd: `${VendorsMicroserviceConstants.VENDORS_SERVICE_FIND_ONE_BY_ID_MESSAGE_PATTERN}/v${this.version}`,
         },
         findOneByIdDto,
       ),
@@ -22,9 +32,9 @@ export class VendorsMicroserviceImpl implements IVendorsMicroservice {
   // find one or fail by id.
   async findOneOrFailById(findOneOrFailByIdDto: FindOneOrFailByIdDto<Vendor>): Promise<Vendor> {
     const vendor: Vendor = await firstValueFrom<Vendor>(
-      this.vendorsMicroservice.send(
+      this.vendorsMicroservice.send<Vendor, FindOneByIdDto<Vendor>>(
         {
-          cmd: `${VendorsMicroserviceConstants.MICROSERVICE_FUNCTION_FIND_ONE_BY_ID}/v${this.version}`,
+          cmd: `${VendorsMicroserviceConstants.VENDORS_SERVICE_FIND_ONE_BY_ID_MESSAGE_PATTERN}/v${this.version}`,
         },
         <FindOneByIdDto<Vendor>>{
           id: findOneOrFailByIdDto.id,
@@ -41,9 +51,9 @@ export class VendorsMicroserviceImpl implements IVendorsMicroservice {
   // find one by phone.
   findOneByPhone(findOneByPhoneDto: FindOneByPhoneDto<Vendor>): Promise<Vendor | null> {
     return firstValueFrom<Vendor>(
-      this.vendorsMicroservice.send(
+      this.vendorsMicroservice.send<Vendor, FindOneByPhoneDto<Vendor>>(
         {
-          cmd: `${VendorsMicroserviceConstants.MICROSERVICE_FUNCTION_FIND_ONE_BY_PHONE}/v${this.version}`,
+          cmd: `${VendorsMicroserviceConstants.VENDORS_SERVICE_FIND_ONE_BY_PHONE_MESSAGE_PATTERN}/v${this.version}`,
         },
         findOneByPhoneDto,
       ),
@@ -53,9 +63,9 @@ export class VendorsMicroserviceImpl implements IVendorsMicroservice {
   // find one or fail by phone.
   async findOneOrFailByPhone(findOneOrFailByPhoneDto: FindOneOrFailByPhoneDto<Vendor>): Promise<Vendor> {
     const vendor: Vendor = await firstValueFrom<Vendor>(
-      this.vendorsMicroservice.send(
+      this.vendorsMicroservice.send<Vendor, FindOneByPhoneDto<Vendor>>(
         {
-          cmd: `${VendorsMicroserviceConstants.MICROSERVICE_FUNCTION_FIND_ONE_BY_PHONE}/v${this.version}`,
+          cmd: `${VendorsMicroserviceConstants.VENDORS_SERVICE_FIND_ONE_BY_PHONE_MESSAGE_PATTERN}/v${this.version}`,
         },
         <FindOneByPhoneDto<Vendor>>{
           phone: findOneOrFailByPhoneDto.phone,
@@ -72,9 +82,15 @@ export class VendorsMicroserviceImpl implements IVendorsMicroservice {
   // create.
   create(vendorSignUpDto: VendorSignUpDto, avatar?: Express.Multer.File): Promise<Vendor> {
     return firstValueFrom<Vendor>(
-      this.vendorsMicroservice.send(
+      this.vendorsMicroservice.send<
+        Vendor,
         {
-          cmd: `${VendorsMicroserviceConstants.MICROSERVICE_FUNCTION_CREATE}/v${this.version}`,
+          vendorSignUpDto: VendorSignUpDto;
+          avatar: Express.Multer.File;
+        }
+      >(
+        {
+          cmd: `${VendorsMicroserviceConstants.VENDORS_SERVICE_CREATE_MESSAGE_PATTERN}/v${this.version}`,
         },
         {
           vendorSignUpDto,
@@ -87,9 +103,9 @@ export class VendorsMicroserviceImpl implements IVendorsMicroservice {
   // remove on by instance.
   removeOneByInstance(vendor: Vendor): Promise<Vendor> {
     return firstValueFrom<Vendor>(
-      this.vendorsMicroservice.send(
+      this.vendorsMicroservice.send<Vendor, Vendor>(
         {
-          cmd: `${VendorsMicroserviceConstants.MICROSERVICE_FUNCTION_REMOVE_ONE_BY_INSTANCE}/v${this.version}`,
+          cmd: `${VendorsMicroserviceConstants.VENDORS_SERVICE_REMOVE_ONE_BY_INSTANCE_MESSAGE_PATTERN}/v${this.version}`,
         },
         vendor,
       ),
@@ -99,11 +115,23 @@ export class VendorsMicroserviceImpl implements IVendorsMicroservice {
   // upload documents.
   uploadDocuments(vendorUploadDocumentsDto: VendorUploadDocumentsDto): Promise<Vendor> {
     return firstValueFrom<Vendor>(
-      this.vendorsMicroservice.send(
+      this.vendorsMicroservice.send<Vendor, VendorUploadDocumentsDto>(
         {
-          cmd: `${VendorsMicroserviceConstants.MICROSERVICE_FUNCTION_UPLOAD_DOCUMENTS}/v${this.version}`,
+          cmd: `${VendorsMicroserviceConstants.VENDORS_SERVICE_UPLOAD_DOCUMENTS_MESSAGE_PATTERN}/v${this.version}`,
         },
         vendorUploadDocumentsDto,
+      ),
+    );
+  }
+
+  // update profile.
+  updateProfile(vendorUpdateProfileDto: VendorUpdateProfileDto): Promise<Vendor> {
+    return firstValueFrom<Vendor>(
+      this.vendorsMicroservice.send<Vendor, VendorUpdateProfileDto>(
+        {
+          cmd: `${VendorsMicroserviceConstants.VENDORS_SERVICE_UPDATE_PROFILE_MESSAGE_PATTERN}/v${this.version}`,
+        },
+        vendorUpdateProfileDto,
       ),
     );
   }

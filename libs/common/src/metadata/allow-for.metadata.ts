@@ -1,5 +1,5 @@
 import { SetMetadata } from '@nestjs/common';
-import { UserType } from '@app/common/enums/user-type.enum';
+import { UserType } from '@app/common';
 
 export const ALLOW_FOR_KEY = 'allowFor';
 

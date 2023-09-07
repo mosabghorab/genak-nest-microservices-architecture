@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
 import { RolesService } from '../services/roles.service';
-import { AdminMustCanDo, AllowFor, PermissionAction, PermissionGroup, PermissionsTarget, Role, RoleDto, Serialize, UserType } from '@app/common';
+import { AdminMustCanDo, AllowFor, FindOneOrFailByIdDto, PermissionAction, PermissionGroup, PermissionsTarget, Role, RoleDto, Serialize, UserType } from '@app/common';
 import { CreateRoleDto } from '../dtos/create-role.dto';
 import { UpdateRoleDto } from '../dtos/update-role.dto';
 
@@ -28,7 +28,9 @@ export class RolesController {
   @Serialize(RoleDto, 'One role.')
   @Get(':id')
   findOne(@Param('id') id: number): Promise<Role> {
-    return this.rolesService.findOneOrFailById(id);
+    return this.rolesService.findOneOrFailById(<FindOneOrFailByIdDto<Role>>{
+      id,
+    });
   }
 
   @AdminMustCanDo(PermissionAction.UPDATE)

@@ -1,8 +1,7 @@
 import { forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder } from 'typeorm';
-import { FindOptionsRelations } from 'typeorm/browser';
-import { ClientUserType, Vendor, VendorStatus } from '@app/common';
+import { ClientUserType, FindOneByIdDto, FindOneOrFailByIdDto, Vendor, VendorStatus } from '@app/common';
 import { CustomerVendorsValidation } from '../validations/customer-vendors.validation';
 import { FindAllVendorsDto } from '../dtos/find-all-vendors.dto';
 
@@ -16,15 +15,18 @@ export class CustomerVendorsService {
   ) {}
 
   // find one by id.
-  findOneById(id: number, relations?: FindOptionsRelations<Vendor>): Promise<Vendor | null> {
-    return this.vendorRepository.findOne({ where: { id }, relations });
+  findOneById(findOneByIdDto: FindOneByIdDto<Vendor>): Promise<Vendor | null> {
+    return this.vendorRepository.findOne({ where: { id: findOneByIdDto.id }, relations: findOneByIdDto.relations });
   }
 
   // find one or fail by id.
-  async findOneOrFailById(id: number, failureMessage?: string, relations?: FindOptionsRelations<Vendor>): Promise<Vendor> {
-    const vendor: Vendor = await this.findOneById(id, relations);
+  async findOneOrFailById(findOneOrFailByIdDto: FindOneOrFailByIdDto<Vendor>): Promise<Vendor> {
+    const vendor: Vendor = await this.findOneById(<FindOneByIdDto<Vendor>>{
+      id: findOneOrFailByIdDto.id,
+      relations: findOneOrFailByIdDto.relations,
+    });
     if (!vendor) {
-      throw new NotFoundException(failureMessage || 'Vendor not found.');
+      throw new NotFoundException(findOneOrFailByIdDto.failureMessage || 'Vendor not found.');
     }
     return vendor;
   }

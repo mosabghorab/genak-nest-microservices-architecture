@@ -1,6 +1,6 @@
 export abstract class DocumentsMicroserviceConstants {
-  static MICROSERVICE_NAME = 'documentsMicroservice';
-  static MICROSERVICE_CONFIG_NAME = 'DOCUMENTS';
+  static NAME = 'documents';
+  static CONFIG_NAME = 'DOCUMENTS';
 
-  static MICROSERVICE_FUNCTION_FIND_ALL = 'findAll';
+  static DOCUMENTS_SERVICE_FIND_ALL_MESSAGE_PATTERN = 'documentsService.findAll';
 }

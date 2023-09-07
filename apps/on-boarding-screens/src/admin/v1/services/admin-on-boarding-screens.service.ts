@@ -1,8 +1,7 @@
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { FindOptionsRelations } from 'typeorm/browser';
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { DeleteFileDto, OnBoardingScreen, OrderByType, StorageMicroserviceConstants, StorageMicroserviceImpl, UploadFileDto } from '@app/common';
+import { DeleteFileDto, FindOneByIdDto, FindOneOrFailByIdDto, OnBoardingScreen, OrderByType, StorageMicroserviceConstants, StorageMicroserviceImpl, UploadFileDto } from '@app/common';
 import { FindAllOnBoardingScreensDto } from '../dtos/find-all-on-boarding-screens.dto';
 import { CreateOnBoardingScreenDto } from '../dtos/create-on-boarding-screen.dto';
 import { UpdateOnBoardingScreenDto } from '../dtos/update-on-boarding-screen.dto';
@@ -16,25 +15,28 @@ export class AdminOnBoardingScreensService {
   constructor(
     @InjectRepository(OnBoardingScreen)
     private readonly onBoardingScreenRepository: Repository<OnBoardingScreen>,
-    @Inject(StorageMicroserviceConstants.MICROSERVICE_NAME)
+    @Inject(StorageMicroserviceConstants.NAME)
     private readonly storageMicroservice: ClientProxy,
   ) {
     this.storageMicroserviceImpl = new StorageMicroserviceImpl(storageMicroservice, Constants.STORAGE_MICROSERVICE_VERSION);
   }
 
   // find one by id.
-  findOneById(id: number, relations?: FindOptionsRelations<OnBoardingScreen>): Promise<OnBoardingScreen | null> {
+  findOneById(findOneByIdDto: FindOneByIdDto<OnBoardingScreen>): Promise<OnBoardingScreen | null> {
     return this.onBoardingScreenRepository.findOne({
-      where: { id },
-      relations,
+      where: { id: findOneByIdDto.id },
+      relations: findOneByIdDto.relations,
     });
   }
 
   // find one or fail by id.
-  async findOneOrFailById(id: number, failureMessage?: string, relations?: FindOptionsRelations<OnBoardingScreen>): Promise<OnBoardingScreen> {
-    const onBoardingScreen: OnBoardingScreen = await this.findOneById(id, relations);
+  async findOneOrFailById(findOneOrFailByIdDto: FindOneOrFailByIdDto<OnBoardingScreen>): Promise<OnBoardingScreen> {
+    const onBoardingScreen: OnBoardingScreen = await this.findOneById(<FindOneByIdDto<OnBoardingScreen>>{
+      id: findOneOrFailByIdDto.id,
+      relations: findOneOrFailByIdDto.relations,
+    });
     if (!onBoardingScreen) {
-      throw new NotFoundException(failureMessage || 'On boarding screen not found.');
+      throw new NotFoundException(findOneOrFailByIdDto.failureMessage || 'On boarding screen not found.');
     }
     return onBoardingScreen;
   }
@@ -65,7 +67,9 @@ export class AdminOnBoardingScreensService {
 
   // update.
   async update(id: number, updateOnBoardingScreenDto: UpdateOnBoardingScreenDto, image?: Express.Multer.File): Promise<OnBoardingScreen> {
-    const onBoardingScreen: OnBoardingScreen = await this.findOneOrFailById(id);
+    const onBoardingScreen: OnBoardingScreen = await this.findOneOrFailById(<FindOneOrFailByIdDto<OnBoardingScreen>>{
+      id,
+    });
     if (image) {
       await this.storageMicroserviceImpl.deleteFile(<DeleteFileDto>{
         prefixPath: Constants.ON_BOARDING_SCREENS_IMAGES_PREFIX_PATH,
@@ -82,7 +86,9 @@ export class AdminOnBoardingScreensService {
 
   // remove.
   async remove(id: number): Promise<OnBoardingScreen> {
-    const onBoardingScreen: OnBoardingScreen = await this.findOneOrFailById(id);
+    const onBoardingScreen: OnBoardingScreen = await this.findOneOrFailById(<FindOneOrFailByIdDto<OnBoardingScreen>>{
+      id,
+    });
     return this.onBoardingScreenRepository.remove(onBoardingScreen);
   }
 }

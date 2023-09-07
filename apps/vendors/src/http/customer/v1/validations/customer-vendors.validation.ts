@@ -12,7 +12,7 @@ export class CustomerVendorsValidation {
   constructor(
     @Inject(forwardRef(() => CustomerVendorsService))
     private readonly customerVendorsService: CustomerVendorsService,
-    @Inject(LocationsMicroserviceConstants.MICROSERVICE_NAME)
+    @Inject(LocationsMicroserviceConstants.NAME)
     private readonly locationsMicroservice: ClientProxy,
   ) {
     this.locationsMicroserviceImpl = new LocationsMicroserviceImpl(locationsMicroservice, Constants.LOCATIONS_MICROSERVICE_VERSION);

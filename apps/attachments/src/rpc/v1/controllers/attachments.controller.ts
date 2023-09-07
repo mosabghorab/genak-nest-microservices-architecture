@@ -10,7 +10,7 @@ export class AttachmentsController {
   constructor(private readonly attachmentsService: AttachmentsService) {}
 
   @MessagePattern({
-    cmd: `${AttachmentsMicroserviceConstants.MICROSERVICE_FUNCTION_FIND_ALL_BY_DOCUMENT_ID_AND_VENDOR_ID}/v${VERSION}`,
+    cmd: `${AttachmentsMicroserviceConstants.ATTACHMENTS_SERVICE_FIND_ALL_BY_DOCUMENT_ID_AND_VENDOR_ID_MESSAGE_PATTERN}/v${VERSION}`,
   })
   findAllByVendorIdAndDocumentId(
     @Payload()
@@ -20,7 +20,7 @@ export class AttachmentsController {
   }
 
   @MessagePattern({
-    cmd: `${AttachmentsMicroserviceConstants.MICROSERVICE_FUNCTION_REMOVE_ONE_BY_INSTANCE}/v${VERSION}`,
+    cmd: `${AttachmentsMicroserviceConstants.ATTACHMENTS_SERVICE_REMOVE_ONE_BY_INSTANCE_MESSAGE_PATTERN}/v${VERSION}`,
   })
   removeOneByInstance(
     @Payload()

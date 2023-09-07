@@ -1,5 +1,4 @@
-import { Admin, AdminUpdatePasswordDto, FindOneByIdDto, FindOneOrFailByIdDto } from '@app/common';
-import { FindOneByEmailDto } from '@app/common/dtos/find-one-by-email.dto';
+import { Admin, AdminUpdatePasswordDto, AdminUpdateProfileDto, FindOneByEmailDto, FindOneByIdDto, FindOneOrFailByIdDto } from '@app/common';
 import { FindOneOrFailByEmailDto } from '@app/common/dtos/find-one-or-fail-by-email.dto';
 
 export interface IAdminsMicroservice {
@@ -12,4 +11,6 @@ export interface IAdminsMicroservice {
   findOneOrFailByEmail(findOneOrFailByEmailDto: FindOneOrFailByEmailDto<Admin>): Promise<Admin>;
 
   updatePassword(adminUpdatePasswordDto: AdminUpdatePasswordDto): Promise<Admin>;
+
+  updateProfile(adminUpdateProfileDto: AdminUpdateProfileDto): Promise<Admin>;
 }

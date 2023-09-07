@@ -11,9 +11,7 @@ export class ProductsService {
   ) {}
 
   // find one by id.
-  findOneById(
-    findOneByIdDto: FindOneByIdDto<Product>,
-  ): Promise<Product | null> {
+  findOneById(findOneByIdDto: FindOneByIdDto<Product>): Promise<Product | null> {
     return this.productRepository.findOne({
       where: { id: findOneByIdDto.id },
       relations: findOneByIdDto.relations,

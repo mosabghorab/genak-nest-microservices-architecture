@@ -9,9 +9,9 @@ export class LocationsMicroserviceImpl implements ILocationsMicroservice {
   // find one by id.
   findOneById(findOneByIdDto: FindOneByIdDto<Location>): Promise<Location | null> {
     return firstValueFrom<Location>(
-      this.locationsMicroservice.send(
+      this.locationsMicroservice.send<Location, FindOneByIdDto<Location>>(
         {
-          cmd: `${LocationsMicroserviceConstants.MICROSERVICE_FUNCTION_FIND_ONE_BY_ID}/v${this.version}`,
+          cmd: `${LocationsMicroserviceConstants.LOCATIONS_SERVICE_FIND_ONE_BY_ID_MESSAGE_PATTERN}/v${this.version}`,
         },
         findOneByIdDto,
       ),
@@ -21,9 +21,9 @@ export class LocationsMicroserviceImpl implements ILocationsMicroservice {
   // find one or fail by id.
   async findOneOrFailById(findOneOrFailByIdDto: FindOneOrFailByIdDto<Location>): Promise<Location> {
     const location: Location = await firstValueFrom<Location>(
-      this.locationsMicroservice.send(
+      this.locationsMicroservice.send<Location, FindOneByIdDto<Location>>(
         {
-          cmd: `${LocationsMicroserviceConstants.MICROSERVICE_FUNCTION_FIND_ONE_BY_ID}/v${this.version}`,
+          cmd: `${LocationsMicroserviceConstants.LOCATIONS_SERVICE_FIND_ONE_BY_ID_MESSAGE_PATTERN}/v${this.version}`,
         },
         <FindOneByIdDto<Location>>{
           id: findOneOrFailByIdDto.id,

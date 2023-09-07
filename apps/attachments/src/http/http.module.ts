@@ -4,7 +4,7 @@ import { AdminAttachmentsController } from './admin/v1/controllers/admin-attachm
 import { AdminAttachmentsService } from './admin/v1/services/admin-attachments.service';
 
 @Module({
-  imports: [DatabaseModule.forFeature([Attachment]), CustomClientsModule.register(StorageMicroserviceConstants.MICROSERVICE_NAME, StorageMicroserviceConstants.MICROSERVICE_CONFIG_NAME)],
+  imports: [DatabaseModule.forFeature([Attachment]), CustomClientsModule.register(StorageMicroserviceConstants.NAME, StorageMicroserviceConstants.CONFIG_NAME)],
   controllers: [AdminAttachmentsController],
   providers: [AdminAttachmentsService],
 })

@@ -1,6 +1,6 @@
 export abstract class ReasonsMicroserviceConstants {
-  static MICROSERVICE_NAME = 'reasonsMicroservice';
-  static MICROSERVICE_CONFIG_NAME = 'REASONS';
+  static NAME = 'reasons';
+  static CONFIG_NAME = 'REASONS';
 
-  static MICROSERVICE_FUNCTION_FIND_ONE_BY_ID = 'findOneById';
+  static REASONS_SERVICE_MICROSERVICE_FIND_ONE_BY_ID_MESSAGE_PATTERN = 'reasonsService.findOneById';
 }

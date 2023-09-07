@@ -1,9 +1,8 @@
-import { Admin, AdminsMicroserviceConstants, AdminUpdatePasswordDto, FindOneByIdDto, FindOneOrFailByIdDto } from '@app/common';
+import { Admin, AdminsMicroserviceConstants, AdminUpdatePasswordDto, AdminUpdateProfileDto, FindOneByEmailDto, FindOneByIdDto, FindOneOrFailByIdDto } from '@app/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { NotFoundException } from '@nestjs/common';
 import { IAdminsMicroservice } from '@app/common/microservices/admins-microservice/admins-microservice.interface';
-import { FindOneByEmailDto } from '@app/common/dtos/find-one-by-email.dto';
 import { FindOneOrFailByEmailDto } from '@app/common/dtos/find-one-or-fail-by-email.dto';
 import { plainToInstance } from 'class-transformer';
 
@@ -13,9 +12,9 @@ export class AdminsMicroserviceImpl implements IAdminsMicroservice {
   // find one by id.
   findOneById(findOneByIdDto: FindOneByIdDto<Admin>): Promise<Admin | null> {
     return firstValueFrom<Admin>(
-      this.adminsMicroservice.send(
+      this.adminsMicroservice.send<Admin, FindOneByIdDto<Admin>>(
         {
-          cmd: `${AdminsMicroserviceConstants.MICROSERVICE_FUNCTION_FIND_ONE_BY_ID}/v${this.version}`,
+          cmd: `${AdminsMicroserviceConstants.ADMINS_SERVICE_FIND_ONE_BY_ID_MESSAGE_PATTERN}/v${this.version}`,
         },
         findOneByIdDto,
       ),
@@ -25,9 +24,9 @@ export class AdminsMicroserviceImpl implements IAdminsMicroservice {
   // find one or fail by id.
   async findOneOrFailById(findOneOrFailByIdDto: FindOneOrFailByIdDto<Admin>): Promise<Admin> {
     const admin: Admin = await firstValueFrom<Admin>(
-      this.adminsMicroservice.send(
+      this.adminsMicroservice.send<Admin, FindOneByIdDto<Admin>>(
         {
-          cmd: `${AdminsMicroserviceConstants.MICROSERVICE_FUNCTION_FIND_ONE_BY_ID}/v${this.version}`,
+          cmd: `${AdminsMicroserviceConstants.ADMINS_SERVICE_FIND_ONE_BY_ID_MESSAGE_PATTERN}/v${this.version}`,
         },
         <FindOneByIdDto<Admin>>{
           id: findOneOrFailByIdDto.id,
@@ -44,9 +43,9 @@ export class AdminsMicroserviceImpl implements IAdminsMicroservice {
   // find one by email.
   findOneByEmail(findOneByEmailDto: FindOneByEmailDto<Admin>): Promise<Admin | null> {
     return firstValueFrom<Admin>(
-      this.adminsMicroservice.send(
+      this.adminsMicroservice.send<Admin, FindOneByEmailDto<Admin>>(
         {
-          cmd: `${AdminsMicroserviceConstants.MICROSERVICE_FUNCTION_FIND_ONE_BY_EMAIL}/v${this.version}`,
+          cmd: `${AdminsMicroserviceConstants.ADMINS_SERVICE_FIND_ONE_BY_EMAIL_MESSAGE_PATTERN}/v${this.version}`,
         },
         findOneByEmailDto,
       ),
@@ -56,9 +55,9 @@ export class AdminsMicroserviceImpl implements IAdminsMicroservice {
   // find one or fail by email.
   async findOneOrFailByEmail(findOneOrFailByEmailDto: FindOneOrFailByEmailDto<Admin>): Promise<Admin> {
     const admin: Admin = await firstValueFrom<Admin>(
-      this.adminsMicroservice.send(
+      this.adminsMicroservice.send<Admin, FindOneByEmailDto<Admin>>(
         {
-          cmd: `${AdminsMicroserviceConstants.MICROSERVICE_FUNCTION_FIND_ONE_BY_EMAIL}/v${this.version}`,
+          cmd: `${AdminsMicroserviceConstants.ADMINS_SERVICE_FIND_ONE_BY_EMAIL_MESSAGE_PATTERN}/v${this.version}`,
         },
         <FindOneByEmailDto<Admin>>{
           email: findOneOrFailByEmailDto.email,
@@ -75,11 +74,23 @@ export class AdminsMicroserviceImpl implements IAdminsMicroservice {
   // update password.
   updatePassword(adminUpdatePasswordDto: AdminUpdatePasswordDto): Promise<Admin> {
     return firstValueFrom<Admin>(
-      this.adminsMicroservice.send(
+      this.adminsMicroservice.send<Admin, AdminUpdatePasswordDto>(
         {
-          cmd: `${AdminsMicroserviceConstants.MICROSERVICE_FUNCTION_UPDATE_PASSWORD}/v${this.version}`,
+          cmd: `${AdminsMicroserviceConstants.ADMINS_SERVICE_UPDATE_PASSWORD_MESSAGE_PATTERN}/v${this.version}`,
         },
         adminUpdatePasswordDto,
+      ),
+    );
+  }
+
+  // update profile.
+  updateProfile(adminUpdateProfileDto: AdminUpdateProfileDto): Promise<Admin> {
+    return firstValueFrom<Admin>(
+      this.adminsMicroservice.send<Admin, AdminUpdateProfileDto>(
+        {
+          cmd: `${AdminsMicroserviceConstants.ADMINS_SERVICE_UPDATE_PROFILE_MESSAGE_PATTERN}/v${this.version}`,
+        },
+        adminUpdateProfileDto,
       ),
     );
   }

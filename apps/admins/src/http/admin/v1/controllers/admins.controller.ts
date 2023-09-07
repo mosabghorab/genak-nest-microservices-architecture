@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { AdminsService } from '../services/admins.service';
-import { Admin, AdminDto, AdminMustCanDo, AllowFor, PermissionAction, PermissionGroup, PermissionsTarget, Serialize, UserType } from '@app/common';
+import { Admin, AdminDto, AdminMustCanDo, AllowFor, FindOneOrFailByIdDto, PermissionAction, PermissionGroup, PermissionsTarget, Serialize, UserType } from '@app/common';
 import { CreateAdminDto } from '../dtos/create-admin.dto';
 import { FindAllAdminsDto } from '../dtos/find-all-admins.dto';
 import { AdminsPaginationDto } from '../dtos/admins-pagination.dto';
@@ -36,8 +36,11 @@ export class AdminsController {
   @Serialize(AdminDto, 'One admin.')
   @Get(':id')
   findOne(@Param('id') id: number): Promise<Admin> {
-    return this.adminsService.findOneOrFailById(id, null, {
-      adminsRoles: { role: true },
+    return this.adminsService.findOneOrFailById(<FindOneOrFailByIdDto<Admin>>{
+      id,
+      relations: {
+        adminsRoles: { role: true },
+      },
     });
   }
 

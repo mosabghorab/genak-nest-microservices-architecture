@@ -1,10 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { LocationsModule } from './locations.module';
-import {
-  INestApplication,
-  ValidationPipe,
-  VersioningType,
-} from '@nestjs/common';
+import { INestApplication, ValidationPipe, VersioningType } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Transport } from '@nestjs/microservices';
 import * as compression from 'compression';
@@ -30,9 +26,7 @@ async function bootstrap(): Promise<void> {
   app.enableVersioning({ type: VersioningType.URI });
   app.use(compression());
   await app.startAllMicroservices();
-  await app.listen(
-    configService.get<string>('LOCATIONS_MICROSERVICE_HTTP_PORT'),
-  );
+  await app.listen(configService.get<string>('LOCATIONS_MICROSERVICE_HTTP_PORT'));
 }
 
 bootstrap();

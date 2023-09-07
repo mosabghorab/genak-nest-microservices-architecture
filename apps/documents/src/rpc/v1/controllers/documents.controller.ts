@@ -10,7 +10,7 @@ export class DocumentsController {
   constructor(private readonly documentsService: DocumentsService) {}
 
   @MessagePattern({
-    cmd: `${DocumentsMicroserviceConstants.MICROSERVICE_FUNCTION_FIND_ALL}/v${VERSION}`,
+    cmd: `${DocumentsMicroserviceConstants.DOCUMENTS_SERVICE_FIND_ALL_MESSAGE_PATTERN}/v${VERSION}`,
   })
   findAll(@Payload() findAllDocumentsDto: FindAllDocumentsDto): Promise<Document[]> {
     return this.documentsService.findAll(findAllDocumentsDto);

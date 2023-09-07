@@ -5,6 +5,7 @@ import {
   Attachment,
   AttachmentsMicroserviceConstants,
   AttachmentsMicroserviceImpl,
+  DeleteFileDto,
   FindAllAttachmentsByVendorIdAndDocumentIdDto,
   FindOneByIdDto,
   FindOneByPhoneDto,
@@ -13,6 +14,7 @@ import {
   UploadFileDto,
   Vendor,
   VendorSignUpDto,
+  VendorUpdateProfileDto,
   VendorUploadDocumentsDto,
 } from '@app/common';
 import { Constants } from '../../../constants';
@@ -26,9 +28,9 @@ export class VendorsService {
   constructor(
     @InjectRepository(Vendor)
     private readonly vendorRepository: Repository<Vendor>,
-    @Inject(AttachmentsMicroserviceConstants.MICROSERVICE_NAME)
+    @Inject(AttachmentsMicroserviceConstants.NAME)
     private readonly attachmentsMicroservice: ClientProxy,
-    @Inject(StorageMicroserviceConstants.MICROSERVICE_NAME)
+    @Inject(StorageMicroserviceConstants.NAME)
     private readonly storageMicroservice: ClientProxy,
   ) {
     this.attachmentMicroserviceImpl = new AttachmentsMicroserviceImpl(attachmentsMicroservice, Constants.ATTACHMENTS_MICROSERVICE_VERSION);
@@ -85,7 +87,7 @@ export class VendorsService {
       if (oldAttachments) {
         for (const oldAttachment of oldAttachments) {
           await this.attachmentMicroserviceImpl.removeOneByInstance(oldAttachment);
-          vendor.attachments = vendor.attachments.filter((e: Attachment) => e.id !== oldAttachment.id);
+          vendor.attachments = vendor.attachments.filter((attachment: Attachment): boolean => attachment.id !== oldAttachment.id);
         }
       }
       const fileUrl: string = await this.storageMicroserviceImpl.uploadFile(<UploadFileDto>{
@@ -102,19 +104,26 @@ export class VendorsService {
     return await this.vendorRepository.save(vendor);
   }
 
-  // update.
-  // async update(
-  //   customerId: number,
-  //   updateCustomerDto: UpdateCustomerDto,
-  // ): Promise<Customer> {
-  //   const customer: Customer =
-  //     await this.customerCustomersValidation.validateUpdate(
-  //       customerId,
-  //       updateCustomerDto,
-  //     );
-  //   Object.assign(customer, updateCustomerDto);
-  //   return this.customerRepository.save(customer);
-  // }
+  // update profile.
+  async updateProfile(vendorUpdateProfileDto: VendorUpdateProfileDto): Promise<Vendor> {
+    const vendor: Vendor = await this.findOneById(<FindOneByIdDto<Vendor>>{
+      id: vendorUpdateProfileDto.vendorId,
+    });
+    if (vendorUpdateProfileDto.avatar) {
+      if (vendor.avatar)
+        await this.storageMicroserviceImpl.deleteFile(<DeleteFileDto>{
+          prefixPath: Constants.VENDORS_IMAGES_PREFIX_PATH,
+          fileUrl: vendor.avatar,
+        });
+      vendor.avatar = await this.storageMicroserviceImpl.uploadFile(<UploadFileDto>{
+        prefixPath: Constants.VENDORS_IMAGES_PREFIX_PATH,
+        file: vendorUpdateProfileDto.avatar,
+      });
+      delete vendorUpdateProfileDto.avatar;
+    }
+    Object.assign(vendor, vendorUpdateProfileDto);
+    return this.vendorRepository.save(vendor);
+  }
 
   // remove one by instance.
   removeOneByInstance(vendor: Vendor): Promise<Vendor> {
