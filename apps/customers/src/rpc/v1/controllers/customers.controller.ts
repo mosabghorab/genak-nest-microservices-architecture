@@ -1,5 +1,5 @@
 import { Controller } from '@nestjs/common';
-import { Customer, CustomerSignUpDto, CustomersMicroserviceConstants, CustomerUpdateProfileDto, FindOneByIdDto, FindOneByPhoneDto } from '@app/common';
+import { Customer, CustomerSignUpDto, CustomersMicroserviceConstants, CustomerUpdateProfileDto, DateFilterDto, FindOneByIdDto, FindOneByPhoneDto, ServiceType } from '@app/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { CustomersService } from '../services/customers.service';
 
@@ -42,5 +42,19 @@ export class CustomersController {
   })
   updateProfile(@Payload() customerUpdateProfileDto: CustomerUpdateProfileDto): Promise<Customer> {
     return this.customersService.updateProfile(customerUpdateProfileDto);
+  }
+
+  @MessagePattern({
+    cmd: `${CustomersMicroserviceConstants.CUSTOMERS_SERVICE_COUNT_MESSAGE_PATTERN}/v${VERSION}`,
+  })
+  count(): Promise<number> {
+    return this.customersService.count();
+  }
+
+  @MessagePattern({
+    cmd: `${CustomersMicroserviceConstants.CUSTOMERS_SERVICE_FIND_BEST_BUYERS_WITH_ORDERS_COUNT_MESSAGE_PATTERN}/v${VERSION}`,
+  })
+  findBestBuyersWithOrdersCount(@Payload('serviceType') serviceType: ServiceType, @Payload('dateFilterDto') dateFilterDto: DateFilterDto): Promise<Customer[]> {
+    return this.customersService.findBestBuyersWithOrdersCount(serviceType, dateFilterDto);
   }
 }

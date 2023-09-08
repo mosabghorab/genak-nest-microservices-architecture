@@ -1,3 +1,3 @@
-export * from './admins-microservice.interface';
-export * from './admins-microservice.implementation';
+export * from './admins-microservice.connection';
 export * from './admins-microservice-constants';
+export * from './services';

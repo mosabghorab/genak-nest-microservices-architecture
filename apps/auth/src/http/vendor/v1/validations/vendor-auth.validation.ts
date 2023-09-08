@@ -5,15 +5,15 @@ import {
   CommonConstants,
   CreateAttachmentDto,
   Document,
+  DocumentsMicroserviceConnection,
   DocumentsMicroserviceConstants,
-  DocumentsMicroserviceImpl,
   DocumentType,
   FindAllDocumentsDto,
   FindOneByPhoneDto,
   FindOneOrFailByIdDto,
   Location,
+  LocationsMicroserviceConnection,
   LocationsMicroserviceConstants,
-  LocationsMicroserviceImpl,
   Vendor,
   VendorSignUpDto,
   VendorsMicroserviceConstants,
@@ -24,9 +24,9 @@ import { Constants } from '../../../../constants';
 
 @Injectable()
 export class VendorAuthValidation {
-  private readonly locationsMicroserviceImpl: LocationsMicroserviceImpl;
+  private readonly locationsMicroserviceConnection: LocationsMicroserviceConnection;
   private readonly vendorsMicroserviceImpl: VendorsMicroserviceImpl;
-  private readonly documentsMicroserviceImpl: DocumentsMicroserviceImpl;
+  private readonly documentsMicroserviceConnection: DocumentsMicroserviceConnection;
 
   constructor(
     @Inject(LocationsMicroserviceConstants.NAME)
@@ -36,9 +36,9 @@ export class VendorAuthValidation {
     @Inject(DocumentsMicroserviceConstants.NAME)
     private readonly documentsMicroservice: ClientProxy,
   ) {
-    this.locationsMicroserviceImpl = new LocationsMicroserviceImpl(locationsMicroservice, Constants.LOCATIONS_MICROSERVICE_VERSION);
+    this.locationsMicroserviceConnection = new LocationsMicroserviceConnection(locationsMicroservice, Constants.LOCATIONS_MICROSERVICE_VERSION);
     this.vendorsMicroserviceImpl = new VendorsMicroserviceImpl(vendorsMicroservice, Constants.VENDORS_MICROSERVICE_VERSION);
-    this.documentsMicroserviceImpl = new DocumentsMicroserviceImpl(documentsMicroservice, Constants.DOCUMENTS_MICROSERVICE_VERSION);
+    this.documentsMicroserviceConnection = new DocumentsMicroserviceConnection(documentsMicroservice, Constants.DOCUMENTS_MICROSERVICE_VERSION);
   }
 
   // validate sign up.
@@ -49,7 +49,7 @@ export class VendorAuthValidation {
     if (vendor) {
       throw new BadRequestException('Phone is already exists.');
     }
-    await this.locationsMicroserviceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Location>>{
+    await this.locationsMicroserviceConnection.locationsServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Location>>{
       id: vendorSignUpDto.governorateId,
       failureMessage: 'Governorate not found.',
     });
@@ -72,7 +72,7 @@ export class VendorAuthValidation {
         attachments: true,
       },
     });
-    const documents: Document[] = await this.documentsMicroserviceImpl.findAll(<FindAllDocumentsDto>{
+    const documents: Document[] = await this.documentsMicroserviceConnection.documentsServiceImpl.findAll(<FindAllDocumentsDto>{
       serviceType: vendor.serviceType,
     });
     if (!documents || documents.length === 0) {

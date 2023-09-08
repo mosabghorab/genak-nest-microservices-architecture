@@ -1,19 +1,25 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { FindOptionsRelations, Repository } from 'typeorm';
 import {
   Attachment,
+  AttachmentsMicroserviceConnection,
   AttachmentsMicroserviceConstants,
-  AttachmentsMicroserviceImpl,
+  DateFilterDto,
+  DateFilterOption,
+  DateHelpers,
   DeleteFileDto,
   FindAllAttachmentsByVendorIdAndDocumentIdDto,
   FindOneByIdDto,
   FindOneByPhoneDto,
+  OrderByType,
+  ServiceType,
   StorageMicroserviceConstants,
   StorageMicroserviceImpl,
   UploadFileDto,
   Vendor,
   VendorSignUpDto,
+  VendorStatus,
   VendorUpdateProfileDto,
   VendorUploadDocumentsDto,
 } from '@app/common';
@@ -22,7 +28,7 @@ import { ClientProxy } from '@nestjs/microservices';
 
 @Injectable()
 export class VendorsService {
-  private readonly attachmentMicroserviceImpl: AttachmentsMicroserviceImpl;
+  private readonly attachmentsMicroserviceConnection: AttachmentsMicroserviceConnection;
   private readonly storageMicroserviceImpl: StorageMicroserviceImpl;
 
   constructor(
@@ -33,7 +39,7 @@ export class VendorsService {
     @Inject(StorageMicroserviceConstants.NAME)
     private readonly storageMicroservice: ClientProxy,
   ) {
-    this.attachmentMicroserviceImpl = new AttachmentsMicroserviceImpl(attachmentsMicroservice, Constants.ATTACHMENTS_MICROSERVICE_VERSION);
+    this.attachmentsMicroserviceConnection = new AttachmentsMicroserviceConnection(attachmentsMicroservice, Constants.ATTACHMENTS_MICROSERVICE_VERSION);
     this.storageMicroserviceImpl = new StorageMicroserviceImpl(storageMicroservice, Constants.STORAGE_MICROSERVICE_VERSION);
   }
 
@@ -80,13 +86,13 @@ export class VendorsService {
     });
     const attachments: Attachment[] = [];
     for (const createAttachmentDto of vendorUploadDocumentsDto.createAttachmentDtoList) {
-      const oldAttachments: Attachment[] = await this.attachmentMicroserviceImpl.findAllByVendorIdAndDocumentId(<FindAllAttachmentsByVendorIdAndDocumentIdDto>{
+      const oldAttachments: Attachment[] = await this.attachmentsMicroserviceConnection.attachmentsServiceImpl.findAllByVendorIdAndDocumentId(<FindAllAttachmentsByVendorIdAndDocumentIdDto>{
         vendorId: vendorUploadDocumentsDto.vendorId,
         documentId: createAttachmentDto.documentId,
       });
       if (oldAttachments) {
         for (const oldAttachment of oldAttachments) {
-          await this.attachmentMicroserviceImpl.removeOneByInstance(oldAttachment);
+          await this.attachmentsMicroserviceConnection.attachmentsServiceImpl.removeOneByInstance(oldAttachment);
           vendor.attachments = vendor.attachments.filter((attachment: Attachment): boolean => attachment.id !== oldAttachment.id);
         }
       }
@@ -128,5 +134,57 @@ export class VendorsService {
   // remove one by instance.
   removeOneByInstance(vendor: Vendor): Promise<Vendor> {
     return this.vendorRepository.remove(vendor);
+  }
+
+  // count.
+  count(serviceType?: ServiceType, status?: VendorStatus): Promise<number> {
+    return this.vendorRepository.count({
+      where: { serviceType, status },
+    });
+  }
+
+  // find latest.
+  findLatest(count: number, serviceType: ServiceType, relations?: FindOptionsRelations<Vendor>): Promise<Vendor[]> {
+    return this.vendorRepository.find({
+      where: { serviceType, status: VendorStatus.PENDING },
+      relations,
+      take: count,
+    });
+  }
+
+  // find best sellers with orders count.
+  async findBestSellersWithOrdersCount(serviceType: ServiceType, dateFilterDto: DateFilterDto): Promise<Vendor[]> {
+    let dateRange: { startDate: Date; endDate: Date };
+    if (dateFilterDto.dateFilterOption === DateFilterOption.CUSTOM) {
+      dateRange = {
+        startDate: dateFilterDto.startDate,
+        endDate: dateFilterDto.endDate,
+      };
+    } else {
+      dateRange = DateHelpers.getDateRangeForDateFilterOption(dateFilterDto.dateFilterOption);
+    }
+    const {
+      entities,
+      raw,
+    }: {
+      entities: Vendor[];
+      raw: any[];
+    } = await this.vendorRepository
+      .createQueryBuilder('vendor')
+      .leftJoin('vendor.orders', 'order', 'order.createdAt BETWEEN :startDate AND :endDate', {
+        startDate: dateRange.startDate,
+        endDate: dateRange.endDate,
+      })
+      .addSelect('COUNT(DISTINCT order.id)', 'ordersCount')
+      .where('vendor.serviceType = :serviceType', { serviceType })
+      .groupBy('vendor.id')
+      .having('ordersCount > 0')
+      .orderBy('ordersCount', OrderByType.DESC)
+      .limit(5)
+      .getRawAndEntities();
+    for (let i = 0; i < entities.length; i++) {
+      entities[i]['ordersCount'] = parseInt(raw[i]['ordersCount']) || 0;
+    }
+    return entities;
   }
 }

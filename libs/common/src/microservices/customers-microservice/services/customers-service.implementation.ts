@@ -3,11 +3,13 @@ import {
   CustomerSignUpDto,
   CustomersMicroserviceConstants,
   CustomerUpdateProfileDto,
+  DateFilterDto,
   FindOneByIdDto,
   FindOneByPhoneDto,
   FindOneOrFailByIdDto,
   FindOneOrFailByPhoneDto,
   ICustomersService,
+  ServiceType,
 } from '@app/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
@@ -30,17 +32,10 @@ export class CustomersServiceImpl implements ICustomersService {
 
   // find one or fail by id.
   async findOneOrFailById(findOneOrFailByIdDto: FindOneOrFailByIdDto<Customer>): Promise<Customer> {
-    const customer: Customer = await firstValueFrom<Customer>(
-      this.customersMicroservice.send<Customer, FindOneByIdDto<Customer>>(
-        {
-          cmd: `${CustomersMicroserviceConstants.CUSTOMERS_SERVICE_FIND_ONE_BY_ID_MESSAGE_PATTERN}/v${this.version}`,
-        },
-        <FindOneByIdDto<Customer>>{
-          id: findOneOrFailByIdDto.id,
-          relations: findOneOrFailByIdDto.relations,
-        },
-      ),
-    );
+    const customer: Customer = await this.findOneById(<FindOneByIdDto<Customer>>{
+      id: findOneOrFailByIdDto.id,
+      relations: findOneOrFailByIdDto.relations,
+    });
     if (!customer) {
       throw new NotFoundException(findOneOrFailByIdDto.failureMessage || 'Customer not found.');
     }
@@ -61,17 +56,10 @@ export class CustomersServiceImpl implements ICustomersService {
 
   // find one or fail by phone.
   async findOneOrFailByPhone(findOneOrFailByPhoneDto: FindOneOrFailByPhoneDto<Customer>): Promise<Customer> {
-    const customer: Customer = await firstValueFrom<Customer>(
-      this.customersMicroservice.send<Customer, FindOneByPhoneDto<Customer>>(
-        {
-          cmd: `${CustomersMicroserviceConstants.CUSTOMERS_SERVICE_FIND_ONE_BY_PHONE_MESSAGE_PATTERN}/v${this.version}`,
-        },
-        <FindOneByPhoneDto<Customer>>{
-          phone: findOneOrFailByPhoneDto.phone,
-          relations: findOneOrFailByPhoneDto.relations,
-        },
-      ),
-    );
+    const customer: Customer = await this.findOneByPhone(<FindOneByPhoneDto<Customer>>{
+      phone: findOneOrFailByPhoneDto.phone,
+      relations: findOneOrFailByPhoneDto.relations,
+    });
     if (!customer) {
       throw new NotFoundException(findOneOrFailByPhoneDto.failureMessage || 'Customer not found.');
     }
@@ -110,6 +98,33 @@ export class CustomersServiceImpl implements ICustomersService {
           cmd: `${CustomersMicroserviceConstants.CUSTOMERS_SERVICE_UPDATE_PROFILE_MESSAGE_PATTERN}/v${this.version}`,
         },
         customerUpdateProfileDto,
+      ),
+    );
+  }
+
+  // count.
+  count(): Promise<number> {
+    return firstValueFrom<number>(
+      this.customersMicroservice.send<number, any>(
+        {
+          cmd: `${CustomersMicroserviceConstants.CUSTOMERS_SERVICE_COUNT_MESSAGE_PATTERN}/v${this.version}`,
+        },
+        {},
+      ),
+    );
+  }
+
+  // find best buyers with orders count.
+  findBestBuyersWithOrdersCount(serviceType: ServiceType, dateFilterDto: DateFilterDto): Promise<Customer[]> {
+    return firstValueFrom<Customer[]>(
+      this.customersMicroservice.send<Customer[], { serviceType: ServiceType; dateFilterDto: DateFilterDto }>(
+        {
+          cmd: `${CustomersMicroserviceConstants.CUSTOMERS_SERVICE_FIND_BEST_BUYERS_WITH_ORDERS_COUNT_MESSAGE_PATTERN}/v${this.version}`,
+        },
+        {
+          serviceType,
+          dateFilterDto,
+        },
       ),
     );
   }

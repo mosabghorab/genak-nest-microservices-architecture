@@ -153,6 +153,33 @@
       "compilerOptions": {
         "tsConfigPath": "apps/orders/tsconfig.app.json"
       }
+    },
+    "reviews": {
+      "type": "application",
+      "root": "apps/reviews",
+      "entryFile": "main",
+      "sourceRoot": "apps/reviews/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/reviews/tsconfig.app.json"
+      }
+    },
+    "complains": {
+      "type": "application",
+      "root": "apps/complains",
+      "entryFile": "main",
+      "sourceRoot": "apps/complains/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/complains/tsconfig.app.json"
+      }
+    },
+    "reports": {
+      "type": "application",
+      "root": "apps/reports",
+      "entryFile": "main",
+      "sourceRoot": "apps/reports/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/reports/tsconfig.app.json"
+      }
     }
   }
 }

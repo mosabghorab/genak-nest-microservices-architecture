@@ -134,9 +134,4 @@ export class AdminsService {
     });
     return this.adminRepository.remove(admin);
   }
-
-  // count.
-  count(): Promise<number> {
-    return this.adminRepository.count();
-  }
 }

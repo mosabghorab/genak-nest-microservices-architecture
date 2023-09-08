@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Customer, CustomerSignUpDto, CustomerUpdateProfileDto, FindOneByIdDto, FindOneByPhoneDto } from '@app/common';
+import { Customer, CustomerSignUpDto, CustomerUpdateProfileDto, DateFilterDto, DateFilterOption, DateHelpers, FindOneByIdDto, FindOneByPhoneDto, OrderByType, ServiceType } from '@app/common';
 
 @Injectable()
 export class CustomersService {
@@ -43,5 +43,40 @@ export class CustomersService {
   // remove one by instance.
   removeOneByInstance(customer: Customer): Promise<Customer> {
     return this.customerRepository.remove(customer);
+  }
+
+  // count.
+  count(): Promise<number> {
+    return this.customerRepository.count();
+  }
+
+  // find best buyers with orders count.
+  async findBestBuyersWithOrdersCount(serviceType: ServiceType, dateFilterDto: DateFilterDto): Promise<Customer[]> {
+    let dateRange: { startDate: Date; endDate: Date };
+    if (dateFilterDto.dateFilterOption === DateFilterOption.CUSTOM) {
+      dateRange = {
+        startDate: dateFilterDto.startDate,
+        endDate: dateFilterDto.endDate,
+      };
+    } else {
+      dateRange = DateHelpers.getDateRangeForDateFilterOption(dateFilterDto.dateFilterOption);
+    }
+    const { entities, raw }: { entities: Customer[]; raw: any[] } = await this.customerRepository
+      .createQueryBuilder('customer')
+      .leftJoin('customer.orders', 'order', 'order.serviceType = :serviceType AND order.createdAt BETWEEN :startDate AND :endDate', {
+        serviceType,
+        startDate: dateRange.startDate,
+        endDate: dateRange.endDate,
+      })
+      .addSelect('COUNT(DISTINCT order.id)', 'ordersCount')
+      .groupBy('customer.id')
+      .having('ordersCount > 0')
+      .orderBy('ordersCount', OrderByType.DESC)
+      .limit(5)
+      .getRawAndEntities();
+    for (let i = 0; i < entities.length; i++) {
+      entities[i]['ordersCount'] = parseInt(raw[i]['ordersCount']) || 0;
+    }
+    return entities;
   }
 }

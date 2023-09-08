@@ -5,15 +5,15 @@ import {
   CommonConstants,
   CreateAttachmentDto,
   Document,
+  DocumentsMicroserviceConnection,
   DocumentsMicroserviceConstants,
-  DocumentsMicroserviceImpl,
   DocumentType,
   FindAllDocumentsDto,
   FindOneByPhoneDto,
   FindOneOrFailByIdDto,
   Location,
+  LocationsMicroserviceConnection,
   LocationsMicroserviceConstants,
-  LocationsMicroserviceImpl,
   Vendor,
 } from '@app/common';
 import { AdminVendorsService } from '../services/admin-vendors.service';
@@ -24,8 +24,8 @@ import { Constants } from '../../../../constants';
 
 @Injectable()
 export class AdminVendorsValidation {
-  private readonly locationsMicroserviceImpl: LocationsMicroserviceImpl;
-  private readonly documentsMicroserviceImpl: DocumentsMicroserviceImpl;
+  private readonly locationsMicroserviceConnection: LocationsMicroserviceConnection;
+  private readonly documentsMicroserviceConnection: DocumentsMicroserviceConnection;
 
   constructor(
     @Inject(forwardRef(() => AdminVendorsService))
@@ -35,24 +35,24 @@ export class AdminVendorsValidation {
     @Inject(DocumentsMicroserviceConstants.NAME)
     private readonly documentsMicroservice: ClientProxy,
   ) {
-    this.locationsMicroserviceImpl = new LocationsMicroserviceImpl(locationsMicroservice, Constants.LOCATIONS_MICROSERVICE_VERSION);
-    this.documentsMicroserviceImpl = new DocumentsMicroserviceImpl(documentsMicroservice, Constants.DOCUMENTS_MICROSERVICE_VERSION);
+    this.locationsMicroserviceConnection = new LocationsMicroserviceConnection(locationsMicroservice, Constants.LOCATIONS_MICROSERVICE_VERSION);
+    this.documentsMicroserviceConnection = new DocumentsMicroserviceConnection(documentsMicroservice, Constants.DOCUMENTS_MICROSERVICE_VERSION);
   }
 
   // validate creation.
   async validateCreation(createVendorDto: CreateVendorDto): Promise<Location> {
-    const vendor: Vendor = await this.adminVendorsService.findOneByPhone(<FindOneByPhoneDto<Location>>{
+    const vendor: Vendor = await this.adminVendorsService.findOneByPhone(<FindOneByPhoneDto<Vendor>>{
       phone: createVendorDto.phone,
     });
     if (vendor) {
       throw new BadRequestException('Phone is already exists.');
     }
-    const governorate: Location = await this.locationsMicroserviceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Location>>{
+    const governorate: Location = await this.locationsMicroserviceConnection.locationsServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Location>>{
       id: createVendorDto.governorateId,
       failureMessage: 'Governorate not found.',
     });
     for (const regionId of createVendorDto.regionsIds) {
-      const region: Location = await this.locationsMicroserviceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Location>>{
+      const region: Location = await this.locationsMicroserviceConnection.locationsServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Location>>{
         id: regionId,
         failureMessage: 'Region not found.',
       });
@@ -81,7 +81,7 @@ export class AdminVendorsValidation {
     if (!files || files.length === 0) {
       throw new BadRequestException('Please upload the required documents.');
     }
-    const documents: Document[] = await this.documentsMicroserviceImpl.findAll(<FindAllDocumentsDto>{
+    const documents: Document[] = await this.documentsMicroserviceConnection.documentsServiceImpl.findAll(<FindAllDocumentsDto>{
       serviceType: createVendorDto.serviceType,
       active: true,
     });
@@ -140,12 +140,12 @@ export class AdminVendorsValidation {
       }
     }
     if (updateVendorDto.governorateId) {
-      const governorate: Location = await this.locationsMicroserviceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Location>>{
+      const governorate: Location = await this.locationsMicroserviceConnection.locationsServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Location>>{
         id: updateVendorDto.governorateId,
         failureMessage: 'Governorate not found.',
       });
       for (const regionId of updateVendorDto.regionsIds) {
-        const region: Location = await this.locationsMicroserviceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Location>>{
+        const region: Location = await this.locationsMicroserviceConnection.locationsServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Location>>{
           id: regionId,
           failureMessage: 'Region not found.',
         });
@@ -175,7 +175,7 @@ export class AdminVendorsValidation {
     if (!files || files.length === 0) {
       throw new BadRequestException('Please upload the required documents.');
     }
-    const documents: Document[] = await this.documentsMicroserviceImpl.findAll(<FindAllDocumentsDto>{
+    const documents: Document[] = await this.documentsMicroserviceConnection.documentsServiceImpl.findAll(<FindAllDocumentsDto>{
       serviceType: vendor.serviceType,
       active: true,
     });

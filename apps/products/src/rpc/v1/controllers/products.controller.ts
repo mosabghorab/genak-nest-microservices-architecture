@@ -1,5 +1,5 @@
 import { Controller } from '@nestjs/common';
-import { FindOneByIdDto, Product, ProductsMicroserviceConstants } from '@app/common';
+import { DateFilterDto, FindOneByIdDto, Product, ProductsMicroserviceConstants, ServiceType } from '@app/common';
 import { ProductsService } from '../services/products.service';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 
@@ -14,5 +14,19 @@ export class ProductsController {
   })
   findOneById(@Payload() findOneByIdDto: FindOneByIdDto<Product>): Promise<Product | null> {
     return this.productsService.findOneById(findOneByIdDto);
+  }
+
+  @MessagePattern({
+    cmd: `${ProductsMicroserviceConstants.PRODUCTS_SERVICE_FIND_WITH_ORDERS_COUNT_MESSAGE_PATTERN}/v${VERSION}`,
+  })
+  findWithOrdersCount(@Payload('serviceType') serviceType: ServiceType, @Payload('dateFilterDto') dateFilterDto: DateFilterDto): Promise<Product[]> {
+    return this.productsService.findWithOrdersCount(serviceType, dateFilterDto);
+  }
+
+  @MessagePattern({
+    cmd: `${ProductsMicroserviceConstants.PRODUCTS_SERVICE_FIND_WITH_TOTAL_SALES_MESSAGE_PATTERN}/v${VERSION}`,
+  })
+  findWithTotalSales(@Payload('serviceType') serviceType: ServiceType, @Payload('dateFilterDto') dateFilterDto?: DateFilterDto): Promise<Product[]> {
+    return this.productsService.findWithTotalSales(serviceType, dateFilterDto);
   }
 }

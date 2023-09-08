@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, FindOptionsRelations, Repository, SelectQueryBuilder } from 'typeorm';
-import { DateFilterOption, DateHelpers, FindOneByIdDto, FindOneOrFailByIdDto, Order, ServiceType } from '@app/common';
+import { Between, Repository } from 'typeorm';
+import { DateFilterOption, DateHelpers, FindOneByIdDto, FindOneOrFailByIdDto, Order } from '@app/common';
 import { FindAllOrdersDto } from '../dtos/find-all-orders.dto';
 
 @Injectable()
@@ -74,65 +74,5 @@ export class AdminOrdersService {
       id,
     });
     return this.orderRepository.remove(order);
-  }
-
-  // count.
-  count(serviceType?: ServiceType, dateFilterOption?: DateFilterOption, startDate?: Date, endDate?: Date): Promise<number> {
-    let dateRange: { startDate: Date; endDate: Date };
-    if (dateFilterOption) {
-      if (dateFilterOption === DateFilterOption.CUSTOM) {
-        dateRange = {
-          startDate: startDate,
-          endDate: endDate,
-        };
-      } else {
-        dateRange = DateHelpers.getDateRangeForDateFilterOption(dateFilterOption);
-      }
-    }
-    return this.orderRepository.count({
-      where: { serviceType, createdAt: dateFilterOption ? Between(dateRange.startDate, dateRange.endDate) : null },
-    });
-  }
-
-  // total sales.
-  async totalSales(
-    serviceType: ServiceType,
-    dateFilterOption?: DateFilterOption,
-    startDate?: Date,
-    endDate?: Date,
-  ): Promise<{
-    totalSales: string;
-  }> {
-    let dateRange: { startDate: Date; endDate: Date };
-    if (dateFilterOption) {
-      if (dateFilterOption === DateFilterOption.CUSTOM) {
-        dateRange = {
-          startDate: startDate,
-          endDate: endDate,
-        };
-      } else {
-        dateRange = DateHelpers.getDateRangeForDateFilterOption(dateFilterOption);
-      }
-    }
-    const queryBuilder: SelectQueryBuilder<Order> = this.orderRepository
-      .createQueryBuilder('order')
-      .select('SUM(order.total)', 'totalSales')
-      .where('order.serviceType = :serviceType', { serviceType });
-    if (dateFilterOption) {
-      queryBuilder.andWhere('order.createdAt BETWEEN :startDate AND :endDate', {
-        startDate: dateRange.startDate,
-        endDate: dateRange.endDate,
-      });
-    }
-    return queryBuilder.getRawOne();
-  }
-
-  // find latest.
-  findLatest(count: number, serviceType: ServiceType, relations?: FindOptionsRelations<Order>): Promise<Order[]> {
-    return this.orderRepository.find({
-      where: { serviceType },
-      relations,
-      take: count,
-    });
   }
 }

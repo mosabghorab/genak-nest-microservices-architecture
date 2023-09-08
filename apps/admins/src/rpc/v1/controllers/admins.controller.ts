@@ -1,5 +1,5 @@
 import { Controller } from '@nestjs/common';
-import { Admin, AdminsMicroserviceConstants, AdminUpdatePasswordDto, AdminUpdateProfileDto, FindOneByEmailDto, FindOneByIdDto } from '@app/common';
+import { Admin, AdminsMicroserviceConstants, AdminUpdatePasswordDto, AdminUpdateProfileDto, FindOneByEmailDto, FindOneByIdDto, PermissionGroup } from '@app/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { AdminsService } from '../services/admins.service';
 
@@ -24,6 +24,13 @@ export class AdminsController {
   }
 
   @MessagePattern({
+    cmd: `${AdminsMicroserviceConstants.ADMINS_SERVICE_FIND_ALL_BY_PERMISSION_GROUP_MESSAGE_PATTERN}/v${VERSION}`,
+  })
+  findAllByPermissionGroup(@Payload() permissionGroup: PermissionGroup): Promise<Admin[]> {
+    return this.adminsService.findAllByPermissionGroup(permissionGroup);
+  }
+
+  @MessagePattern({
     cmd: `${AdminsMicroserviceConstants.ADMINS_SERVICE_UPDATE_PASSWORD_MESSAGE_PATTERN}/v${VERSION}`,
   })
   updatePassword(@Payload() adminUpdatePasswordDto: AdminUpdatePasswordDto): Promise<Admin> {
@@ -35,5 +42,12 @@ export class AdminsController {
   })
   updateProfile(@Payload() adminUpdateProfileDto: AdminUpdateProfileDto): Promise<Admin> {
     return this.adminsService.updateProfile(adminUpdateProfileDto);
+  }
+
+  @MessagePattern({
+    cmd: `${AdminsMicroserviceConstants.ADMINS_SERVICE_COUNT_MESSAGE_PATTERN}/v${VERSION}`,
+  })
+  count(): Promise<number> {
+    return this.adminsService.count();
   }
 }

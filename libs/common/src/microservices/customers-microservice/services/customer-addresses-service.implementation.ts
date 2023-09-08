@@ -20,17 +20,10 @@ export class CustomerAddressesServiceImpl implements ICustomerAddressesService {
 
   // find one or fail by id.
   async findOneOrFailById(findOneOrFailByIdDto: FindOneOrFailByIdDto<CustomerAddress>): Promise<CustomerAddress> {
-    const customerAddress: CustomerAddress = await firstValueFrom<CustomerAddress>(
-      this.customersMicroservice.send<CustomerAddress, FindOneByIdDto<CustomerAddress>>(
-        {
-          cmd: `${CustomersMicroserviceConstants.CUSTOMER_ADDRESSES_SERVICE_FIND_ONE_BY_ID_MESSAGE_PATTERN}/v${this.version}`,
-        },
-        <FindOneByIdDto<CustomerAddress>>{
-          id: findOneOrFailByIdDto.id,
-          relations: findOneOrFailByIdDto.relations,
-        },
-      ),
-    );
+    const customerAddress: CustomerAddress = await this.findOneById(<FindOneByIdDto<CustomerAddress>>{
+      id: findOneOrFailByIdDto.id,
+      relations: findOneOrFailByIdDto.relations,
+    });
     if (!customerAddress) {
       throw new NotFoundException(findOneOrFailByIdDto.failureMessage || 'Customer address not found.');
     }

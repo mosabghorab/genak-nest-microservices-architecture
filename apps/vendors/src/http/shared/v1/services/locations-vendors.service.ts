@@ -1,7 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { FindOptionsRelations } from 'typeorm/browser';
+import { FindOptionsRelations, Repository } from 'typeorm';
 import { FindOneByIdDto, FindOneOrFailByIdDto, LocationVendor } from '@app/common';
 
 @Injectable()

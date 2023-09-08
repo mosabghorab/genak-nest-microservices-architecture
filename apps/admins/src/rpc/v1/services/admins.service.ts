@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Admin, AdminUpdatePasswordDto, AdminUpdateProfileDto, FindOneByEmailDto, FindOneByIdDto } from '@app/common';
+import { Admin, AdminStatus, AdminUpdatePasswordDto, AdminUpdateProfileDto, FindOneByEmailDto, FindOneByIdDto, PermissionGroup } from '@app/common';
 
 @Injectable()
 export class AdminsService {
@@ -26,6 +26,24 @@ export class AdminsService {
     });
   }
 
+  // find all by permission group.
+  findAllByPermissionGroup(permissionGroup: PermissionGroup): Promise<Admin[]> {
+    return this.adminRepository.find({
+      where: {
+        status: AdminStatus.ACTIVE,
+        adminsRoles: {
+          role: {
+            rolesPermissions: {
+              permission: {
+                group: permissionGroup,
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
   // update password.
   async updatePassword(adminUpdatePasswordDto: AdminUpdatePasswordDto): Promise<Admin> {
     const admin: Admin = await this.findOneById(<FindOneByIdDto<Admin>>{
@@ -42,5 +60,10 @@ export class AdminsService {
     });
     Object.assign(admin, adminUpdateProfileDto);
     return this.adminRepository.save(admin);
+  }
+
+  // count.
+  count(): Promise<number> {
+    return this.adminRepository.count();
   }
 }

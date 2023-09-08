@@ -1,21 +1,17 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
-import { FindOneByPhoneDto, FindOneOrFailByIdDto, LocationsMicroserviceConstants, LocationsMicroserviceImpl, Vendor, VendorsMicroserviceConstants, VendorsMicroserviceImpl } from '@app/common';
+import { FindOneByPhoneDto, FindOneOrFailByIdDto, Vendor, VendorsMicroserviceConstants, VendorsMicroserviceImpl } from '@app/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { Constants } from '../../../constants';
 import { UpdateProfileDto } from '../dtos/update-profile.dto';
 
 @Injectable()
 export class VendorProfileValidation {
-  private readonly locationsMicroserviceImpl: LocationsMicroserviceImpl;
   private readonly vendorsMicroserviceImpl: VendorsMicroserviceImpl;
 
   constructor(
-    @Inject(LocationsMicroserviceConstants.NAME)
-    private readonly locationsMicroservice: ClientProxy,
     @Inject(VendorsMicroserviceConstants.NAME)
     private readonly vendorsMicroservice: ClientProxy,
   ) {
-    this.locationsMicroserviceImpl = new LocationsMicroserviceImpl(locationsMicroservice, Constants.LOCATIONS_MICROSERVICE_VERSION);
     this.vendorsMicroserviceImpl = new VendorsMicroserviceImpl(vendorsMicroservice, Constants.VENDORS_MICROSERVICE_VERSION);
   }
 

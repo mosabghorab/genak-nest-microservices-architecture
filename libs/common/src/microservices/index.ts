@@ -11,3 +11,4 @@ export * from './products-microservice';
 export * from './notifications-microservice';
 export * from './auth-microservice';
 export * from './orders-microservice';
+export * from './complains-microservice';

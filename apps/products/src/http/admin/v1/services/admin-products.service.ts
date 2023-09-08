@@ -1,18 +1,7 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import {
-  DateFilterOption,
-  DateHelpers,
-  DeleteFileDto,
-  FindOneByIdDto,
-  FindOneOrFailByIdDto,
-  Product,
-  ServiceType,
-  StorageMicroserviceConstants,
-  StorageMicroserviceImpl,
-  UploadFileDto,
-} from '@app/common';
+import { DeleteFileDto, FindOneByIdDto, FindOneOrFailByIdDto, Product, StorageMicroserviceConstants, StorageMicroserviceImpl, UploadFileDto } from '@app/common';
 import { FindAllProductsDto } from '../dtos/find-all-products.dto';
 import { CreateProductDto } from '../dtos/create-product.dto';
 import { UpdateProductDto } from '../dtos/update-product.dto';
@@ -100,81 +89,5 @@ export class AdminProductsService {
       id,
     });
     return this.productRepository.remove(product);
-  }
-
-  // find with total sales.
-  async findWithTotalSales(serviceType: ServiceType, dateFilterOption?: DateFilterOption, startDate?: Date, endDate?: Date): Promise<Product[]> {
-    let dateRange: { startDate: Date; endDate: Date };
-    if (dateFilterOption) {
-      if (dateFilterOption === DateFilterOption.CUSTOM) {
-        dateRange = {
-          startDate: startDate,
-          endDate: endDate,
-        };
-      } else {
-        dateRange = DateHelpers.getDateRangeForDateFilterOption(dateFilterOption);
-      }
-    }
-    const {
-      entities,
-      raw,
-    }: {
-      entities: Product[];
-      raw: any[];
-    } = await this.productRepository
-      .createQueryBuilder('product')
-      .leftJoin(
-        'product.orderItems',
-        'orderItem',
-        dateFilterOption ? 'orderItem.createdAt BETWEEN :startDate AND :endDate' : null,
-        dateFilterOption
-          ? {
-              startDate: dateRange.startDate,
-              endDate: dateRange.endDate,
-            }
-          : null,
-      )
-      .addSelect('SUM(orderItem.price * orderItem.quantity)', 'totalSales')
-      .where('product.serviceType = :serviceType', { serviceType })
-      .groupBy('product.id')
-      .getRawAndEntities();
-    for (let i = 0; i < entities.length; i++) {
-      entities[i]['totalSales'] = parseFloat(raw[i]['totalSales']) || 0;
-    }
-    return entities;
-  }
-
-  // find with orders count.
-  async findWithOrdersCount(serviceType: ServiceType, dateFilterOption: DateFilterOption, startDate: Date, endDate: Date): Promise<Product[]> {
-    let dateRange: { startDate: Date; endDate: Date };
-    if (dateFilterOption === DateFilterOption.CUSTOM) {
-      dateRange = {
-        startDate: startDate,
-        endDate: endDate,
-      };
-    } else {
-      dateRange = DateHelpers.getDateRangeForDateFilterOption(dateFilterOption);
-    }
-    const {
-      entities,
-      raw,
-    }: {
-      entities: Product[];
-      raw: any[];
-    } = await this.productRepository
-      .createQueryBuilder('product')
-      .leftJoin('product.orderItems', 'orderItem')
-      .leftJoin('orderItem.order', 'order', 'order.createdAt BETWEEN :startDate AND :endDate', {
-        startDate: dateRange.startDate,
-        endDate: dateRange.endDate,
-      })
-      .addSelect('COUNT(DISTINCT order.id)', 'ordersCount')
-      .where('product.serviceType = :serviceType', { serviceType })
-      .groupBy('product.id')
-      .getRawAndEntities();
-    for (let i = 0; i < entities.length; i++) {
-      entities[i]['ordersCount'] = parseInt(raw[i]['ordersCount']) || 0;
-    }
-    return entities;
   }
 }

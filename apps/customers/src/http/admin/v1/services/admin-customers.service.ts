@@ -1,7 +1,7 @@
 import { BadRequestException, forwardRef, Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder } from 'typeorm';
-import { Customer, DateFilterOption, DateHelpers, FindOneByIdDto, FindOneByPhoneDto, FindOneOrFailByIdDto, FindOneOrFailByPhoneDto, OrderByType, ServiceType } from '@app/common';
+import { Customer, FindOneByIdDto, FindOneByPhoneDto, FindOneOrFailByIdDto, FindOneOrFailByPhoneDto } from '@app/common';
 import { AdminCustomersValidation } from '../validations/admin-customers.validation';
 import { FindAllCustomersDto } from '../dtos/find-all-customers.dto';
 import { CreateCustomerDto } from '../dtos/create-customer.dto';
@@ -109,40 +109,5 @@ export class AdminCustomersService {
       id,
     });
     return this.customerRepository.remove(customer);
-  }
-
-  // count.
-  count(): Promise<number> {
-    return this.customerRepository.count();
-  }
-
-  // find best buyers with orders count.
-  async findBestBuyersWithOrdersCount(serviceType: ServiceType, dateFilterOption: DateFilterOption, startDate: Date, endDate: Date): Promise<Customer[]> {
-    let dateRange: { startDate: Date; endDate: Date };
-    if (dateFilterOption === DateFilterOption.CUSTOM) {
-      dateRange = {
-        startDate: startDate,
-        endDate: endDate,
-      };
-    } else {
-      dateRange = DateHelpers.getDateRangeForDateFilterOption(dateFilterOption);
-    }
-    const { entities, raw }: { entities: Customer[]; raw: any[] } = await this.customerRepository
-      .createQueryBuilder('customer')
-      .leftJoin('customer.orders', 'order', 'order.serviceType = :serviceType AND order.createdAt BETWEEN :startDate AND :endDate', {
-        serviceType,
-        startDate: dateRange.startDate,
-        endDate: dateRange.endDate,
-      })
-      .addSelect('COUNT(DISTINCT order.id)', 'ordersCount')
-      .groupBy('customer.id')
-      .having('ordersCount > 0')
-      .orderBy('ordersCount', OrderByType.DESC)
-      .limit(5)
-      .getRawAndEntities();
-    for (let i = 0; i < entities.length; i++) {
-      entities[i]['ordersCount'] = parseInt(raw[i]['ordersCount']) || 0;
-    }
-    return entities;
   }
 }

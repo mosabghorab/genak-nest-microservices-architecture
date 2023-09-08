@@ -1,18 +1,22 @@
 import {
+  DateFilterDto,
   FindOneByIdDto,
   FindOneByPhoneDto,
   FindOneOrFailByIdDto,
   FindOneOrFailByPhoneDto,
   IVendorsMicroservice,
+  ServiceType,
   Vendor,
   VendorSignUpDto,
   VendorsMicroserviceConstants,
+  VendorStatus,
   VendorUpdateProfileDto,
   VendorUploadDocumentsDto,
 } from '@app/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { NotFoundException } from '@nestjs/common';
+import { FindOptionsRelations } from 'typeorm';
 
 export class VendorsMicroserviceImpl implements IVendorsMicroservice {
   constructor(private readonly vendorsMicroservice: ClientProxy, private readonly version: string) {}
@@ -132,6 +136,59 @@ export class VendorsMicroserviceImpl implements IVendorsMicroservice {
           cmd: `${VendorsMicroserviceConstants.VENDORS_SERVICE_UPDATE_PROFILE_MESSAGE_PATTERN}/v${this.version}`,
         },
         vendorUpdateProfileDto,
+      ),
+    );
+  }
+
+  // count.
+  count(serviceType?: ServiceType, status?: VendorStatus): Promise<number> {
+    return firstValueFrom<number>(
+      this.vendorsMicroservice.send<number, { serviceType?: ServiceType; status?: VendorStatus }>(
+        {
+          cmd: `${VendorsMicroserviceConstants.VENDORS_SERVICE_COUNT_MESSAGE_PATTERN}/v${this.version}`,
+        },
+        {
+          serviceType,
+          status,
+        },
+      ),
+    );
+  }
+
+  // find best sellers with orders count.
+  findBestSellersWithOrdersCount(serviceType: ServiceType, dateFilterDto: DateFilterDto): Promise<Vendor[]> {
+    return firstValueFrom<Vendor[]>(
+      this.vendorsMicroservice.send<Vendor[], { serviceType: ServiceType; dateFilterDto: DateFilterDto }>(
+        {
+          cmd: `${VendorsMicroserviceConstants.VENDORS_SERVICE_FIND_BEST_SELLERS_WITH_ORDERS_COUNT_MESSAGE_PATTERN}/v${this.version}`,
+        },
+        {
+          serviceType,
+          dateFilterDto,
+        },
+      ),
+    );
+  }
+
+  // find latest.
+  findLatest(count: number, serviceType: ServiceType, relations?: FindOptionsRelations<Vendor>): Promise<Vendor[]> {
+    return firstValueFrom<Vendor[]>(
+      this.vendorsMicroservice.send<
+        Vendor[],
+        {
+          count: number;
+          serviceType: ServiceType;
+          relations?: FindOptionsRelations<Vendor>;
+        }
+      >(
+        {
+          cmd: `${VendorsMicroserviceConstants.VENDORS_SERVICE_FIND_LATEST_MESSAGE_PATTERN}/v${this.version}`,
+        },
+        {
+          count,
+          serviceType,
+          relations,
+        },
       ),
     );
   }

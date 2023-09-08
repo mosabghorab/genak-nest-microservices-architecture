@@ -7,15 +7,15 @@ import {
   FindOneByPhoneDto,
   FindOneOrFailByIdDto,
   Location,
+  LocationsMicroserviceConnection,
   LocationsMicroserviceConstants,
-  LocationsMicroserviceImpl,
 } from '@app/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { Constants } from '../../../../constants';
 
 @Injectable()
 export class CustomerAuthValidation {
-  private readonly locationsMicroserviceImpl: LocationsMicroserviceImpl;
+  private readonly locationsMicroserviceConnection: LocationsMicroserviceConnection;
   private readonly customersMicroserviceConnection: CustomersMicroserviceConnection;
 
   constructor(
@@ -24,7 +24,7 @@ export class CustomerAuthValidation {
     @Inject(CustomersMicroserviceConstants.NAME)
     private readonly customersMicroservice: ClientProxy,
   ) {
-    this.locationsMicroserviceImpl = new LocationsMicroserviceImpl(locationsMicroservice, Constants.LOCATIONS_MICROSERVICE_VERSION);
+    this.locationsMicroserviceConnection = new LocationsMicroserviceConnection(locationsMicroservice, Constants.LOCATIONS_MICROSERVICE_VERSION);
     this.customersMicroserviceConnection = new CustomersMicroserviceConnection(customersMicroservice, Constants.CUSTOMERS_MICROSERVICE_VERSION);
   }
 
@@ -36,11 +36,11 @@ export class CustomerAuthValidation {
     if (customerByPhone) {
       throw new BadRequestException('Phone is already exists.');
     }
-    const governorate: Location = await this.locationsMicroserviceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Location>>{
+    const governorate: Location = await this.locationsMicroserviceConnection.locationsServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Location>>{
       id: customerSignUpDto.governorateId,
       failureMessage: 'Governorate not found.',
     });
-    const region: Location = await this.locationsMicroserviceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Location>>{
+    const region: Location = await this.locationsMicroserviceConnection.locationsServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Location>>{
       id: customerSignUpDto.regionId,
       failureMessage: 'Region not found.',
     });

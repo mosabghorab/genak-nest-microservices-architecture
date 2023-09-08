@@ -1,7 +1,19 @@
 import { Controller } from '@nestjs/common';
-import { FindOneByIdDto, FindOneByPhoneDto, Vendor, VendorSignUpDto, VendorsMicroserviceConstants, VendorUpdateProfileDto, VendorUploadDocumentsDto } from '@app/common';
+import {
+  DateFilterDto,
+  FindOneByIdDto,
+  FindOneByPhoneDto,
+  ServiceType,
+  Vendor,
+  VendorSignUpDto,
+  VendorsMicroserviceConstants,
+  VendorStatus,
+  VendorUpdateProfileDto,
+  VendorUploadDocumentsDto,
+} from '@app/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { VendorsService } from '../services/vendors.service';
+import { FindOptionsRelations } from 'typeorm';
 
 const VERSION = '1';
 
@@ -49,5 +61,26 @@ export class VendorsController {
   })
   updateProfile(@Payload() vendorUpdateProfileDto: VendorUpdateProfileDto): Promise<Vendor> {
     return this.vendorsService.updateProfile(vendorUpdateProfileDto);
+  }
+
+  @MessagePattern({
+    cmd: `${VendorsMicroserviceConstants.VENDORS_SERVICE_COUNT_MESSAGE_PATTERN}/v${VERSION}`,
+  })
+  count(@Payload('serviceType') serviceType?: ServiceType, @Payload('status') status?: VendorStatus): Promise<number> {
+    return this.vendorsService.count(serviceType, status);
+  }
+
+  @MessagePattern({
+    cmd: `${VendorsMicroserviceConstants.VENDORS_SERVICE_FIND_LATEST_MESSAGE_PATTERN}/v${VERSION}`,
+  })
+  findLatest(@Payload('count') count: number, @Payload('serviceType') serviceType: ServiceType, @Payload('relations') relations?: FindOptionsRelations<Vendor>): Promise<Vendor[]> {
+    return this.vendorsService.findLatest(count, serviceType, relations);
+  }
+
+  @MessagePattern({
+    cmd: `${VendorsMicroserviceConstants.VENDORS_SERVICE_FIND_BEST_SELLERS_WITH_ORDERS_COUNT_MESSAGE_PATTERN}/v${VERSION}`,
+  })
+  findBestSellersWithOrdersCount(@Payload('serviceType') serviceType: ServiceType, @Payload('dateFilterDto') dateFilterDto: DateFilterDto): Promise<Vendor[]> {
+    return this.vendorsService.findBestSellersWithOrdersCount(serviceType, dateFilterDto);
   }
 }

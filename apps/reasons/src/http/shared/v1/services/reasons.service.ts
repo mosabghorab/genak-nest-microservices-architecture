@@ -1,7 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { FindOptionsRelations } from 'typeorm/browser';
+import { FindOptionsRelations, Repository } from 'typeorm';
 import { Reason } from '@app/common';
 
 @Injectable()
@@ -12,10 +11,7 @@ export class ReasonsService {
   ) {}
 
   // find one by id.
-  async findOneById(
-    id: number,
-    relations?: FindOptionsRelations<Reason>,
-  ): Promise<Reason | null> {
+  async findOneById(id: number, relations?: FindOptionsRelations<Reason>): Promise<Reason | null> {
     return this.reasonRepository.findOne({
       where: { id, active: true },
       relations,
@@ -23,11 +19,7 @@ export class ReasonsService {
   }
 
   // find one or fail by id.
-  async findOneOrFailById(
-    id: number,
-    failureMessage?: string,
-    relations?: FindOptionsRelations<Reason>,
-  ): Promise<Reason> {
+  async findOneOrFailById(id: number, failureMessage?: string, relations?: FindOptionsRelations<Reason>): Promise<Reason> {
     const reason: Reason = await this.findOneById(id, relations);
     if (!reason) {
       throw new NotFoundException(failureMessage || 'Reason not found.');
