@@ -21,8 +21,8 @@ import {
   SendFcmNotificationDto,
   UserType,
   Vendor,
+  VendorsMicroserviceConnection,
   VendorsMicroserviceConstants,
-  VendorsMicroserviceImpl,
 } from '@app/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { ComplainStatusChangedEvent } from '../events/complain-status-changed.event';
@@ -34,7 +34,7 @@ export class ComplainStatusChangedHandler {
   private readonly authMicroserviceConnection: AuthMicroserviceConnection;
   private readonly customersMicroserviceConnection: CustomersMicroserviceConnection;
   private readonly ordersMicroserviceConnection: OrdersMicroserviceConnection;
-  private readonly vendorsMicroserviceImpl: VendorsMicroserviceImpl;
+  private readonly vendorsMicroserviceConnection: VendorsMicroserviceConnection;
 
   constructor(
     @Inject(NotificationsMicroserviceConstants.NAME)
@@ -52,7 +52,7 @@ export class ComplainStatusChangedHandler {
     this.authMicroserviceConnection = new AuthMicroserviceConnection(authMicroservice, Constants.AUTH_MICROSERVICE_VERSION);
     this.customersMicroserviceConnection = new CustomersMicroserviceConnection(customersMicroservice, Constants.CUSTOMERS_MICROSERVICE_VERSION);
     this.ordersMicroserviceConnection = new OrdersMicroserviceConnection(ordersMicroservice, Constants.ORDERS_MICROSERVICE_VERSION);
-    this.vendorsMicroserviceImpl = new VendorsMicroserviceImpl(vendorsMicroservice, Constants.VENDORS_MICROSERVICE_VERSION);
+    this.vendorsMicroserviceConnection = new VendorsMicroserviceConnection(vendorsMicroservice, Constants.VENDORS_MICROSERVICE_VERSION);
   }
 
   // handle.
@@ -95,7 +95,7 @@ export class ComplainStatusChangedHandler {
       }
     } else {
       const isNotificationsEnabled: boolean = (
-        await this.vendorsMicroserviceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Vendor>>{
+        await this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Vendor>>{
           id: complain.complainerId,
         })
       ).notificationsEnabled;

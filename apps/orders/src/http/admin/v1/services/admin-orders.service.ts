@@ -11,8 +11,8 @@ import {
   FindOneOrFailByIdDto,
   Order,
   Vendor,
+  VendorsMicroserviceConnection,
   VendorsMicroserviceConstants,
-  VendorsMicroserviceImpl,
 } from '@app/common';
 import { FindAllOrdersDto } from '../dtos/find-all-orders.dto';
 import { FindVendorOrdersDto } from '../dtos/find-vendor-orders.dto';
@@ -23,7 +23,7 @@ import { Constants } from '../../../../../../reports/src/constants';
 @Injectable()
 export class AdminOrdersService {
   private readonly customersMicroserviceConnection: CustomersMicroserviceConnection;
-  private readonly vendorsMicroserviceImpl: VendorsMicroserviceImpl;
+  private readonly vendorsMicroserviceConnection: VendorsMicroserviceConnection;
 
   constructor(
     @InjectRepository(Order)
@@ -34,7 +34,7 @@ export class AdminOrdersService {
     private readonly vendorsMicroservice: ClientProxy,
   ) {
     this.customersMicroserviceConnection = new CustomersMicroserviceConnection(customersMicroservice, Constants.CUSTOMERS_MICROSERVICE_VERSION);
-    this.vendorsMicroserviceImpl = new VendorsMicroserviceImpl(vendorsMicroservice, Constants.VENDORS_MICROSERVICE_VERSION);
+    this.vendorsMicroserviceConnection = new VendorsMicroserviceConnection(vendorsMicroservice, Constants.VENDORS_MICROSERVICE_VERSION);
   }
 
   // find one by id.
@@ -161,7 +161,7 @@ export class AdminOrdersService {
     ordersTotalPrice: any;
     currentPage: number;
   }> {
-    await this.vendorsMicroserviceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Vendor>>{
+    await this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Vendor>>{
       id: vendorId,
     });
     const { ordersAverageTimeMinutes } = await this.orderRepository

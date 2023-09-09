@@ -8,8 +8,8 @@ import {
   Order,
   OrdersMicroserviceConnection,
   OrdersMicroserviceConstants,
+  StorageMicroserviceConnection,
   StorageMicroserviceConstants,
-  StorageMicroserviceImpl,
   UploadFileDto,
 } from '@app/common';
 import { Constants } from '../../../../constants';
@@ -21,7 +21,7 @@ import { ComplainCreatedEvent } from '../../../shared/v1/events/complain-created
 @Injectable()
 export class CustomerComplainsService {
   private readonly ordersMicroserviceConnection: OrdersMicroserviceConnection;
-  private readonly storageMicroserviceImpl: StorageMicroserviceImpl;
+  private readonly storageMicroserviceConnection: StorageMicroserviceConnection;
 
   constructor(
     private readonly eventEmitter: EventEmitter2,
@@ -33,7 +33,7 @@ export class CustomerComplainsService {
     private readonly storageMicroservice: ClientProxy,
   ) {
     this.ordersMicroserviceConnection = new OrdersMicroserviceConnection(ordersMicroservice, Constants.ORDERS_MICROSERVICE_VERSION);
-    this.storageMicroserviceImpl = new StorageMicroserviceImpl(storageMicroservice, Constants.STORAGE_MICROSERVICE_VERSION);
+    this.storageMicroserviceConnection = new StorageMicroserviceConnection(storageMicroservice, Constants.STORAGE_MICROSERVICE_VERSION);
   }
 
   // create.
@@ -43,7 +43,7 @@ export class CustomerComplainsService {
     });
     let imageUrl: string;
     if (image) {
-      imageUrl = await this.storageMicroserviceImpl.uploadFile(<UploadFileDto>{
+      imageUrl = await this.storageMicroserviceConnection.storageServiceImpl.uploadFile(<UploadFileDto>{
         prefixPath: Constants.COMPLAINS_IMAGES_PREFIX_PATH,
         file: image,
       });

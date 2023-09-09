@@ -1,14 +1,14 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Attachment, DeleteFileDto, FindOneByIdDto, FindOneOrFailByIdDto, StorageMicroserviceConstants, StorageMicroserviceImpl } from '@app/common';
+import { Attachment, DeleteFileDto, FindOneByIdDto, FindOneOrFailByIdDto, StorageMicroserviceConnection, StorageMicroserviceConstants } from '@app/common';
 import { UpdateAttachmentStatusDto } from '../dtos/update-attachment-status.dto';
 import { Constants } from '../../../../constants';
 import { ClientProxy } from '@nestjs/microservices';
 
 @Injectable()
 export class AdminAttachmentsService {
-  private readonly storageMicroserviceImpl: StorageMicroserviceImpl;
+  private readonly storageMicroserviceConnection: StorageMicroserviceConnection;
 
   constructor(
     @InjectRepository(Attachment)
@@ -16,7 +16,7 @@ export class AdminAttachmentsService {
     @Inject(StorageMicroserviceConstants.NAME)
     private readonly storageMicroservice: ClientProxy,
   ) {
-    this.storageMicroserviceImpl = new StorageMicroserviceImpl(storageMicroservice, Constants.STORAGE_MICROSERVICE_VERSION);
+    this.storageMicroserviceConnection = new StorageMicroserviceConnection(storageMicroservice, Constants.STORAGE_MICROSERVICE_VERSION);
   }
 
   // find one by id.
@@ -65,7 +65,7 @@ export class AdminAttachmentsService {
 
   // remove one by instance.
   async removeOneByInstance(attachment: Attachment): Promise<Attachment> {
-    await this.storageMicroserviceImpl.deleteFile(<DeleteFileDto>{
+    await this.storageMicroserviceConnection.storageServiceImpl.deleteFile(<DeleteFileDto>{
       prefixPath: Constants.VENDORS_ATTACHMENTS_PREFIX_PATH,
       fileUrl: attachment.file,
     });

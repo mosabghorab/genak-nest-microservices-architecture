@@ -1,9 +1,9 @@
+import { DateFilterDto, FindOneByIdDto, FindOneOrFailByIdDto, IProductsService, Product, ProductsMicroserviceConstants, ServiceType } from '@app/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { DateFilterDto, FindOneByIdDto, FindOneOrFailByIdDto, IProductsMicroservice, Product, ProductsMicroserviceConstants, ServiceType } from '@app/common';
 import { firstValueFrom } from 'rxjs';
 import { NotFoundException } from '@nestjs/common';
 
-export class ProductsMicroserviceImpl implements IProductsMicroservice {
+export class ProductsServiceImpl implements IProductsService {
   constructor(private readonly productsMicroservice: ClientProxy, private readonly version: string) {}
 
   // find one by id.

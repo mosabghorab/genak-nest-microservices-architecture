@@ -13,12 +13,12 @@ import {
   OrdersMicroserviceConnection,
   OrdersMicroserviceConstants,
   Product,
+  ProductsMicroserviceConnection,
   ProductsMicroserviceConstants,
-  ProductsMicroserviceImpl,
   ServiceType,
   Vendor,
+  VendorsMicroserviceConnection,
   VendorsMicroserviceConstants,
-  VendorsMicroserviceImpl,
   VendorStatus,
 } from '@app/common';
 import { ClientProxy } from '@nestjs/microservices';
@@ -32,10 +32,10 @@ import { FindGeneralReportsDto } from '../dtos/find-general-reports.dto';
 export class ReportsService {
   private readonly locationsMicroserviceConnection: LocationsMicroserviceConnection;
   private readonly customersMicroserviceConnection: CustomersMicroserviceConnection;
-  private readonly vendorsMicroserviceImpl: VendorsMicroserviceImpl;
+  private readonly vendorsMicroserviceConnection: VendorsMicroserviceConnection;
   private readonly adminsMicroserviceConnection: AdminsMicroserviceConnection;
   private readonly ordersMicroserviceConnection: OrdersMicroserviceConnection;
-  private readonly productsMicroserviceImpl: ProductsMicroserviceImpl;
+  private readonly productsMicroserviceConnection: ProductsMicroserviceConnection;
 
   constructor(
     @Inject(LocationsMicroserviceConstants.NAME)
@@ -53,10 +53,10 @@ export class ReportsService {
   ) {
     this.locationsMicroserviceConnection = new LocationsMicroserviceConnection(locationsMicroservice, Constants.LOCATIONS_MICROSERVICE_VERSION);
     this.customersMicroserviceConnection = new CustomersMicroserviceConnection(customersMicroservice, Constants.CUSTOMERS_MICROSERVICE_VERSION);
-    this.vendorsMicroserviceImpl = new VendorsMicroserviceImpl(vendorsMicroservice, Constants.VENDORS_MICROSERVICE_VERSION);
+    this.vendorsMicroserviceConnection = new VendorsMicroserviceConnection(vendorsMicroservice, Constants.VENDORS_MICROSERVICE_VERSION);
     this.adminsMicroserviceConnection = new AdminsMicroserviceConnection(adminsMicroservice, Constants.ADMINS_MICROSERVICE_VERSION);
     this.ordersMicroserviceConnection = new OrdersMicroserviceConnection(ordersMicroservice, Constants.ORDERS_MICROSERVICE_VERSION);
-    this.productsMicroserviceImpl = new ProductsMicroserviceImpl(productsMicroservice, Constants.PRODUCTS_MICROSERVICE_VERSION);
+    this.productsMicroserviceConnection = new ProductsMicroserviceConnection(productsMicroservice, Constants.PRODUCTS_MICROSERVICE_VERSION);
   }
 
   // find general reports.
@@ -71,8 +71,8 @@ export class ReportsService {
   }> {
     const customersCount: number = await this.customersMicroserviceConnection.customersServiceImpl.count();
     const adminsCount: number = await this.adminsMicroserviceConnection.adminsServiceImpl.count();
-    const allVendorsCount: number = await this.vendorsMicroserviceImpl.count();
-    const vendorsCountByServiceType: number = await this.vendorsMicroserviceImpl.count(findGeneralReportsDto.serviceType);
+    const allVendorsCount: number = await this.vendorsMicroserviceConnection.vendorsServiceImpl.count();
+    const vendorsCountByServiceType: number = await this.vendorsMicroserviceConnection.vendorsServiceImpl.count(findGeneralReportsDto.serviceType);
     const ordersCount: number = await this.ordersMicroserviceConnection.ordersServiceImpl.count(findGeneralReportsDto.serviceType);
     const governoratesWithVendorsAndCustomersAndOrdersCount: Location[] = await this.locationsMicroserviceConnection.locationsServiceImpl.findGovernoratesWithVendorsAndCustomersAndOrdersCount(
       findGeneralReportsDto.serviceType,
@@ -81,7 +81,7 @@ export class ReportsService {
       customer: true,
       vendor: true,
     });
-    const latestVendors: Vendor[] = await this.vendorsMicroserviceImpl.findLatest(10, findGeneralReportsDto.serviceType);
+    const latestVendors: Vendor[] = await this.vendorsMicroserviceConnection.vendorsServiceImpl.findLatest(10, findGeneralReportsDto.serviceType);
     return {
       usersCount: allVendorsCount + customersCount + adminsCount,
       customersCount,
@@ -100,9 +100,9 @@ export class ReportsService {
     pendingVendorsCount: number;
     activeVendorsCount: number;
   }> {
-    const documentsRequiredVendorsCount: number = await this.vendorsMicroserviceImpl.count(findVendorsReportsDto.serviceType, VendorStatus.DOCUMENTS_REQUIRED);
-    const pendingVendorsCount: number = await this.vendorsMicroserviceImpl.count(findVendorsReportsDto.serviceType, VendorStatus.PENDING);
-    const activeVendorsCount: number = await this.vendorsMicroserviceImpl.count(findVendorsReportsDto.serviceType, VendorStatus.ACTIVE);
+    const documentsRequiredVendorsCount: number = await this.vendorsMicroserviceConnection.vendorsServiceImpl.count(findVendorsReportsDto.serviceType, VendorStatus.DOCUMENTS_REQUIRED);
+    const pendingVendorsCount: number = await this.vendorsMicroserviceConnection.vendorsServiceImpl.count(findVendorsReportsDto.serviceType, VendorStatus.PENDING);
+    const activeVendorsCount: number = await this.vendorsMicroserviceConnection.vendorsServiceImpl.count(findVendorsReportsDto.serviceType, VendorStatus.ACTIVE);
     const governoratesWithVendorsCount: Location[] = await this.locationsMicroserviceConnection.locationsServiceImpl.findGovernoratesWithVendorsCount(findVendorsReportsDto.serviceType);
     return {
       documentsRequiredVendorsCount,
@@ -134,7 +134,7 @@ export class ReportsService {
     const ordersCount: number = await this.ordersMicroserviceConnection.ordersServiceImpl.count(findSalesReportsDto.serviceType);
     const totalSales: number = parseFloat((await this.ordersMicroserviceConnection.ordersServiceImpl.totalSales(findSalesReportsDto.serviceType)).totalSales) || 0;
     const governoratesWithOrdersCount: Location[] = await this.locationsMicroserviceConnection.locationsServiceImpl.findGovernoratesWithOrdersCount(findSalesReportsDto.serviceType);
-    const productsWithTotalSales: Product[] = await this.productsMicroserviceImpl.findWithTotalSales(findSalesReportsDto.serviceType);
+    const productsWithTotalSales: Product[] = await this.productsMicroserviceConnection.productsServiceImpl.findWithTotalSales(findSalesReportsDto.serviceType);
     let customOrderItemsTotalSales: number;
     let customOrderItemsTotalQuantities: number;
     if (findSalesReportsDto.serviceType === ServiceType.WATER) {
@@ -201,18 +201,20 @@ export class ReportsService {
       endDate: findSalesReportsWithFilterDto.endDate,
     });
 
-    const productsWithTotalSales: Product[] = await this.productsMicroserviceImpl.findWithTotalSales(findSalesReportsWithFilterDto.serviceType, <DateFilterDto>{
+    const productsWithTotalSales: Product[] = await this.productsMicroserviceConnection.productsServiceImpl.findWithTotalSales(findSalesReportsWithFilterDto.serviceType, <DateFilterDto>{
       dateFilterOption: findSalesReportsWithFilterDto.dateFilterOption,
       startDate: findSalesReportsWithFilterDto.startDate,
       endDate: findSalesReportsWithFilterDto.endDate,
     });
-    const productsWithOrdersCount: Product[] = await this.productsMicroserviceImpl.findWithOrdersCount(findSalesReportsWithFilterDto.serviceType, <DateFilterDto>{
+    const productsWithOrdersCount: Product[] = await this.productsMicroserviceConnection.productsServiceImpl.findWithOrdersCount(findSalesReportsWithFilterDto.serviceType, <DateFilterDto>{
       dateFilterOption: findSalesReportsWithFilterDto.dateFilterOption,
       startDate: findSalesReportsWithFilterDto.startDate,
       endDate: findSalesReportsWithFilterDto.endDate,
     });
 
-    const vendorsBestSellersWithOrdersCount: Vendor[] = await this.vendorsMicroserviceImpl.findBestSellersWithOrdersCount(findSalesReportsWithFilterDto.serviceType, <DateFilterDto>{
+    const vendorsBestSellersWithOrdersCount: Vendor[] = await this.vendorsMicroserviceConnection.vendorsServiceImpl.findBestSellersWithOrdersCount(findSalesReportsWithFilterDto.serviceType, <
+      DateFilterDto
+    >{
       dateFilterOption: findSalesReportsWithFilterDto.dateFilterOption,
       startDate: findSalesReportsWithFilterDto.startDate,
       endDate: findSalesReportsWithFilterDto.endDate,

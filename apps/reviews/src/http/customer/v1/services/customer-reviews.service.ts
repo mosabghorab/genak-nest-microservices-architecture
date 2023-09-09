@@ -11,8 +11,8 @@ import {
   OrdersMicroserviceConstants,
   Review,
   Vendor,
+  VendorsMicroserviceConnection,
   VendorsMicroserviceConstants,
-  VendorsMicroserviceImpl,
 } from '@app/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { Constants } from '../../../../constants';
@@ -21,7 +21,7 @@ import { CreateReviewDto } from '../dtos/create-review.dto';
 @Injectable()
 export class CustomerReviewsService {
   private readonly ordersMicroserviceConnection: OrdersMicroserviceConnection;
-  private readonly vendorsMicroserviceImpl: VendorsMicroserviceImpl;
+  private readonly vendorsMicroserviceConnection: VendorsMicroserviceConnection;
 
   constructor(
     @InjectRepository(Review)
@@ -32,7 +32,7 @@ export class CustomerReviewsService {
     private readonly vendorsMicroservice: ClientProxy,
   ) {
     this.ordersMicroserviceConnection = new OrdersMicroserviceConnection(ordersMicroservice, Constants.ORDERS_MICROSERVICE_VERSION);
-    this.vendorsMicroserviceImpl = new VendorsMicroserviceImpl(vendorsMicroservice, Constants.VENDORS_MICROSERVICE_VERSION);
+    this.vendorsMicroserviceConnection = new VendorsMicroserviceConnection(vendorsMicroservice, Constants.VENDORS_MICROSERVICE_VERSION);
   }
 
   // create.
@@ -40,7 +40,7 @@ export class CustomerReviewsService {
     const order: Order = await this.ordersMicroserviceConnection.ordersServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Order>>{
       id: createReviewDto.orderId,
     });
-    await this.vendorsMicroserviceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Vendor>>{
+    await this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Vendor>>{
       id: createReviewDto.vendorId,
     });
     return this.reviewRepository.save(

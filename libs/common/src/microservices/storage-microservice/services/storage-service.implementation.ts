@@ -1,8 +1,8 @@
-import { DeleteFileDto, IStorageMicroservice, StorageMicroserviceConstants, UploadFileDto } from '@app/common';
+import { DeleteFileDto, IStorageService, StorageMicroserviceConstants, UploadFileDto } from '@app/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 
-export class StorageMicroserviceImpl implements IStorageMicroservice {
+export class StorageServiceImpl implements IStorageService {
   constructor(private readonly storageMicroservice: ClientProxy, private readonly version: string) {}
 
   // upload file.

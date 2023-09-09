@@ -16,8 +16,8 @@ import {
   LocationsMicroserviceConstants,
   Vendor,
   VendorSignUpDto,
+  VendorsMicroserviceConnection,
   VendorsMicroserviceConstants,
-  VendorsMicroserviceImpl,
 } from '@app/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { Constants } from '../../../../constants';
@@ -25,7 +25,7 @@ import { Constants } from '../../../../constants';
 @Injectable()
 export class VendorAuthValidation {
   private readonly locationsMicroserviceConnection: LocationsMicroserviceConnection;
-  private readonly vendorsMicroserviceImpl: VendorsMicroserviceImpl;
+  private readonly vendorsMicroserviceConnection: VendorsMicroserviceConnection;
   private readonly documentsMicroserviceConnection: DocumentsMicroserviceConnection;
 
   constructor(
@@ -37,13 +37,13 @@ export class VendorAuthValidation {
     private readonly documentsMicroservice: ClientProxy,
   ) {
     this.locationsMicroserviceConnection = new LocationsMicroserviceConnection(locationsMicroservice, Constants.LOCATIONS_MICROSERVICE_VERSION);
-    this.vendorsMicroserviceImpl = new VendorsMicroserviceImpl(vendorsMicroservice, Constants.VENDORS_MICROSERVICE_VERSION);
+    this.vendorsMicroserviceConnection = new VendorsMicroserviceConnection(vendorsMicroservice, Constants.VENDORS_MICROSERVICE_VERSION);
     this.documentsMicroserviceConnection = new DocumentsMicroserviceConnection(documentsMicroservice, Constants.DOCUMENTS_MICROSERVICE_VERSION);
   }
 
   // validate sign up.
   async validateSignUp(vendorSignUpDto: VendorSignUpDto): Promise<void> {
-    const vendor: Vendor = await this.vendorsMicroserviceImpl.findOneByPhone(<FindOneByPhoneDto<Vendor>>{
+    const vendor: Vendor = await this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneByPhone(<FindOneByPhoneDto<Vendor>>{
       phone: vendorSignUpDto.phone,
     });
     if (vendor) {
@@ -66,7 +66,7 @@ export class VendorAuthValidation {
     if (!files || files.length === 0) {
       throw new BadRequestException('Please upload the required documents.');
     }
-    const vendor: Vendor = await this.vendorsMicroserviceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Vendor>>{
+    const vendor: Vendor = await this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Vendor>>{
       id: vendorId,
       relations: {
         attachments: true,

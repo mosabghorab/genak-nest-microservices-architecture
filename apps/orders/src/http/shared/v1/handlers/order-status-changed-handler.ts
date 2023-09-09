@@ -17,8 +17,8 @@ import {
   SendFcmNotificationDto,
   UserType,
   Vendor,
+  VendorsMicroserviceConnection,
   VendorsMicroserviceConstants,
-  VendorsMicroserviceImpl,
 } from '@app/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { OrderStatusChangedEvent } from '../events/order-status-changed.event';
@@ -29,7 +29,7 @@ export class OrderStatusChangedHandler {
   private readonly notificationsMicroserviceImpl: NotificationsMicroserviceImpl;
   private readonly authMicroserviceConnection: AuthMicroserviceConnection;
   private readonly customersMicroserviceConnection: CustomersMicroserviceConnection;
-  private readonly vendorsMicroserviceImpl: VendorsMicroserviceImpl;
+  private readonly vendorsMicroserviceConnection: VendorsMicroserviceConnection;
 
   constructor(
     @Inject(NotificationsMicroserviceConstants.NAME)
@@ -44,7 +44,7 @@ export class OrderStatusChangedHandler {
     this.notificationsMicroserviceImpl = new NotificationsMicroserviceImpl(notificationsMicroservice, Constants.NOTIFICATIONS_MICROSERVICE_VERSION);
     this.authMicroserviceConnection = new AuthMicroserviceConnection(authMicroservice, Constants.AUTH_MICROSERVICE_VERSION);
     this.customersMicroserviceConnection = new CustomersMicroserviceConnection(customersMicroservice, Constants.CUSTOMERS_MICROSERVICE_VERSION);
-    this.vendorsMicroserviceImpl = new VendorsMicroserviceImpl(vendorsMicroservice, Constants.VENDORS_MICROSERVICE_VERSION);
+    this.vendorsMicroserviceConnection = new VendorsMicroserviceConnection(vendorsMicroservice, Constants.VENDORS_MICROSERVICE_VERSION);
   }
 
   // handle.
@@ -74,7 +74,7 @@ export class OrderStatusChangedHandler {
       }
     } else if (authedUser.type === UserType.CUSTOMER) {
       const isNotificationsEnabled: boolean = (
-        await this.vendorsMicroserviceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Vendor>>{
+        await this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Vendor>>{
           id: order.vendorId,
         })
       ).notificationsEnabled;
@@ -103,7 +103,7 @@ export class OrderStatusChangedHandler {
         );
       }
       const vendorIsNotificationsEnabled: boolean = (
-        await this.vendorsMicroserviceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Vendor>>{
+        await this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Vendor>>{
           id: order.vendorId,
         })
       ).notificationsEnabled;

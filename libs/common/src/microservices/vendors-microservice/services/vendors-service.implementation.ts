@@ -1,10 +1,11 @@
+import { ClientProxy } from '@nestjs/microservices';
 import {
   DateFilterDto,
   FindOneByIdDto,
   FindOneByPhoneDto,
   FindOneOrFailByIdDto,
   FindOneOrFailByPhoneDto,
-  IVendorsMicroservice,
+  IVendorsService,
   ServiceType,
   Vendor,
   VendorSignUpDto,
@@ -13,12 +14,11 @@ import {
   VendorUpdateProfileDto,
   VendorUploadDocumentsDto,
 } from '@app/common';
-import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { NotFoundException } from '@nestjs/common';
 import { FindOptionsRelations } from 'typeorm';
 
-export class VendorsMicroserviceImpl implements IVendorsMicroservice {
+export class VendorsServiceImpl implements IVendorsService {
   constructor(private readonly vendorsMicroservice: ClientProxy, private readonly version: string) {}
 
   // find one by id.

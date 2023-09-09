@@ -8,12 +8,12 @@ import {
   FindOneOrFailByIdDto,
   OrdersMicroserviceConnection,
   OrdersMicroserviceConstants,
+  StorageMicroserviceConnection,
   StorageMicroserviceConstants,
-  StorageMicroserviceImpl,
   UploadFileDto,
   Vendor,
+  VendorsMicroserviceConnection,
   VendorsMicroserviceConstants,
-  VendorsMicroserviceImpl,
 } from '@app/common';
 import { Constants } from '../../../../constants';
 import { ClientProxy } from '@nestjs/microservices';
@@ -24,8 +24,8 @@ import { CreateComplainDto } from '../../../shared/v1/dtos/create-complain.dto';
 @Injectable()
 export class VendorComplainsService {
   private readonly ordersMicroserviceConnection: OrdersMicroserviceConnection;
-  private readonly storageMicroserviceImpl: StorageMicroserviceImpl;
-  private readonly vendorsMicroserviceImpl: VendorsMicroserviceImpl;
+  private readonly storageMicroserviceConnection: StorageMicroserviceConnection;
+  private readonly vendorsMicroserviceConnection: VendorsMicroserviceConnection;
 
   constructor(
     private readonly eventEmitter: EventEmitter2,
@@ -39,13 +39,13 @@ export class VendorComplainsService {
     private readonly vendorsMicroservice: ClientProxy,
   ) {
     this.ordersMicroserviceConnection = new OrdersMicroserviceConnection(ordersMicroservice, Constants.ORDERS_MICROSERVICE_VERSION);
-    this.storageMicroserviceImpl = new StorageMicroserviceImpl(storageMicroservice, Constants.STORAGE_MICROSERVICE_VERSION);
-    this.vendorsMicroserviceImpl = new VendorsMicroserviceImpl(vendorsMicroservice, Constants.VENDORS_MICROSERVICE_VERSION);
+    this.storageMicroserviceConnection = new StorageMicroserviceConnection(storageMicroservice, Constants.STORAGE_MICROSERVICE_VERSION);
+    this.vendorsMicroserviceConnection = new VendorsMicroserviceConnection(vendorsMicroservice, Constants.VENDORS_MICROSERVICE_VERSION);
   }
 
   // create.
   async create(vendorId: number, createComplainDto: CreateComplainDto, image?: Express.Multer.File): Promise<Complain> {
-    const vendor: Vendor = await this.vendorsMicroserviceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Vendor>>{
+    const vendor: Vendor = await this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Vendor>>{
       id: vendorId,
     });
     await this.ordersMicroserviceConnection.ordersServiceImpl.findOneOrFailByIdAndServiceType(<FindOneOrderOrFailByIdAndServiceTypeDto>{
@@ -54,7 +54,7 @@ export class VendorComplainsService {
     });
     let imageUrl: string;
     if (image) {
-      imageUrl = await this.storageMicroserviceImpl.uploadFile(<UploadFileDto>{
+      imageUrl = await this.storageMicroserviceConnection.storageServiceImpl.uploadFile(<UploadFileDto>{
         prefixPath: Constants.COMPLAINS_IMAGES_PREFIX_PATH,
         file: image,
       });

@@ -1,7 +1,7 @@
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { DeleteFileDto, FindOneByIdDto, FindOneOrFailByIdDto, OnBoardingScreen, OrderByType, StorageMicroserviceConstants, StorageMicroserviceImpl, UploadFileDto } from '@app/common';
+import { DeleteFileDto, FindOneByIdDto, FindOneOrFailByIdDto, OnBoardingScreen, OrderByType, StorageMicroserviceConnection, StorageMicroserviceConstants, UploadFileDto } from '@app/common';
 import { FindAllOnBoardingScreensDto } from '../dtos/find-all-on-boarding-screens.dto';
 import { CreateOnBoardingScreenDto } from '../dtos/create-on-boarding-screen.dto';
 import { UpdateOnBoardingScreenDto } from '../dtos/update-on-boarding-screen.dto';
@@ -10,7 +10,7 @@ import { ClientProxy } from '@nestjs/microservices';
 
 @Injectable()
 export class AdminOnBoardingScreensService {
-  private readonly storageMicroserviceImpl: StorageMicroserviceImpl;
+  private readonly storageMicroserviceConnection: StorageMicroserviceConnection;
 
   constructor(
     @InjectRepository(OnBoardingScreen)
@@ -18,7 +18,7 @@ export class AdminOnBoardingScreensService {
     @Inject(StorageMicroserviceConstants.NAME)
     private readonly storageMicroservice: ClientProxy,
   ) {
-    this.storageMicroserviceImpl = new StorageMicroserviceImpl(storageMicroservice, Constants.STORAGE_MICROSERVICE_VERSION);
+    this.storageMicroserviceConnection = new StorageMicroserviceConnection(storageMicroservice, Constants.STORAGE_MICROSERVICE_VERSION);
   }
 
   // find one by id.
@@ -53,7 +53,7 @@ export class AdminOnBoardingScreensService {
 
   // create.
   async create(createOnBoardingScreenDto: CreateOnBoardingScreenDto, image: Express.Multer.File): Promise<OnBoardingScreen> {
-    const imageUrl: string = await this.storageMicroserviceImpl.uploadFile(<UploadFileDto>{
+    const imageUrl: string = await this.storageMicroserviceConnection.storageServiceImpl.uploadFile(<UploadFileDto>{
       prefixPath: Constants.ON_BOARDING_SCREENS_IMAGES_PREFIX_PATH,
       file: image,
     });
@@ -71,11 +71,11 @@ export class AdminOnBoardingScreensService {
       id,
     });
     if (image) {
-      await this.storageMicroserviceImpl.deleteFile(<DeleteFileDto>{
+      await this.storageMicroserviceConnection.storageServiceImpl.deleteFile(<DeleteFileDto>{
         prefixPath: Constants.ON_BOARDING_SCREENS_IMAGES_PREFIX_PATH,
         fileUrl: onBoardingScreen.image,
       });
-      onBoardingScreen.image = await this.storageMicroserviceImpl.uploadFile(<UploadFileDto>{
+      onBoardingScreen.image = await this.storageMicroserviceConnection.storageServiceImpl.uploadFile(<UploadFileDto>{
         prefixPath: Constants.ON_BOARDING_SCREENS_IMAGES_PREFIX_PATH,
         file: image,
       });

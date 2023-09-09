@@ -15,8 +15,8 @@ import {
   OrdersMicroserviceConstants,
   Review,
   Vendor,
+  VendorsMicroserviceConnection,
   VendorsMicroserviceConstants,
-  VendorsMicroserviceImpl,
 } from '@app/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { Constants } from '../../../../constants';
@@ -24,7 +24,7 @@ import { Constants } from '../../../../constants';
 @Injectable()
 export class VendorReviewsService {
   private readonly ordersMicroserviceConnection: OrdersMicroserviceConnection;
-  private readonly vendorsMicroserviceImpl: VendorsMicroserviceImpl;
+  private readonly vendorsMicroserviceConnection: VendorsMicroserviceConnection;
   private readonly customersMicroserviceConnection: CustomersMicroserviceConnection;
 
   constructor(
@@ -38,13 +38,13 @@ export class VendorReviewsService {
     private readonly customersMicroservice: ClientProxy,
   ) {
     this.ordersMicroserviceConnection = new OrdersMicroserviceConnection(ordersMicroservice, Constants.ORDERS_MICROSERVICE_VERSION);
-    this.vendorsMicroserviceImpl = new VendorsMicroserviceImpl(vendorsMicroservice, Constants.VENDORS_MICROSERVICE_VERSION);
+    this.vendorsMicroserviceConnection = new VendorsMicroserviceConnection(vendorsMicroservice, Constants.VENDORS_MICROSERVICE_VERSION);
     this.customersMicroserviceConnection = new CustomersMicroserviceConnection(customersMicroservice, Constants.CUSTOMERS_MICROSERVICE_VERSION);
   }
 
   // create.
   async create(vendorId: number, createReviewDto: CreateReviewDto): Promise<Review> {
-    const vendor: Vendor = await this.vendorsMicroserviceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Vendor>>{
+    const vendor: Vendor = await this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Vendor>>{
       id: vendorId,
     });
     await this.ordersMicroserviceConnection.ordersServiceImpl.findOneOrFailByIdAndServiceType(<FindOneOrderOrFailByIdAndServiceTypeDto>{
@@ -73,7 +73,7 @@ export class VendorReviewsService {
       today: Date;
       tomorrow: Date;
     } = DateHelpers.getTodayAndTomorrowForADate(findAllReviewsDto.date);
-    const vendor: Vendor = await this.vendorsMicroserviceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Vendor>>{
+    const vendor: Vendor = await this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Vendor>>{
       id: vendorId,
     });
     return this.reviewRepository.find({

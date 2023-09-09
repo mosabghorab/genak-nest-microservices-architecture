@@ -1,7 +1,7 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { DeleteFileDto, FindOneByIdDto, FindOneOrFailByIdDto, Product, StorageMicroserviceConstants, StorageMicroserviceImpl, UploadFileDto } from '@app/common';
+import { DeleteFileDto, FindOneByIdDto, FindOneOrFailByIdDto, Product, StorageMicroserviceConnection, StorageMicroserviceConstants, UploadFileDto } from '@app/common';
 import { FindAllProductsDto } from '../dtos/find-all-products.dto';
 import { CreateProductDto } from '../dtos/create-product.dto';
 import { UpdateProductDto } from '../dtos/update-product.dto';
@@ -10,7 +10,7 @@ import { ClientProxy } from '@nestjs/microservices';
 
 @Injectable()
 export class AdminProductsService {
-  private readonly storageMicroserviceImpl: StorageMicroserviceImpl;
+  private readonly storageMicroserviceConnection: StorageMicroserviceConnection;
 
   constructor(
     @InjectRepository(Product)
@@ -18,7 +18,7 @@ export class AdminProductsService {
     @Inject(StorageMicroserviceConstants.NAME)
     private readonly storageMicroservice: ClientProxy,
   ) {
-    this.storageMicroserviceImpl = new StorageMicroserviceImpl(storageMicroservice, Constants.STORAGE_MICROSERVICE_VERSION);
+    this.storageMicroserviceConnection = new StorageMicroserviceConnection(storageMicroservice, Constants.STORAGE_MICROSERVICE_VERSION);
   }
 
   // find one by id.
@@ -52,7 +52,7 @@ export class AdminProductsService {
 
   // create.
   async create(createProductDto: CreateProductDto, image: Express.Multer.File): Promise<Product> {
-    const imageUrl: string = await this.storageMicroserviceImpl.uploadFile(<UploadFileDto>{
+    const imageUrl: string = await this.storageMicroserviceConnection.storageServiceImpl.uploadFile(<UploadFileDto>{
       prefixPath: Constants.PRODUCTS_IMAGES_PREFIX_PATH,
       file: image,
     });
@@ -70,11 +70,11 @@ export class AdminProductsService {
       id,
     });
     if (image) {
-      await this.storageMicroserviceImpl.deleteFile(<DeleteFileDto>{
+      await this.storageMicroserviceConnection.storageServiceImpl.deleteFile(<DeleteFileDto>{
         prefixPath: Constants.PRODUCTS_IMAGES_PREFIX_PATH,
         fileUrl: product.image,
       });
-      product.image = await this.storageMicroserviceImpl.uploadFile(<UploadFileDto>{
+      product.image = await this.storageMicroserviceConnection.storageServiceImpl.uploadFile(<UploadFileDto>{
         prefixPath: Constants.PRODUCTS_IMAGES_PREFIX_PATH,
         file: image,
       });

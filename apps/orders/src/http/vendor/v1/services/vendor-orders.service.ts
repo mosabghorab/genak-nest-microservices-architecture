@@ -1,14 +1,14 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { FindOneByIdDto, FindOneOrFailByIdDto, Order, Vendor, VendorsMicroserviceConstants, VendorsMicroserviceImpl } from '@app/common';
+import { FindOneByIdDto, FindOneOrFailByIdDto, Order, Vendor, VendorsMicroserviceConnection, VendorsMicroserviceConstants } from '@app/common';
 import { FindAllOrdersDto } from '../dtos/find-all-orders.dto';
 import { ClientProxy } from '@nestjs/microservices';
 import { Constants } from '../../../../constants';
 
 @Injectable()
 export class VendorOrdersService {
-  private readonly vendorsMicroserviceImpl: VendorsMicroserviceImpl;
+  private readonly vendorsMicroserviceConnection: VendorsMicroserviceConnection;
 
   constructor(
     @InjectRepository(Order)
@@ -16,7 +16,7 @@ export class VendorOrdersService {
     @Inject(VendorsMicroserviceConstants.NAME)
     private readonly vendorsMicroservice: ClientProxy,
   ) {
-    this.vendorsMicroserviceImpl = new VendorsMicroserviceImpl(vendorsMicroservice, Constants.VENDORS_MICROSERVICE_VERSION);
+    this.vendorsMicroserviceConnection = new VendorsMicroserviceConnection(vendorsMicroservice, Constants.VENDORS_MICROSERVICE_VERSION);
   }
 
   // find one by id.
@@ -38,7 +38,7 @@ export class VendorOrdersService {
 
   // find all.
   async findAll(vendorId: number, findAllOrdersDto: FindAllOrdersDto): Promise<Order[]> {
-    const vendor: Vendor = await this.vendorsMicroserviceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Vendor>>{
+    const vendor: Vendor = await this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Vendor>>{
       id: vendorId,
     });
     return this.orderRepository

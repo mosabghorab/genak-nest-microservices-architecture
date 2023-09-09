@@ -16,8 +16,8 @@ import {
   FindOneOrFailByPhoneDto,
   Location,
   LocationVendor,
+  StorageMicroserviceConnection,
   StorageMicroserviceConstants,
-  StorageMicroserviceImpl,
   UploadFileDto,
   Vendor,
   VendorStatus,
@@ -33,7 +33,7 @@ import { UpdateVendorDto } from '../dtos/update-vendor.dto';
 @Injectable()
 export class AdminVendorsService {
   private readonly attachmentsMicroserviceConnection: AttachmentsMicroserviceConnection;
-  private readonly storageMicroserviceImpl: StorageMicroserviceImpl;
+  private readonly storageMicroserviceConnection: StorageMicroserviceConnection;
 
   constructor(
     @InjectRepository(Vendor)
@@ -47,7 +47,7 @@ export class AdminVendorsService {
     private readonly storageMicroservice: ClientProxy,
   ) {
     this.attachmentsMicroserviceConnection = new AttachmentsMicroserviceConnection(attachmentsMicroservice, Constants.ATTACHMENTS_MICROSERVICE_VERSION);
-    this.storageMicroserviceImpl = new StorageMicroserviceImpl(storageMicroservice, Constants.STORAGE_MICROSERVICE_VERSION);
+    this.storageMicroserviceConnection = new StorageMicroserviceConnection(storageMicroservice, Constants.STORAGE_MICROSERVICE_VERSION);
   }
 
   // find one by id.
@@ -163,7 +163,7 @@ export class AdminVendorsService {
     } = await this.adminVendorsValidation.validateCreationUploadDocuments(createVendorDto, files);
     let avatarUrl: string;
     if (avatar) {
-      avatarUrl = await this.storageMicroserviceImpl.uploadFile(<UploadFileDto>{
+      avatarUrl = await this.storageMicroserviceConnection.storageServiceImpl.uploadFile(<UploadFileDto>{
         prefixPath: Constants.VENDORS_IMAGES_PREFIX_PATH,
         file: avatar,
       });
@@ -187,7 +187,7 @@ export class AdminVendorsService {
     });
     const attachments: Attachment[] = [];
     for (const createAttachmentDto of createAttachmentDtoList) {
-      const fileUrl: string = await this.storageMicroserviceImpl.uploadFile(<UploadFileDto>{
+      const fileUrl: string = await this.storageMicroserviceConnection.storageServiceImpl.uploadFile(<UploadFileDto>{
         prefixPath: Constants.VENDORS_ATTACHMENTS_PREFIX_PATH,
         file: createAttachmentDto.file,
       });
@@ -215,11 +215,11 @@ export class AdminVendorsService {
     } = await this.adminVendorsValidation.validateUpdateUploadDocuments(vendor, files);
     if (avatar) {
       if (vendor.avatar)
-        await this.storageMicroserviceImpl.deleteFile(<DeleteFileDto>{
+        await this.storageMicroserviceConnection.storageServiceImpl.deleteFile(<DeleteFileDto>{
           prefixPath: Constants.VENDORS_IMAGES_PREFIX_PATH,
           fileUrl: vendor.avatar,
         });
-      vendor.avatar = await this.storageMicroserviceImpl.uploadFile(<UploadFileDto>{
+      vendor.avatar = await this.storageMicroserviceConnection.storageServiceImpl.uploadFile(<UploadFileDto>{
         prefixPath: Constants.VENDORS_IMAGES_PREFIX_PATH,
         file: avatar,
       });
@@ -251,7 +251,7 @@ export class AdminVendorsService {
           savedVendor.attachments = savedVendor.attachments.filter((attachment: Attachment): boolean => attachment.id !== oldAttachment.id);
         }
       }
-      const fileUrl: string = await this.storageMicroserviceImpl.uploadFile(<UploadFileDto>{
+      const fileUrl: string = await this.storageMicroserviceConnection.storageServiceImpl.uploadFile(<UploadFileDto>{
         prefixPath: Constants.VENDORS_IMAGES_PREFIX_PATH,
         file: avatar,
       });

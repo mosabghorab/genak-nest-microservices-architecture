@@ -1,7 +1,6 @@
-import { Product } from '@app/common/entities';
-import { DateFilterDto, FindOneByIdDto, FindOneOrFailByIdDto, ServiceType } from '@app/common';
+import { DateFilterDto, FindOneByIdDto, FindOneOrFailByIdDto, Product, ServiceType } from '@app/common';
 
-export interface IProductsMicroservice {
+export interface IProductsService {
   // find one by id.
   findOneById(findOneByIdDto: FindOneByIdDto<Product>): Promise<Product | null>;
 

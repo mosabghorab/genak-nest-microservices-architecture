@@ -14,8 +14,8 @@ import {
   OrderStatusHistory,
   ServiceType,
   Vendor,
+  VendorsMicroserviceConnection,
   VendorsMicroserviceConstants,
-  VendorsMicroserviceImpl,
 } from '@app/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { FindAllOrdersDto } from '../dtos/find-all-orders.dto';
@@ -28,7 +28,7 @@ import { OrderCreatedEvent } from '../events/order-created.event';
 @Injectable()
 export class CustomerOrdersService {
   private readonly customersMicroserviceConnection: CustomersMicroserviceConnection;
-  private readonly vendorsMicroserviceImpl: VendorsMicroserviceImpl;
+  private readonly vendorsMicroserviceConnection: VendorsMicroserviceConnection;
 
   constructor(
     @InjectRepository(Order)
@@ -38,7 +38,7 @@ export class CustomerOrdersService {
     @Inject(VendorsMicroserviceConstants.NAME) private readonly vendorsMicroservice: ClientProxy,
   ) {
     this.customersMicroserviceConnection = new CustomersMicroserviceConnection(customersMicroservice, Constants.CUSTOMERS_MICROSERVICE_VERSION);
-    this.vendorsMicroserviceImpl = new VendorsMicroserviceImpl(vendorsMicroservice, Constants.VENDORS_MICROSERVICE_VERSION);
+    this.vendorsMicroserviceConnection = new VendorsMicroserviceConnection(vendorsMicroservice, Constants.VENDORS_MICROSERVICE_VERSION);
   }
 
   // find one by id.
@@ -80,7 +80,7 @@ export class CustomerOrdersService {
     const customer: Customer = await this.customersMicroserviceConnection.customersServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Customer>>{
       id: customerId,
     });
-    const vendor: Vendor = await this.vendorsMicroserviceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Vendor>>{
+    const vendor: Vendor = await this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Vendor>>{
       id: createOrderDto.vendorId,
     });
     const customerAddress: CustomerAddress = await this.customersMicroserviceConnection.customerAddressesServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<CustomerAddress>>{

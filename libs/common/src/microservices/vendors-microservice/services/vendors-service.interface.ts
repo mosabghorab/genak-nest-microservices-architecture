@@ -13,7 +13,7 @@ import {
 } from '@app/common';
 import { FindOptionsRelations } from 'typeorm';
 
-export interface IVendorsMicroservice {
+export interface IVendorsService {
   // find one by id.
   findOneById(findOneByIdDto: FindOneByIdDto<Vendor>): Promise<Vendor | null>;
 

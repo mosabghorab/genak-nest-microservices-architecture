@@ -15,8 +15,8 @@ import {
   UserType,
   Vendor,
   VendorSignUpDto,
+  VendorsMicroserviceConnection,
   VendorsMicroserviceConstants,
-  VendorsMicroserviceImpl,
   VendorUploadDocumentsDto,
   VerificationCode,
 } from '@app/common';
@@ -28,7 +28,7 @@ import { CreateFcmTokenDto } from '../../../shared/v1/dtos/create-fcm-token.dto'
 
 @Injectable()
 export class VendorAuthService {
-  private readonly vendorsMicroserviceImpl: VendorsMicroserviceImpl;
+  private readonly vendorsMicroserviceConnection: VendorsMicroserviceConnection;
 
   constructor(
     private readonly jwtService: JwtService,
@@ -38,12 +38,12 @@ export class VendorAuthService {
     @Inject(VendorsMicroserviceConstants.NAME)
     private readonly vendorsMicroservice: ClientProxy,
   ) {
-    this.vendorsMicroserviceImpl = new VendorsMicroserviceImpl(vendorsMicroservice, Constants.VENDORS_MICROSERVICE_VERSION);
+    this.vendorsMicroserviceConnection = new VendorsMicroserviceConnection(vendorsMicroservice, Constants.VENDORS_MICROSERVICE_VERSION);
   }
 
   // send verification code.
   async sendVerificationCode(sendVerificationCodeDto: SendVerificationCodeDto): Promise<void> {
-    await this.vendorsMicroserviceImpl.findOneOrFailByPhone(<FindOneOrFailByPhoneDto<Vendor>>{
+    await this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneOrFailByPhone(<FindOneOrFailByPhoneDto<Vendor>>{
       phone: sendVerificationCodeDto.phone,
     });
     await this.verificationCodesService.create(sendVerificationCodeDto.phone, ClientUserType.VENDOR);
@@ -51,7 +51,7 @@ export class VendorAuthService {
 
   // sign in with phone.
   async signInWithPhone(signInWithPhoneDto: SignInWithPhoneDto): Promise<any> {
-    const vendor: Vendor = await this.vendorsMicroserviceImpl.findOneOrFailByPhone(<FindOneOrFailByPhoneDto<Vendor>>{
+    const vendor: Vendor = await this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneOrFailByPhone(<FindOneOrFailByPhoneDto<Vendor>>{
       phone: signInWithPhoneDto.phone,
     });
     const verificationCode: VerificationCode = await this.verificationCodesService.findLastOneOrFailByPhone(signInWithPhoneDto.phone, ClientUserType.VENDOR);
@@ -83,7 +83,7 @@ export class VendorAuthService {
   // sign up.
   async signUp(vendorSignUpDto: VendorSignUpDto, avatar?: Express.Multer.File): Promise<Vendor> {
     await this.vendorAuthValidation.validateSignUp(vendorSignUpDto);
-    return this.vendorsMicroserviceImpl.create(vendorSignUpDto, avatar);
+    return this.vendorsMicroserviceConnection.vendorsServiceImpl.create(vendorSignUpDto, avatar);
   }
 
   // upload documents.
@@ -95,7 +95,7 @@ export class VendorAuthService {
       vendor: Vendor;
       createAttachmentDtoList: CreateAttachmentDto[];
     } = await this.vendorAuthValidation.validateUploadDocuments(vendorId, files);
-    return this.vendorsMicroserviceImpl.uploadDocuments(<VendorUploadDocumentsDto>{
+    return this.vendorsMicroserviceConnection.vendorsServiceImpl.uploadDocuments(<VendorUploadDocumentsDto>{
       vendorId: vendor.id,
       createAttachmentDtoList,
     });
@@ -103,9 +103,9 @@ export class VendorAuthService {
 
   // delete account.
   async deleteAccount(vendorId: number): Promise<Vendor> {
-    const vendor: Vendor = await this.vendorsMicroserviceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Vendor>>{
+    const vendor: Vendor = await this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Vendor>>{
       id: vendorId,
     });
-    return this.vendorsMicroserviceImpl.removeOneByInstance(vendor);
+    return this.vendorsMicroserviceConnection.vendorsServiceImpl.removeOneByInstance(vendor);
   }
 }
