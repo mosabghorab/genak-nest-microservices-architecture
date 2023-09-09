@@ -21,17 +21,13 @@ export class AdminReasonsService {
   }
 
   // find one or fail by id.
-  async findOneOrFailById(
-    findOneOrFailByIdDto: FindOneOrFailByIdDto<Reason>,
-  ): Promise<Reason> {
+  async findOneOrFailById(findOneOrFailByIdDto: FindOneOrFailByIdDto<Reason>): Promise<Reason> {
     const reason: Reason = await this.findOneById(<FindOneByIdDto<Reason>>{
       id: findOneOrFailByIdDto.id,
       relations: findOneOrFailByIdDto.relations,
     });
     if (!reason) {
-      throw new NotFoundException(
-        findOneOrFailByIdDto.failureMessage || 'Reason not found.',
-      );
+      throw new NotFoundException(findOneOrFailByIdDto.failureMessage || 'Reason not found.');
     }
     return reason;
   }
@@ -43,16 +39,12 @@ export class AdminReasonsService {
 
   // create.
   async create(createReasonDto: CreateReasonDto): Promise<Reason> {
-    return this.reasonRepository.save(
-      await this.reasonRepository.create(createReasonDto),
-    );
+    return this.reasonRepository.save(await this.reasonRepository.create(createReasonDto));
   }
 
   // update.
   async update(id: number, updateReasonDto: UpdateReasonDto): Promise<Reason> {
-    const reason: Reason = await this.findOneOrFailById(<
-      FindOneByIdDto<Reason>
-    >{
+    const reason: Reason = await this.findOneOrFailById(<FindOneByIdDto<Reason>>{
       id,
     });
     Object.assign(reason, updateReasonDto);
@@ -61,9 +53,7 @@ export class AdminReasonsService {
 
   // remove.
   async remove(id: number): Promise<Reason> {
-    const reason: Reason = await this.findOneOrFailById(<
-      FindOneByIdDto<Reason>
-    >{
+    const reason: Reason = await this.findOneOrFailById(<FindOneByIdDto<Reason>>{
       id,
     });
     return this.reasonRepository.remove(reason);

@@ -1,15 +1,23 @@
-import { Injectable } from '@nestjs/common';
-import { SendFcmNotificationDto } from '@app/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { FcmNotificationType, SendFcmNotificationDto } from '@app/common';
+import { firebaseAdmin } from '../../../firebase-admin-init';
+import { Messaging } from 'firebase-admin/lib/messaging';
 
 @Injectable()
 export class FcmNotificationsService {
+  private readonly fcm: Messaging = firebaseAdmin.messaging();
+
   // send notification.
-  sendNotification(sendFcmNotificationDto: SendFcmNotificationDto): void {
-    console.log(`Fcm notification has been sent with these info : `);
-    console.log(sendFcmNotificationDto.fcmTokens);
-    console.log(sendFcmNotificationDto.type);
-    console.log(sendFcmNotificationDto.body);
-    console.log(sendFcmNotificationDto.title);
-    console.log(sendFcmNotificationDto.topic);
+  async sendNotification(sendFcmNotificationDto: SendFcmNotificationDto): Promise<void> {
+    try {
+      if (sendFcmNotificationDto.type === FcmNotificationType.FCM_TOKENS) {
+        await this.fcm.sendEachForMulticast(sendFcmNotificationDto.toJsonPayload());
+      } else {
+        await this.fcm.sendToTopic(sendFcmNotificationDto.topic, sendFcmNotificationDto.toJsonPayload());
+      }
+    } catch (error) {
+      console.log(error);
+      throw new InternalServerErrorException(error);
+    }
   }
 }

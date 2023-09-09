@@ -1,5 +1,5 @@
-import { Expose } from 'class-transformer';
-import { NotificationTarget, UserType } from '@app/common';
+import { Expose, Type } from 'class-transformer';
+import { ComplainDto, NotificationTarget, OrderDto, UserType } from '@app/common';
 
 export class NotificationDto {
   @Expose()
@@ -31,4 +31,13 @@ export class NotificationDto {
 
   @Expose()
   updatedAt: Date;
+
+  // extra fields.
+  @Expose()
+  @Type(() => OrderDto)
+  order: OrderDto;
+
+  @Expose()
+  @Type(() => ComplainDto)
+  complain: ComplainDto;
 }

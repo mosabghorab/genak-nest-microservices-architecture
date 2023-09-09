@@ -180,6 +180,15 @@
       "compilerOptions": {
         "tsConfigPath": "apps/reports/tsconfig.app.json"
       }
+    },
+    "settings": {
+      "type": "application",
+      "root": "apps/settings",
+      "entryFile": "main",
+      "sourceRoot": "apps/settings/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/settings/tsconfig.app.json"
+      }
     }
   }
 }

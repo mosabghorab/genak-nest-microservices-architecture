@@ -13,8 +13,8 @@ export class NotificationsService {
   ) {}
 
   // send fcm notification.
-  sendFcmNotification(sendFcmNotificationDto: SendFcmNotificationDto): void {
-    this.fcmNotificationsService.sendNotification(sendFcmNotificationDto);
+  async sendFcmNotification(sendFcmNotificationDto: SendFcmNotificationDto): Promise<void> {
+    await this.fcmNotificationsService.sendNotification(sendFcmNotificationDto);
   }
 
   // create database notification.
