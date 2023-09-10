@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, StreamableFile } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Admin, AdminsRoles, FindOneByEmailDto, FindOneByIdDto, FindOneOrFailByEmailDto, FindOneOrFailByIdDto } from '@app/common';
@@ -6,6 +6,9 @@ import { AdminsRolesService } from './admins-roles.service';
 import { FindAllAdminsDto } from '../dtos/find-all-admins.dto';
 import { CreateAdminDto } from '../dtos/create-admin.dto';
 import { UpdateAdminDto } from '../dtos/update-admin.dto';
+import { Workbook, Worksheet } from 'exceljs';
+import * as fsExtra from 'fs-extra';
+import { createReadStream } from 'fs';
 
 @Injectable()
 export class AdminsService {
@@ -56,28 +59,36 @@ export class AdminsService {
   }
 
   // find all.
-  async findAll(findAllAdminsDto: FindAllAdminsDto): Promise<{
-    total: number;
-    perPage: number;
-    lastPage: number;
-    data: Admin[];
-    currentPage: number;
-  }> {
+  async findAll(findAllAdminsDto: FindAllAdminsDto): Promise<
+    | {
+        total: number;
+        perPage: number;
+        lastPage: number;
+        data: Admin[];
+        currentPage: number;
+      }
+    | { total: number; data: Admin[] }
+  > {
     const offset: number = (findAllAdminsDto.page - 1) * findAllAdminsDto.limit;
-    const [customers, count]: [Admin[], number] = await this.adminRepository.findAndCount({
+    const [admins, count]: [Admin[], number] = await this.adminRepository.findAndCount({
       relations: {
         adminsRoles: { role: true },
       },
-      skip: offset,
-      take: findAllAdminsDto.limit,
+      skip: findAllAdminsDto.paginationEnable ? offset : null,
+      take: findAllAdminsDto.paginationEnable ? findAllAdminsDto.limit : null,
     });
-    return {
-      perPage: findAllAdminsDto.limit,
-      currentPage: findAllAdminsDto.page,
-      lastPage: Math.ceil(count / findAllAdminsDto.limit),
-      total: count,
-      data: customers,
-    };
+    return findAllAdminsDto.paginationEnable
+      ? {
+          perPage: findAllAdminsDto.limit,
+          currentPage: findAllAdminsDto.page,
+          lastPage: Math.ceil(count / findAllAdminsDto.limit),
+          total: count,
+          data: admins,
+        }
+      : {
+          total: count,
+          data: admins,
+        };
   }
 
   // create.
@@ -133,5 +144,23 @@ export class AdminsService {
       id,
     });
     return this.adminRepository.remove(admin);
+  }
+
+  // export all.
+  async exportAll(findAllAdminsDto: FindAllAdminsDto): Promise<StreamableFile> {
+    const { data }: { data: Admin[] } = await this.findAll(findAllAdminsDto);
+    const workbook: Workbook = new Workbook();
+    const worksheet: Worksheet = workbook.addWorksheet('مسؤولين النظام');
+    // add headers.
+    worksheet.addRow(['اسم المسؤول', 'البريد الالكتروني', 'الحالة', 'تاريخ الانشاء']);
+    // add data rows.
+    data.forEach((admin: Admin): void => {
+      worksheet.addRow([admin.name, admin.email, admin.status, admin.createdAt.toDateString()]);
+    });
+    const dirPath = './exports/';
+    const filePath = `${dirPath}exported-file.xlsx`;
+    await fsExtra.ensureDir(dirPath);
+    await workbook.xlsx.writeFile(filePath);
+    return new StreamableFile(createReadStream(filePath));
   }
 }

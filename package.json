@@ -39,7 +39,7 @@
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.0",
     "compression": "^1.7.4",
-    "express-fileupload": "^1.4.0",
+    "exceljs": "^4.3.0",
     "faker": "^6.6.6",
     "firebase-admin": "^11.10.1",
     "fs-extra": "^11.1.1",

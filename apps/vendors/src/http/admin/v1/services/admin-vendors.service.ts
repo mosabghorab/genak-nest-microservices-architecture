@@ -1,4 +1,4 @@
-import { forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, NotFoundException, StreamableFile } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder } from 'typeorm';
 import {
@@ -29,6 +29,9 @@ import { FindAllVendorsDto } from '../dtos/find-all-vendors.dto';
 import { CreateVendorDto } from '../dtos/create-vendor.dto';
 import { Constants } from '../../../../constants';
 import { UpdateVendorDto } from '../dtos/update-vendor.dto';
+import { Workbook, Worksheet } from 'exceljs';
+import * as fsExtra from 'fs-extra';
+import { createReadStream } from 'fs';
 
 @Injectable()
 export class AdminVendorsService {
@@ -88,13 +91,13 @@ export class AdminVendorsService {
   }
 
   // find all.
-  async findAll(findAllVendorsDto: FindAllVendorsDto): Promise<{
-    total: number;
-    perPage: number;
-    lastPage: number;
-    data: Vendor[];
-    currentPage: number;
-  }> {
+  async findAll(findAllVendorsDto: FindAllVendorsDto): Promise<
+    | { total: number; perPage: number; lastPage: number; data: Vendor[]; currentPage: number }
+    | {
+        total: number;
+        data: Vendor[];
+      }
+  > {
     const offset: number = (findAllVendorsDto.page - 1) * findAllVendorsDto.limit;
     let dateRange: { startDate: Date; endDate: Date };
     if (findAllVendorsDto.dateFilterOption) {
@@ -133,7 +136,8 @@ export class AdminVendorsService {
         endDate: dateRange.endDate,
       });
     }
-    queryBuilder.groupBy('vendor.id').orderBy('ordersCount', findAllVendorsDto.orderByType).skip(offset).take(findAllVendorsDto.limit);
+    queryBuilder.groupBy('vendor.id').orderBy('ordersCount', findAllVendorsDto.orderByType);
+    if (findAllVendorsDto.paginationEnable) queryBuilder.skip(offset).take(findAllVendorsDto.limit);
     const { entities, raw }: { entities: Vendor[]; raw: any[] } = await queryBuilder.getRawAndEntities();
     const count: number = await queryBuilder.getCount();
     for (let i = 0; i < entities.length; i++) {
@@ -142,13 +146,15 @@ export class AdminVendorsService {
       });
       entities[i]['ordersCount'] = parseInt(raw[i]['ordersCount']) || 0;
     }
-    return {
-      perPage: findAllVendorsDto.limit,
-      currentPage: findAllVendorsDto.page,
-      lastPage: Math.ceil(count / findAllVendorsDto.limit),
-      total: count,
-      data: entities,
-    };
+    return findAllVendorsDto.paginationEnable
+      ? {
+          perPage: findAllVendorsDto.limit,
+          currentPage: findAllVendorsDto.page,
+          lastPage: Math.ceil(count / findAllVendorsDto.limit),
+          total: count,
+          data: entities,
+        }
+      : { total: count, data: entities };
   }
 
   // create.
@@ -271,5 +277,32 @@ export class AdminVendorsService {
       id,
     });
     return this.vendorRepository.remove(vendor);
+  }
+
+  // export all.
+  async exportAll(findAllVendorsDto: FindAllVendorsDto): Promise<StreamableFile> {
+    const { data }: { data: Vendor[] } = await this.findAll(findAllVendorsDto);
+    const workbook: Workbook = new Workbook();
+    const worksheet: Worksheet = workbook.addWorksheet('الموزعين');
+    // add headers.
+    worksheet.addRow(['رقم الموزع', 'إسم الموزع', 'إسم التجاري', 'المدينة', 'الأحياء', 'رقم الجوال', 'عدد الطلبات', 'تاريخ الانشاء']);
+    // add data rows.
+    data.forEach((vendor: Vendor): void => {
+      worksheet.addRow([
+        vendor.id,
+        vendor.name,
+        vendor.commercialName,
+        vendor.governorate.name,
+        vendor.locationsVendors.map((locationVendor: LocationVendor): string => locationVendor.location.name).join(' ، '),
+        vendor.phone,
+        vendor['ordersCount'],
+        vendor.createdAt.toDateString(),
+      ]);
+    });
+    const dirPath = './exports/';
+    const filePath = `${dirPath}exported-file.xlsx`;
+    await fsExtra.ensureDir(dirPath);
+    await workbook.xlsx.writeFile(filePath);
+    return new StreamableFile(createReadStream(filePath));
   }
 }

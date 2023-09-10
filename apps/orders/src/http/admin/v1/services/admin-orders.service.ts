@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, StreamableFile } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, Repository, SelectQueryBuilder } from 'typeorm';
 import {
@@ -19,6 +19,9 @@ import { FindVendorOrdersDto } from '../dtos/find-vendor-orders.dto';
 import { FindCustomerOrdersDto } from '../dtos/find-customer-orders.dto';
 import { ClientProxy } from '@nestjs/microservices';
 import { Constants } from '../../../../constants';
+import { Workbook, Worksheet } from 'exceljs';
+import { createReadStream } from 'fs';
+import * as fsExtra from 'fs-extra';
 
 @Injectable()
 export class AdminOrdersService {
@@ -55,13 +58,16 @@ export class AdminOrdersService {
   }
 
   // find all.
-  async findAll(findAllOrdersDto: FindAllOrdersDto): Promise<{
-    total: number;
-    perPage: number;
-    lastPage: number;
-    data: Order[];
-    currentPage: number;
-  }> {
+  async findAll(findAllOrdersDto: FindAllOrdersDto): Promise<
+    | {
+        total: number;
+        perPage: number;
+        lastPage: number;
+        data: Order[];
+        currentPage: number;
+      }
+    | { total: number; data: Order[] }
+  > {
     const offset: number = (findAllOrdersDto.page - 1) * findAllOrdersDto.limit;
     let dateRange: { startDate: Date; endDate: Date };
     if (findAllOrdersDto.dateFilterOption === DateFilterOption.CUSTOM) {
@@ -82,30 +88,38 @@ export class AdminOrdersService {
         customer: true,
         vendor: true,
       },
-      skip: offset,
-      take: findAllOrdersDto.limit,
+      skip: findAllOrdersDto.paginationEnable ? offset : null,
+      take: findAllOrdersDto.paginationEnable ? findAllOrdersDto.limit : null,
     });
-    return {
-      perPage: findAllOrdersDto.limit,
-      currentPage: findAllOrdersDto.page,
-      lastPage: Math.ceil(count / findAllOrdersDto.limit),
-      total: count,
-      data: orders,
-    };
+    return findAllOrdersDto.paginationEnable
+      ? {
+          perPage: findAllOrdersDto.limit,
+          currentPage: findAllOrdersDto.page,
+          lastPage: Math.ceil(count / findAllOrdersDto.limit),
+          total: count,
+          data: orders,
+        }
+      : {
+          total: count,
+          data: orders,
+        };
   }
 
   // find all by customer id.
   async findAllByCustomerId(
     customerId: number,
     findCustomerOrdersDto: FindCustomerOrdersDto,
-  ): Promise<{
-    total: number;
-    perPage: number;
-    lastPage: number;
-    data: Order[];
-    ordersTotalPrice: any;
-    currentPage: number;
-  }> {
+  ): Promise<
+    | {
+        total: number;
+        perPage: number;
+        lastPage: number;
+        data: Order[];
+        ordersTotalPrice: any;
+        currentPage: number;
+      }
+    | { total: number; data: Order[]; ordersTotalPrice: any }
+  > {
     await this.customersMicroserviceConnection.customersServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Customer>>{
       id: customerId,
     });
@@ -136,31 +150,42 @@ export class AdminOrdersService {
         status: findCustomerOrdersDto.status,
       });
     }
-    const [orders, count]: [Order[], number] = await mainQueryBuilder.clone().leftJoinAndSelect('order.vendor', 'vendor').skip(offset).take(findCustomerOrdersDto.limit).getManyAndCount();
+    const ordersQueryBuilder: SelectQueryBuilder<Order> = mainQueryBuilder.clone().leftJoinAndSelect('order.vendor', 'vendor');
+    if (findCustomerOrdersDto.paginationEnable) ordersQueryBuilder.skip(offset).take(findCustomerOrdersDto.limit);
+    const [orders, count]: [Order[], number] = await ordersQueryBuilder.getManyAndCount();
     const { ordersTotalPrice } = await mainQueryBuilder.clone().select('SUM(order.total)', 'ordersTotalPrice').getRawOne();
-    return {
-      perPage: findCustomerOrdersDto.limit,
-      currentPage: findCustomerOrdersDto.page,
-      lastPage: Math.ceil(count / findCustomerOrdersDto.limit),
-      total: count,
-      ordersTotalPrice: ordersTotalPrice || 0,
-      data: orders,
-    };
+    return findCustomerOrdersDto.paginationEnable
+      ? {
+          perPage: findCustomerOrdersDto.limit,
+          currentPage: findCustomerOrdersDto.page,
+          lastPage: Math.ceil(count / findCustomerOrdersDto.limit),
+          total: count,
+          ordersTotalPrice: ordersTotalPrice || 0,
+          data: orders,
+        }
+      : {
+          total: count,
+          ordersTotalPrice: ordersTotalPrice || 0,
+          data: orders,
+        };
   }
 
   // find all by vendor id.
   async findAllByVendorId(
     vendorId: number,
     findVendorOrdersDto: FindVendorOrdersDto,
-  ): Promise<{
-    total: number;
-    perPage: number;
-    ordersAverageTimeMinutes: number;
-    lastPage: number;
-    data: Order[];
-    ordersTotalPrice: any;
-    currentPage: number;
-  }> {
+  ): Promise<
+    | {
+        total: number;
+        perPage: number;
+        ordersAverageTimeMinutes: number;
+        lastPage: number;
+        data: Order[];
+        ordersTotalPrice: any;
+        currentPage: number;
+      }
+    | { total: number; ordersAverageTimeMinutes: number; data: Order[]; ordersTotalPrice: any }
+  > {
     await this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Vendor>>{
       id: vendorId,
     });
@@ -201,17 +226,27 @@ export class AdminOrdersService {
         status: findVendorOrdersDto.status,
       });
     }
-    const [orders, count]: [Order[], number] = await mainQueryBuilder.clone().leftJoinAndSelect('order.customer', 'customer').skip(offset).take(findVendorOrdersDto.limit).getManyAndCount();
+
+    const ordersQueryBuilder: SelectQueryBuilder<Order> = mainQueryBuilder.clone().leftJoinAndSelect('order.customer', 'customer');
+    if (findVendorOrdersDto.paginationEnable) ordersQueryBuilder.skip(offset).take(findVendorOrdersDto.limit);
+    const [orders, count]: [Order[], number] = await ordersQueryBuilder.getManyAndCount();
     const { ordersTotalPrice } = await mainQueryBuilder.clone().select('SUM(order.total)', 'ordersTotalPrice').getRawOne();
-    return {
-      perPage: findVendorOrdersDto.limit,
-      currentPage: findVendorOrdersDto.page,
-      lastPage: Math.ceil(count / findVendorOrdersDto.limit),
-      total: count,
-      ordersTotalPrice: ordersTotalPrice || 0,
-      ordersAverageTimeMinutes: Math.floor(ordersAverageTimeMinutes) || 0,
-      data: orders,
-    };
+    return findVendorOrdersDto.paginationEnable
+      ? {
+          perPage: findVendorOrdersDto.limit,
+          currentPage: findVendorOrdersDto.page,
+          lastPage: Math.ceil(count / findVendorOrdersDto.limit),
+          total: count,
+          ordersTotalPrice: ordersTotalPrice || 0,
+          ordersAverageTimeMinutes: Math.floor(ordersAverageTimeMinutes) || 0,
+          data: orders,
+        }
+      : {
+          total: count,
+          ordersTotalPrice: ordersTotalPrice || 0,
+          ordersAverageTimeMinutes: Math.floor(ordersAverageTimeMinutes) || 0,
+          data: orders,
+        };
   }
 
   // remove.
@@ -220,5 +255,71 @@ export class AdminOrdersService {
       id,
     });
     return this.orderRepository.remove(order);
+  }
+
+  // export all.
+  async exportAll(findAllOrdersDto: FindAllOrdersDto): Promise<StreamableFile> {
+    const { data }: { data: Order[] } = await this.findAll(findAllOrdersDto);
+    const workbook: Workbook = new Workbook();
+    const worksheet: Worksheet = workbook.addWorksheet('الطلبات');
+    // add headers.
+    worksheet.addRow(['رقم الطلب', 'الزبون', 'الموزع', 'حالة الطلب', 'تاريخ الطلب', 'وقت الطلب']);
+    // add data rows.
+    data.forEach((order: Order): void => {
+      const hours: number = order.createdAt.getHours();
+      const minutes: number = order.createdAt.getMinutes();
+      const seconds: number = order.createdAt.getSeconds();
+      const orderTime: string = hours + ':' + minutes + ':' + seconds;
+      worksheet.addRow([order.uniqueId, order.customer.name, order.vendor.commercialName, order.status, order.createdAt.toDateString(), orderTime]);
+    });
+    const dirPath = './exports/';
+    const filePath = `${dirPath}exported-file.xlsx`;
+    await fsExtra.ensureDir(dirPath);
+    await workbook.xlsx.writeFile(filePath);
+    return new StreamableFile(createReadStream(filePath));
+  }
+
+  // export all by customer id.
+  async exportAllByCustomerId(customerId: number, findCustomerOrdersDto: FindCustomerOrdersDto): Promise<StreamableFile> {
+    const { data }: { data: Order[] } = await this.findAllByCustomerId(customerId, findCustomerOrdersDto);
+    const workbook: Workbook = new Workbook();
+    const worksheet: Worksheet = workbook.addWorksheet('الطلبات');
+    // add headers.
+    worksheet.addRow(['رقم الطلب', 'الموزع', 'حالة الطلب', 'تاريخ الطلب', 'وقت الطلب']);
+    // add data rows.
+    data.forEach((order: Order): void => {
+      const hours: number = order.createdAt.getHours();
+      const minutes: number = order.createdAt.getMinutes();
+      const seconds: number = order.createdAt.getSeconds();
+      const orderTime: string = hours + ':' + minutes + ':' + seconds;
+      worksheet.addRow([order.uniqueId, order.vendor.commercialName, order.status, order.createdAt.toDateString(), orderTime]);
+    });
+    const dirPath = './exports/';
+    const filePath = `${dirPath}exported-file.xlsx`;
+    await fsExtra.ensureDir(dirPath);
+    await workbook.xlsx.writeFile(filePath);
+    return new StreamableFile(createReadStream(filePath));
+  }
+
+  // export all by vendor id.
+  async exportAllByVendorId(vendorId: number, findVendorOrdersDto: FindVendorOrdersDto): Promise<StreamableFile> {
+    const { data }: { data: Order[] } = await this.findAllByVendorId(vendorId, findVendorOrdersDto);
+    const workbook: Workbook = new Workbook();
+    const worksheet: Worksheet = workbook.addWorksheet('الطلبات');
+    // add headers.
+    worksheet.addRow(['رقم الطلب', 'الزبون', 'حالة الطلب', 'تاريخ الطلب', 'وقت الطلب']);
+    // add data rows.
+    data.forEach((order: Order): void => {
+      const hours: number = order.createdAt.getHours();
+      const minutes: number = order.createdAt.getMinutes();
+      const seconds: number = order.createdAt.getSeconds();
+      const orderTime: string = hours + ':' + minutes + ':' + seconds;
+      worksheet.addRow([order.uniqueId, order.customer.name, order.status, order.createdAt.toDateString(), orderTime]);
+    });
+    const dirPath = './exports/';
+    const filePath = `${dirPath}exported-file.xlsx`;
+    await fsExtra.ensureDir(dirPath);
+    await workbook.xlsx.writeFile(filePath);
+    return new StreamableFile(createReadStream(filePath));
   }
 }

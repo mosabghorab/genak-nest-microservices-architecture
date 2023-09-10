@@ -1,7 +1,7 @@
 import { Expose, Type } from 'class-transformer';
 import { CustomerDto } from '@app/common';
 
-export class CustomersPaginationDto {
+export class AllCustomersDto {
   @Expose()
   perPage: number;
 

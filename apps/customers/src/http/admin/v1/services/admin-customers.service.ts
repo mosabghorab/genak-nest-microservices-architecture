@@ -1,4 +1,4 @@
-import { BadRequestException, forwardRef, Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, forwardRef, Inject, Injectable, StreamableFile } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder } from 'typeorm';
 import { Customer, FindOneByIdDto, FindOneByPhoneDto, FindOneOrFailByIdDto, FindOneOrFailByPhoneDto } from '@app/common';
@@ -6,6 +6,9 @@ import { AdminCustomersValidation } from '../validations/admin-customers.validat
 import { FindAllCustomersDto } from '../dtos/find-all-customers.dto';
 import { CreateCustomerDto } from '../dtos/create-customer.dto';
 import { UpdateCustomerDto } from '../dtos/update-customer.dto';
+import { Workbook, Worksheet } from 'exceljs';
+import * as fsExtra from 'fs-extra';
+import { createReadStream } from 'fs';
 
 @Injectable()
 export class AdminCustomersService {
@@ -59,13 +62,16 @@ export class AdminCustomersService {
   }
 
   // find all.
-  async findAll(findAllCustomersDto: FindAllCustomersDto): Promise<{
-    total: number;
-    perPage: number;
-    lastPage: number;
-    data: Customer[];
-    currentPage: number;
-  }> {
+  async findAll(findAllCustomersDto: FindAllCustomersDto): Promise<
+    | {
+        total: number;
+        perPage: number;
+        lastPage: number;
+        data: Customer[];
+        currentPage: number;
+      }
+    | { total: number; data: Customer[] }
+  > {
     const offset: number = (findAllCustomersDto.page - 1) * findAllCustomersDto.limit;
     const queryBuilder: SelectQueryBuilder<Customer> = this.customerRepository
       .createQueryBuilder('customer')
@@ -73,21 +79,22 @@ export class AdminCustomersService {
       .leftJoinAndSelect('customer.region', 'region')
       .leftJoin('customer.orders', 'order')
       .addSelect('COUNT(DISTINCT order.id)', 'ordersCount')
-      .groupBy('customer.id')
-      .skip(offset)
-      .take(findAllCustomersDto.limit);
+      .groupBy('customer.id');
+    if (findAllCustomersDto.paginationEnable) queryBuilder.skip(offset).take(findAllCustomersDto.limit);
     const { entities, raw }: { entities: Customer[]; raw: any[] } = await queryBuilder.getRawAndEntities();
     const count: number = await queryBuilder.getCount();
     for (let i = 0; i < entities.length; i++) {
       entities[i]['ordersCount'] = parseInt(raw[i]['ordersCount']) || 0;
     }
-    return {
-      perPage: findAllCustomersDto.limit,
-      currentPage: findAllCustomersDto.page,
-      lastPage: Math.ceil(count / findAllCustomersDto.limit),
-      total: count,
-      data: entities,
-    };
+    return findAllCustomersDto.paginationEnable
+      ? {
+          perPage: findAllCustomersDto.limit,
+          currentPage: findAllCustomersDto.page,
+          lastPage: Math.ceil(count / findAllCustomersDto.limit),
+          total: count,
+          data: entities,
+        }
+      : { total: count, data: entities };
   }
 
   // create.
@@ -109,5 +116,23 @@ export class AdminCustomersService {
       id,
     });
     return this.customerRepository.remove(customer);
+  }
+
+  // export all.
+  async exportAll(findAllCustomersDto: FindAllCustomersDto): Promise<StreamableFile> {
+    const { data }: { data: Customer[] } = await this.findAll(findAllCustomersDto);
+    const workbook: Workbook = new Workbook();
+    const worksheet: Worksheet = workbook.addWorksheet('الزبائن');
+    // add headers.
+    worksheet.addRow(['اسم الزبون', 'رقم الجوال', 'عدد الطلبات', 'المدينة', 'الحي']);
+    // add data rows.
+    data.forEach((customer: Customer): void => {
+      worksheet.addRow([customer.name, customer.phone, customer['ordersCount'], customer.governorate.name, customer.region.name]);
+    });
+    const dirPath = './exports/';
+    const filePath = `${dirPath}exported-file.xlsx`;
+    await fsExtra.ensureDir(dirPath);
+    await workbook.xlsx.writeFile(filePath);
+    return new StreamableFile(createReadStream(filePath));
   }
 }

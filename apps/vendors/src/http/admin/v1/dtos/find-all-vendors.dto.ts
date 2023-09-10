@@ -1,18 +1,6 @@
-import {
-  IsArray,
-  IsDate,
-  IsEnum,
-  IsNumber,
-  IsOptional,
-  ValidateIf,
-} from 'class-validator';
+import { IsArray, IsBoolean, IsDate, IsEnum, IsNumber, IsOptional, ValidateIf } from 'class-validator';
 import { Transform } from 'class-transformer';
-import {
-  DateFilterOption,
-  OrderByType,
-  ServiceType,
-  VendorStatus,
-} from '@app/common';
+import { DateFilterOption, OrderByType, ServiceType, VendorStatus } from '@app/common';
 
 export class FindAllVendorsDto {
   @IsEnum(ServiceType)
@@ -27,6 +15,11 @@ export class FindAllVendorsDto {
   @IsNumber()
   @Transform(({ value }) => parseInt(value))
   limit = 10;
+
+  @IsOptional()
+  @IsBoolean()
+  @Transform(({ value }): boolean => value === 'true')
+  paginationEnable = true;
 
   @IsArray()
   @Transform(({ value }) => JSON.parse(value))

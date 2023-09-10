@@ -1,9 +1,9 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Header, Param, Patch, Post, Query, StreamableFile } from '@nestjs/common';
 import { AdminsService } from '../services/admins.service';
 import { Admin, AdminDto, AdminMustCanDo, AllowFor, FindOneOrFailByIdDto, PermissionAction, PermissionGroup, PermissionsTarget, Serialize, UserType } from '@app/common';
 import { CreateAdminDto } from '../dtos/create-admin.dto';
 import { FindAllAdminsDto } from '../dtos/find-all-admins.dto';
-import { AdminsPaginationDto } from '../dtos/admins-pagination.dto';
+import { AllAdminsDto } from '../dtos/all-admins.dto';
 import { UpdateAdminDto } from '../dtos/update-admin.dto';
 
 @AllowFor(UserType.ADMIN)
@@ -20,16 +20,26 @@ export class AdminsController {
   }
 
   @AdminMustCanDo(PermissionAction.VIEW)
-  @Serialize(AdminsPaginationDto, 'All admins.')
+  @Serialize(AllAdminsDto, 'All admins.')
   @Get()
-  findAll(@Query() findAllAdminsDto: FindAllAdminsDto): Promise<{
-    total: number;
-    perPage: number;
-    lastPage: number;
-    data: Admin[];
-    currentPage: number;
-  }> {
+  findAll(@Query() findAllAdminsDto: FindAllAdminsDto): Promise<
+    | {
+        total: number;
+        perPage: number;
+        lastPage: number;
+        data: Admin[];
+        currentPage: number;
+      }
+    | { total: number; data: Admin[] }
+  > {
     return this.adminsService.findAll(findAllAdminsDto);
+  }
+
+  @AdminMustCanDo(PermissionAction.EXPORT)
+  @Get('export')
+  @Header('Content-Disposition', 'attachment; filename="exported-file.xlsx"')
+  exportAll(@Query() findAllAdminsDto: FindAllAdminsDto): Promise<StreamableFile> {
+    return this.adminsService.exportAll(findAllAdminsDto);
   }
 
   @AdminMustCanDo(PermissionAction.VIEW)

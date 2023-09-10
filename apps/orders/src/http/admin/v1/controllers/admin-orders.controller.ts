@@ -1,7 +1,7 @@
-import { Controller, Delete, Get, Param, Query } from '@nestjs/common';
+import { Controller, Delete, Get, Header, Param, Query, StreamableFile } from '@nestjs/common';
 import { AdminMustCanDo, AllowFor, FindOneOrFailByIdDto, Order, OrderDto, PermissionAction, PermissionGroup, PermissionsTarget, Serialize, UserType } from '@app/common';
 import { AdminOrdersService } from '../services/admin-orders.service';
-import { OrdersPaginationDto } from '../dtos/orders-pagination.dto';
+import { AllOrdersDto } from '../dtos/all-orders.dto';
 import { FindAllOrdersDto } from '../dtos/find-all-orders.dto';
 import { CustomerOrdersPaginationDto } from '../dtos/customer-orders-pagination.dto';
 import { FindCustomerOrdersDto } from '../dtos/find-customer-orders.dto';
@@ -15,16 +15,33 @@ export class AdminOrdersController {
   constructor(private readonly adminOrdersService: AdminOrdersService) {}
 
   @AdminMustCanDo(PermissionAction.VIEW)
-  @Serialize(OrdersPaginationDto, 'All orders.')
+  @Serialize(AllOrdersDto, 'All orders.')
   @Get()
-  findAll(@Query() findAllOrdersDto: FindAllOrdersDto): Promise<{
-    total: number;
-    perPage: number;
-    lastPage: number;
-    data: Order[];
-    currentPage: number;
-  }> {
+  findAll(@Query() findAllOrdersDto: FindAllOrdersDto): Promise<
+    | {
+        total: number;
+        perPage: number;
+        lastPage: number;
+        data: Order[];
+        currentPage: number;
+      }
+    | { total: number; data: Order[] }
+  > {
     return this.adminOrdersService.findAll(findAllOrdersDto);
+  }
+
+  @AdminMustCanDo(PermissionAction.EXPORT)
+  @Get('export')
+  @Header('Content-Disposition', 'attachment; filename="exported-file.xlsx"')
+  exportAll(@Query() findAllOrdersDto: FindAllOrdersDto): Promise<StreamableFile> {
+    return this.adminOrdersService.exportAll(findAllOrdersDto);
+  }
+
+  @AdminMustCanDo(PermissionAction.EXPORT)
+  @Get('by-customer/:id/export')
+  @Header('Content-Disposition', 'attachment; filename="exported-file.xlsx"')
+  exportAllByCustomerId(@Param('id') id: number, @Query() findCustomerOrdersDto: FindCustomerOrdersDto): Promise<StreamableFile> {
+    return this.adminOrdersService.exportAllByCustomerId(id, findCustomerOrdersDto);
   }
 
   @AdminMustCanDo(PermissionAction.VIEW)
@@ -33,15 +50,25 @@ export class AdminOrdersController {
   findAllByCustomerId(
     @Param('id') id: number,
     @Query() findCustomerOrdersDto: FindCustomerOrdersDto,
-  ): Promise<{
-    total: number;
-    perPage: number;
-    lastPage: number;
-    data: Order[];
-    ordersTotalPrice: any;
-    currentPage: number;
-  }> {
+  ): Promise<
+    | {
+        total: number;
+        perPage: number;
+        lastPage: number;
+        data: Order[];
+        ordersTotalPrice: any;
+        currentPage: number;
+      }
+    | { total: number; data: Order[]; ordersTotalPrice: any }
+  > {
     return this.adminOrdersService.findAllByCustomerId(id, findCustomerOrdersDto);
+  }
+
+  @AdminMustCanDo(PermissionAction.EXPORT)
+  @Get('by-vendor/:id/export')
+  @Header('Content-Disposition', 'attachment; filename="exported-file.xlsx"')
+  exportAllByVendorId(@Param('id') id: number, @Query() findVendorOrdersDto: FindVendorOrdersDto): Promise<StreamableFile> {
+    return this.adminOrdersService.exportAllByVendorId(id, findVendorOrdersDto);
   }
 
   @AdminMustCanDo(PermissionAction.VIEW)
@@ -50,15 +77,18 @@ export class AdminOrdersController {
   findAllByVendorId(
     @Param('id') id: number,
     @Query() findVendorOrdersDto: FindVendorOrdersDto,
-  ): Promise<{
-    total: number;
-    perPage: number;
-    ordersAverageTimeMinutes: number;
-    lastPage: number;
-    data: Order[];
-    ordersTotalPrice: any;
-    currentPage: number;
-  }> {
+  ): Promise<
+    | {
+        total: number;
+        perPage: number;
+        ordersAverageTimeMinutes: number;
+        lastPage: number;
+        data: Order[];
+        ordersTotalPrice: any;
+        currentPage: number;
+      }
+    | { total: number; ordersAverageTimeMinutes: number; data: Order[]; ordersTotalPrice: any }
+  > {
     return this.adminOrdersService.findAllByVendorId(id, findVendorOrdersDto);
   }
 

@@ -1,8 +1,8 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UploadedFiles, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Header, Param, Patch, Post, Query, StreamableFile, UploadedFiles, UseInterceptors } from '@nestjs/common';
 import { AdminMustCanDo, AllowFor, FindOneOrFailByIdDto, PermissionAction, PermissionGroup, PermissionsTarget, Serialize, UserType, Vendor, VendorDto } from '@app/common';
 import { AdminVendorsService } from '../services/admin-vendors.service';
 import { CreateVendorDto } from '../dtos/create-vendor.dto';
-import { VendorsPaginationDto } from '../dtos/vendors-pagination.dto';
+import { AllVendorsDto } from '../dtos/all-vendors.dto';
 import { FindAllVendorsDto } from '../dtos/find-all-vendors.dto';
 import { UpdateVendorDto } from '../dtos/update-vendor.dto';
 import { AnyFilesInterceptor } from '@nestjs/platform-express';
@@ -26,16 +26,26 @@ export class AdminVendorsController {
   }
 
   @AdminMustCanDo(PermissionAction.VIEW)
-  @Serialize(VendorsPaginationDto, 'All vendors.')
+  @Serialize(AllVendorsDto, 'All vendors.')
   @Get()
-  findAll(@Query() findAllVendorsDto: FindAllVendorsDto): Promise<{
-    total: number;
-    perPage: number;
-    lastPage: number;
-    data: Vendor[];
-    currentPage: number;
-  }> {
+  findAll(@Query() findAllVendorsDto: FindAllVendorsDto): Promise<
+    | {
+        total: number;
+        perPage: number;
+        lastPage: number;
+        data: Vendor[];
+        currentPage: number;
+      }
+    | { total: number; data: Vendor[] }
+  > {
     return this.adminVendorsService.findAll(findAllVendorsDto);
+  }
+
+  @AdminMustCanDo(PermissionAction.EXPORT)
+  @Get('export')
+  @Header('Content-Disposition', 'attachment; filename="exported-file.xlsx"')
+  exportAll(@Query() findAllVendorsDto: FindAllVendorsDto): Promise<StreamableFile> {
+    return this.adminVendorsService.exportAll(findAllVendorsDto);
   }
 
   @AdminMustCanDo(PermissionAction.VIEW)

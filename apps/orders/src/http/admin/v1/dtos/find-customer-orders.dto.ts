@@ -1,4 +1,4 @@
-import { IsDate, IsEnum, IsNumber, IsOptional, ValidateIf } from 'class-validator';
+import { IsBoolean, IsDate, IsEnum, IsNumber, IsOptional, ValidateIf } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { DateFilterOption, OrderStatus, ServiceType } from '@app/common';
 
@@ -12,6 +12,11 @@ export class FindCustomerOrdersDto {
   @IsNumber()
   @Transform(({ value }) => parseInt(value))
   limit = 10;
+
+  @IsOptional()
+  @IsBoolean()
+  @Transform(({ value }): boolean => value === 'true')
+  paginationEnable = true;
 
   @IsEnum(ServiceType)
   serviceType: ServiceType;

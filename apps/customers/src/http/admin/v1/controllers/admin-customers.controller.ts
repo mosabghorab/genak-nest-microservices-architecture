@@ -1,28 +1,8 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  Patch,
-  Post,
-  Query,
-} from '@nestjs/common';
-import {
-  AdminMustCanDo,
-  AllowFor,
-  Customer,
-  CustomerDto,
-  FindOneOrFailByIdDto,
-  PermissionAction,
-  PermissionGroup,
-  PermissionsTarget,
-  Serialize,
-  UserType,
-} from '@app/common';
+import { Body, Controller, Delete, Get, Header, Param, Patch, Post, Query, StreamableFile } from '@nestjs/common';
+import { AdminMustCanDo, AllowFor, Customer, CustomerDto, FindOneOrFailByIdDto, PermissionAction, PermissionGroup, PermissionsTarget, Serialize, UserType } from '@app/common';
 import { AdminCustomersService } from '../services/admin-customers.service';
 import { CreateCustomerDto } from '../dtos/create-customer.dto';
-import { CustomersPaginationDto } from '../dtos/customers-pagination.dto';
+import { AllCustomersDto } from '../dtos/all-customers.dto';
 import { FindAllCustomersDto } from '../dtos/find-all-customers.dto';
 import { UpdateCustomerDto } from '../dtos/update-customer.dto';
 
@@ -40,25 +20,33 @@ export class AdminCustomersController {
   }
 
   @AdminMustCanDo(PermissionAction.VIEW)
-  @Serialize(CustomersPaginationDto, 'All customers.')
+  @Serialize(AllCustomersDto, 'All customers.')
   @Get()
-  findAll(@Query() findAllCustomersDto: FindAllCustomersDto): Promise<{
-    total: number;
-    perPage: number;
-    lastPage: number;
-    data: Customer[];
-    currentPage: number;
-  }> {
+  findAll(@Query() findAllCustomersDto: FindAllCustomersDto): Promise<
+    | {
+        total: number;
+        perPage: number;
+        lastPage: number;
+        data: Customer[];
+        currentPage: number;
+      }
+    | { total: number; data: Customer[] }
+  > {
     return this.adminCustomersService.findAll(findAllCustomersDto);
+  }
+
+  @AdminMustCanDo(PermissionAction.EXPORT)
+  @Get('export')
+  @Header('Content-Disposition', 'attachment; filename="exported-file.xlsx"')
+  exportAll(@Query() findAllCustomersDto: FindAllCustomersDto): Promise<StreamableFile> {
+    return this.adminCustomersService.exportAll(findAllCustomersDto);
   }
 
   @AdminMustCanDo(PermissionAction.VIEW)
   @Serialize(CustomerDto, 'One customer.')
   @Get(':id')
   findOne(@Param('id') id: number): Promise<Customer> {
-    return this.adminCustomersService.findOneOrFailById(<
-      FindOneOrFailByIdDto<Customer>
-    >{
+    return this.adminCustomersService.findOneOrFailById(<FindOneOrFailByIdDto<Customer>>{
       id,
       relations: {
         governorate: true,
@@ -70,10 +58,7 @@ export class AdminCustomersController {
   @AdminMustCanDo(PermissionAction.UPDATE)
   @Serialize(CustomerDto, 'Customer updated successfully.')
   @Patch(':id')
-  update(
-    @Param('id') id: number,
-    @Body() updateCustomerDto: UpdateCustomerDto,
-  ): Promise<Customer> {
+  update(@Param('id') id: number, @Body() updateCustomerDto: UpdateCustomerDto): Promise<Customer> {
     return this.adminCustomersService.update(id, updateCustomerDto);
   }
 

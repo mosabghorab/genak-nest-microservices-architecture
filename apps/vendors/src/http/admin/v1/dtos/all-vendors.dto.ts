@@ -1,7 +1,7 @@
 import { Expose, Type } from 'class-transformer';
-import { OrderDto } from '@app/common';
+import { VendorDto } from '@app/common';
 
-export class OrdersPaginationDto {
+export class AllVendorsDto {
   @Expose()
   perPage: number;
 
@@ -15,6 +15,6 @@ export class OrdersPaginationDto {
   total: number;
 
   @Expose()
-  @Type(() => OrderDto)
-  data: OrderDto[];
+  @Type(() => VendorDto)
+  data: VendorDto[];
 }
