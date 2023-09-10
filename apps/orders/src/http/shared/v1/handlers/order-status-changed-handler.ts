@@ -11,8 +11,8 @@ import {
   FcmToken,
   FindAllFcmTokensDto,
   FindOneOrFailByIdDto,
+  NotificationsMicroserviceConnection,
   NotificationsMicroserviceConstants,
-  NotificationsMicroserviceImpl,
   NotificationTarget,
   SendFcmNotificationDto,
   UserType,
@@ -26,7 +26,7 @@ import { Constants } from '../../../../constants';
 
 @Injectable()
 export class OrderStatusChangedHandler {
-  private readonly notificationsMicroserviceImpl: NotificationsMicroserviceImpl;
+  private readonly notificationsMicroserviceConnection: NotificationsMicroserviceConnection;
   private readonly authMicroserviceConnection: AuthMicroserviceConnection;
   private readonly customersMicroserviceConnection: CustomersMicroserviceConnection;
   private readonly vendorsMicroserviceConnection: VendorsMicroserviceConnection;
@@ -41,7 +41,7 @@ export class OrderStatusChangedHandler {
     @Inject(VendorsMicroserviceConstants.NAME)
     private readonly vendorsMicroservice: ClientProxy,
   ) {
-    this.notificationsMicroserviceImpl = new NotificationsMicroserviceImpl(notificationsMicroservice, Constants.NOTIFICATIONS_MICROSERVICE_VERSION);
+    this.notificationsMicroserviceConnection = new NotificationsMicroserviceConnection(notificationsMicroservice, Constants.NOTIFICATIONS_MICROSERVICE_VERSION);
     this.authMicroserviceConnection = new AuthMicroserviceConnection(authMicroservice, Constants.AUTH_MICROSERVICE_VERSION);
     this.customersMicroserviceConnection = new CustomersMicroserviceConnection(customersMicroservice, Constants.CUSTOMERS_MICROSERVICE_VERSION);
     this.vendorsMicroserviceConnection = new VendorsMicroserviceConnection(vendorsMicroservice, Constants.VENDORS_MICROSERVICE_VERSION);
@@ -119,7 +119,7 @@ export class OrderStatusChangedHandler {
       }
     }
     if (fcmTokens.length > 0) {
-      this.notificationsMicroserviceImpl.sendFcmNotification(<SendFcmNotificationDto>{
+      this.notificationsMicroserviceConnection.notificationsServiceImpl.sendFcmNotification(<SendFcmNotificationDto>{
         type: FcmNotificationType.FCM_TOKENS,
         fcmTokens: fcmTokens,
         title: 'Order Status',
@@ -150,8 +150,8 @@ export class OrderStatusChangedHandler {
         title: 'Order Status',
         body: `Order status with id ${order.uniqueId} changed to ${order.status} by ${authedUser.type}`,
       };
-      this.notificationsMicroserviceImpl.createDatabaseNotification(createDatabaseNotificationDtoForCustomer);
-      this.notificationsMicroserviceImpl.createDatabaseNotification(createDatabaseNotificationDtoForVendor);
+      this.notificationsMicroserviceConnection.notificationsServiceImpl.createDatabaseNotification(createDatabaseNotificationDtoForCustomer);
+      this.notificationsMicroserviceConnection.notificationsServiceImpl.createDatabaseNotification(createDatabaseNotificationDtoForVendor);
     } else {
       let notifiableType: UserType;
       let notifiableId: number;
@@ -170,7 +170,7 @@ export class OrderStatusChangedHandler {
         title: 'Order Status',
         body: `Order status with id ${order.uniqueId} changed to ${order.status} by ${authedUser.type}`,
       };
-      this.notificationsMicroserviceImpl.createDatabaseNotification(createDatabaseNotificationDto);
+      this.notificationsMicroserviceConnection.notificationsServiceImpl.createDatabaseNotification(createDatabaseNotificationDto);
     }
   }
 }

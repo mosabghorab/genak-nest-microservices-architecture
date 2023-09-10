@@ -1,7 +1,7 @@
 import { ClientProxy } from '@nestjs/microservices';
-import { CreateDatabaseNotificationDto, INotificationsMicroservice, NotificationsMicroserviceConstants, SendFcmNotificationDto, SendSmsNotificationDto } from '@app/common';
+import { CreateDatabaseNotificationDto, INotificationsService, NotificationsMicroserviceConstants, SendFcmNotificationDto, SendSmsNotificationDto } from '@app/common';
 
-export class NotificationsMicroserviceImpl implements INotificationsMicroservice {
+export class NotificationsServiceImpl implements INotificationsService {
   constructor(private readonly notificationsMicroservice: ClientProxy, private readonly version: string) {}
 
   // create database notification.

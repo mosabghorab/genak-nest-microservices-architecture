@@ -12,8 +12,8 @@ import {
   FcmToken,
   FindAllFcmTokensDto,
   FindOneOrFailByIdDto,
+  NotificationsMicroserviceConnection,
   NotificationsMicroserviceConstants,
-  NotificationsMicroserviceImpl,
   NotificationTarget,
   Order,
   OrdersMicroserviceConnection,
@@ -30,7 +30,7 @@ import { Constants } from '../../../../constants';
 
 @Injectable()
 export class ComplainStatusChangedHandler {
-  private readonly notificationsMicroserviceImpl: NotificationsMicroserviceImpl;
+  private readonly notificationsMicroserviceConnection: NotificationsMicroserviceConnection;
   private readonly authMicroserviceConnection: AuthMicroserviceConnection;
   private readonly customersMicroserviceConnection: CustomersMicroserviceConnection;
   private readonly ordersMicroserviceConnection: OrdersMicroserviceConnection;
@@ -48,7 +48,7 @@ export class ComplainStatusChangedHandler {
     @Inject(VendorsMicroserviceConstants.NAME)
     private readonly vendorsMicroservice: ClientProxy,
   ) {
-    this.notificationsMicroserviceImpl = new NotificationsMicroserviceImpl(notificationsMicroservice, Constants.NOTIFICATIONS_MICROSERVICE_VERSION);
+    this.notificationsMicroserviceConnection = new NotificationsMicroserviceConnection(notificationsMicroservice, Constants.NOTIFICATIONS_MICROSERVICE_VERSION);
     this.authMicroserviceConnection = new AuthMicroserviceConnection(authMicroservice, Constants.AUTH_MICROSERVICE_VERSION);
     this.customersMicroserviceConnection = new CustomersMicroserviceConnection(customersMicroservice, Constants.CUSTOMERS_MICROSERVICE_VERSION);
     this.ordersMicroserviceConnection = new OrdersMicroserviceConnection(ordersMicroservice, Constants.ORDERS_MICROSERVICE_VERSION);
@@ -83,7 +83,7 @@ export class ComplainStatusChangedHandler {
           })
         ).map((fcmToken: FcmToken): string => fcmToken.token);
         if (fcmTokens.length > 0) {
-          this.notificationsMicroserviceImpl.sendFcmNotification(<SendFcmNotificationDto>{
+          this.notificationsMicroserviceConnection.notificationsServiceImpl.sendFcmNotification(<SendFcmNotificationDto>{
             type: FcmNotificationType.FCM_TOKENS,
             fcmTokens: fcmTokens,
             title: 'Complain Status',
@@ -110,7 +110,7 @@ export class ComplainStatusChangedHandler {
           })
         ).map((fcmToken: FcmToken): string => fcmToken.token);
         if (fcmTokens.length > 0) {
-          this.notificationsMicroserviceImpl.sendFcmNotification(<SendFcmNotificationDto>{
+          this.notificationsMicroserviceConnection.notificationsServiceImpl.sendFcmNotification(<SendFcmNotificationDto>{
             type: FcmNotificationType.FCM_TOKENS,
             fcmTokens: fcmTokens,
             title: 'Complain Status',
@@ -143,6 +143,6 @@ export class ComplainStatusChangedHandler {
       title: 'Complain Status',
       body: `Complain status with order id ${order.uniqueId} changed to ${complain.status}`,
     };
-    this.notificationsMicroserviceImpl.createDatabaseNotification(createDatabaseNotificationDto);
+    this.notificationsMicroserviceConnection.notificationsServiceImpl.createDatabaseNotification(createDatabaseNotificationDto);
   }
 }

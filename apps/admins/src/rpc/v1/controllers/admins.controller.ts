@@ -19,7 +19,7 @@ export class AdminsController {
   @MessagePattern({
     cmd: `${AdminsMicroserviceConstants.ADMINS_SERVICE_FIND_ONE_BY_EMAIL_MESSAGE_PATTERN}/v${VERSION}`,
   })
-  findOneByPhone(@Payload() findOneByEmailDto: FindOneByEmailDto<Admin>): Promise<Admin | null> {
+  findOneByEmail(@Payload() findOneByEmailDto: FindOneByEmailDto<Admin>): Promise<Admin | null> {
     return this.adminsService.findOneByEmail(findOneByEmailDto);
   }
 

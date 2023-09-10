@@ -7,8 +7,8 @@ import {
   FcmNotificationType,
   FcmToken,
   FindAllFcmTokensDto,
+  NotificationsMicroserviceConnection,
   NotificationsMicroserviceConstants,
-  NotificationsMicroserviceImpl,
   NotificationTarget,
   SendFcmNotificationDto,
   UserType,
@@ -19,14 +19,14 @@ import { Constants } from '../../../../constants';
 
 @Injectable()
 export class OrderCreatedHandler {
-  private readonly notificationsMicroserviceImpl: NotificationsMicroserviceImpl;
+  private readonly notificationsMicroserviceConnection: NotificationsMicroserviceConnection;
   private readonly authMicroserviceConnection: AuthMicroserviceConnection;
 
   constructor(
     @Inject(NotificationsMicroserviceConstants.NAME) private readonly notificationsMicroservice: ClientProxy,
     @Inject(AuthMicroserviceConstants.NAME) private readonly authMicroservice: ClientProxy,
   ) {
-    this.notificationsMicroserviceImpl = new NotificationsMicroserviceImpl(notificationsMicroservice, Constants.NOTIFICATIONS_MICROSERVICE_VERSION);
+    this.notificationsMicroserviceConnection = new NotificationsMicroserviceConnection(notificationsMicroservice, Constants.NOTIFICATIONS_MICROSERVICE_VERSION);
     this.authMicroserviceConnection = new AuthMicroserviceConnection(authMicroservice, Constants.AUTH_MICROSERVICE_VERSION);
   }
 
@@ -49,7 +49,7 @@ export class OrderCreatedHandler {
         })
       ).map((fcmToken: FcmToken) => fcmToken.token);
       if (fcmTokens.length > 0) {
-        this.notificationsMicroserviceImpl.sendFcmNotification(<SendFcmNotificationDto>{
+        this.notificationsMicroserviceConnection.notificationsServiceImpl.sendFcmNotification(<SendFcmNotificationDto>{
           type: FcmNotificationType.FCM_TOKENS,
           fcmTokens: fcmTokens,
           title: 'New Order',
@@ -72,6 +72,6 @@ export class OrderCreatedHandler {
       title: 'New Order',
       body: `You got a new order from: ${customer.name}`,
     };
-    this.notificationsMicroserviceImpl.createDatabaseNotification(createDatabaseNotificationDto);
+    this.notificationsMicroserviceConnection.notificationsServiceImpl.createDatabaseNotification(createDatabaseNotificationDto);
   }
 }

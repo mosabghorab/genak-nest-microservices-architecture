@@ -18,7 +18,7 @@ import { FindAllOrdersDto } from '../dtos/find-all-orders.dto';
 import { FindVendorOrdersDto } from '../dtos/find-vendor-orders.dto';
 import { FindCustomerOrdersDto } from '../dtos/find-customer-orders.dto';
 import { ClientProxy } from '@nestjs/microservices';
-import { Constants } from '../../../../../../reports/src/constants';
+import { Constants } from '../../../../constants';
 
 @Injectable()
 export class AdminOrdersService {

@@ -10,8 +10,8 @@ import {
   FcmNotificationType,
   FcmToken,
   FindAllFcmTokensDto,
+  NotificationsMicroserviceConnection,
   NotificationsMicroserviceConstants,
-  NotificationsMicroserviceImpl,
   NotificationTarget,
   PermissionGroup,
   SendFcmNotificationDto,
@@ -23,7 +23,7 @@ import { ComplainCreatedEvent } from '../events/complain-created.event';
 
 @Injectable()
 export class ComplainCreatedHandler {
-  private readonly notificationsMicroserviceImpl: NotificationsMicroserviceImpl;
+  private readonly notificationsMicroserviceConnection: NotificationsMicroserviceConnection;
   private readonly authMicroserviceConnection: AuthMicroserviceConnection;
   private readonly adminsMicroserviceConnection: AdminsMicroserviceConnection;
 
@@ -35,7 +35,7 @@ export class ComplainCreatedHandler {
     @Inject(AdminsMicroserviceConstants.NAME)
     private readonly adminsMicroservice: ClientProxy,
   ) {
-    this.notificationsMicroserviceImpl = new NotificationsMicroserviceImpl(notificationsMicroservice, Constants.NOTIFICATIONS_MICROSERVICE_VERSION);
+    this.notificationsMicroserviceConnection = new NotificationsMicroserviceConnection(notificationsMicroservice, Constants.NOTIFICATIONS_MICROSERVICE_VERSION);
     this.authMicroserviceConnection = new AuthMicroserviceConnection(authMicroservice, Constants.AUTH_MICROSERVICE_VERSION);
     this.adminsMicroserviceConnection = new AdminsMicroserviceConnection(adminsMicroservice, Constants.ADMINS_MICROSERVICE_VERSION);
   }
@@ -65,7 +65,7 @@ export class ComplainCreatedHandler {
         }
       }
       if (fcmTokens.length > 0) {
-        this.notificationsMicroserviceImpl.sendFcmNotification(<SendFcmNotificationDto>{
+        this.notificationsMicroserviceConnection.notificationsServiceImpl.sendFcmNotification(<SendFcmNotificationDto>{
           type: FcmNotificationType.FCM_TOKENS,
           fcmTokens: fcmTokens,
           title: 'New Complain',
@@ -91,7 +91,7 @@ export class ComplainCreatedHandler {
           title: 'New Complain',
           body: `New complain created by ${complain.complainerUserType}`,
         };
-        this.notificationsMicroserviceImpl.createDatabaseNotification(createDatabaseNotificationDto);
+        this.notificationsMicroserviceConnection.notificationsServiceImpl.createDatabaseNotification(createDatabaseNotificationDto);
       }
     }
   }
