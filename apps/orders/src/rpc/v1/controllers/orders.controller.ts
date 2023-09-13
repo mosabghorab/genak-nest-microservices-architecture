@@ -1,5 +1,5 @@
 import { Controller } from '@nestjs/common';
-import { DateFilterDto, FindOneByIdDto, FindOneOrderByIdAndServiceTypeDto, Order, OrdersMicroserviceConstants, ServiceType } from '@app/common';
+import { DateFilterDto, FindOneByIdDto, FindOneOrderByIdAndServiceTypeDto, Order, OrdersMicroserviceConstants, SearchPayloadDto, ServiceType } from '@app/common';
 import { OrdersService } from '../services/orders.service';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { FindOptionsRelations } from 'typeorm';
@@ -15,6 +15,13 @@ export class OrdersController {
   })
   findOneById(@Payload() findOneByIdDto: FindOneByIdDto<Order>): Promise<Order | null> {
     return this.ordersService.findOneById(findOneByIdDto);
+  }
+
+  @MessagePattern({
+    cmd: `${OrdersMicroserviceConstants.ORDERS_SERVICE_SEARCH_BY_UNIQUE_ID_MESSAGE_PATTERN}/v${VERSION}`,
+  })
+  searchByUniqueId(@Payload('searchPayloadDto') searchPayloadDto: SearchPayloadDto<Order>): Promise<Order[]> {
+    return this.ordersService.searchByUniqueId(searchPayloadDto);
   }
 
   @MessagePattern({

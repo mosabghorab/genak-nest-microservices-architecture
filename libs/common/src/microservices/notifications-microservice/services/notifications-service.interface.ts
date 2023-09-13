@@ -1,8 +1,8 @@
-import { CreateDatabaseNotificationDto, SendFcmNotificationDto, SendSmsNotificationDto } from '@app/common/dtos';
+import { CreateDatabaseNotificationDto, SendPushNotificationPayloadDto, SendSmsNotificationDto } from '@app/common/dtos';
 
 export interface INotificationsService {
   // send fcm notification.
-  sendFcmNotification(sendFcmNotificationDto: SendFcmNotificationDto): void;
+  sendFcmNotification(sendFcmNotificationDto: SendPushNotificationPayloadDto): void;
 
   // create database notification.
   createDatabaseNotification(createDatabaseNotificationDto: CreateDatabaseNotificationDto): void;

@@ -1,4 +1,15 @@
-import { Customer, CustomerSignUpDto, CustomerUpdateProfileDto, DateFilterDto, FindOneByIdDto, FindOneByPhoneDto, FindOneOrFailByIdDto, FindOneOrFailByPhoneDto, ServiceType } from '@app/common';
+import {
+  Customer,
+  CustomerSignUpDto,
+  CustomerUpdateProfileDto,
+  DateFilterDto,
+  FindOneByIdDto,
+  FindOneByPhoneDto,
+  FindOneOrFailByIdDto,
+  FindOneOrFailByPhoneDto,
+  SearchPayloadDto,
+  ServiceType,
+} from '@app/common';
 
 export interface ICustomersService {
   // find one by id.
@@ -12,6 +23,9 @@ export interface ICustomersService {
 
   // find one or fail by phone.
   findOneOrFailByPhone(findOneOrFailByPhoneDto: FindOneOrFailByPhoneDto<Customer>): Promise<Customer>;
+
+  // search by name.
+  searchByName(searchPayloadDto: SearchPayloadDto<Customer>): Promise<Customer[]>;
 
   // create.
   create(customerSignUpDto: CustomerSignUpDto): Promise<Customer>;

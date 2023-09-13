@@ -1,6 +1,5 @@
 import { DynamicModule, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigService } from '@nestjs/config';
 import {
   Admin,
   AdminsRoles,
@@ -27,6 +26,7 @@ import {
   Vendor,
   VerificationCode,
 } from '@app/common';
+import { ConfigService } from '@nestjs/config';
 
 @Module({})
 export class DatabaseModule {
@@ -39,9 +39,9 @@ export class DatabaseModule {
           useFactory: (configService: ConfigService) => {
             return {
               type: 'mysql',
-              database: configService.get<string>('DATABASE_NAME'),
-              username: configService.get<string>('DATABASE_USERNAME'),
-              password: configService.get<string>('DATABASE_PASSWORD'),
+              database: configService.getOrThrow<string>('DATABASE_NAME'),
+              username: configService.getOrThrow<string>('DATABASE_USERNAME'),
+              password: configService.getOrThrow<string>('DATABASE_PASSWORD'),
               entities: [
                 Customer,
                 Admin,
@@ -68,7 +68,7 @@ export class DatabaseModule {
                 VerificationCode,
                 Notification,
               ],
-              synchronize: true,
+              synchronize: false,
             };
           },
         }),

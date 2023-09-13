@@ -7,14 +7,14 @@ import {
   Customer,
   CustomersMicroserviceConnection,
   CustomersMicroserviceConstants,
-  FcmNotificationType,
   FcmToken,
   FindAllFcmTokensDto,
   FindOneOrFailByIdDto,
   NotificationsMicroserviceConnection,
   NotificationsMicroserviceConstants,
   NotificationTarget,
-  SendFcmNotificationDto,
+  PushNotificationType,
+  SendPushNotificationPayloadDto,
   UserType,
   Vendor,
   VendorsMicroserviceConnection,
@@ -119,8 +119,8 @@ export class OrderStatusChangedHandler {
       }
     }
     if (fcmTokens.length > 0) {
-      this.notificationsMicroserviceConnection.notificationsServiceImpl.sendFcmNotification(<SendFcmNotificationDto>{
-        type: FcmNotificationType.FCM_TOKENS,
+      this.notificationsMicroserviceConnection.notificationsServiceImpl.sendFcmNotification(<SendPushNotificationPayloadDto>{
+        type: PushNotificationType.TOKENS,
         fcmTokens: fcmTokens,
         title: 'Order Status',
         body: `Order status with id ${order.uniqueId} changed to ${order.status} by ${authedUser.type}`,

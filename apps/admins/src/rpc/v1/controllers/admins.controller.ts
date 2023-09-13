@@ -1,5 +1,5 @@
 import { Controller } from '@nestjs/common';
-import { Admin, AdminsMicroserviceConstants, AdminUpdatePasswordDto, AdminUpdateProfileDto, FindOneByEmailDto, FindOneByIdDto, PermissionGroup } from '@app/common';
+import { Admin, AdminsMicroserviceConstants, AdminUpdatePasswordDto, AdminUpdateProfileDto, FindOneByEmailDto, FindOneByIdDto, PermissionGroup, SearchPayloadDto } from '@app/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { AdminsService } from '../services/admins.service';
 
@@ -21,6 +21,13 @@ export class AdminsController {
   })
   findOneByEmail(@Payload() findOneByEmailDto: FindOneByEmailDto<Admin>): Promise<Admin | null> {
     return this.adminsService.findOneByEmail(findOneByEmailDto);
+  }
+
+  @MessagePattern({
+    cmd: `${AdminsMicroserviceConstants.ADMINS_SERVICE_SEARCH_BY_NAME_MESSAGE_PATTERN}/v${VERSION}`,
+  })
+  searchByName(@Payload('searchPayloadDto') searchPayloadDto: SearchPayloadDto<Admin>): Promise<Admin[]> {
+    return this.adminsService.searchByName(searchPayloadDto);
   }
 
   @MessagePattern({

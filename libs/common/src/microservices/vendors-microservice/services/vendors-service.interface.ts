@@ -4,6 +4,7 @@ import {
   FindOneByPhoneDto,
   FindOneOrFailByIdDto,
   FindOneOrFailByPhoneDto,
+  SearchPayloadDto,
   ServiceType,
   Vendor,
   VendorSignUpDto,
@@ -25,6 +26,9 @@ export interface IVendorsService {
 
   // find one or fail by phone.
   findOneOrFailByPhone(findOneOrFailByPhoneDto: FindOneOrFailByPhoneDto<Vendor>): Promise<Vendor>;
+
+  // search by name.
+  searchByName(searchPayloadDto: SearchPayloadDto<Vendor>): Promise<Vendor[]>;
 
   // create.
   create(vendorSignUpDto: VendorSignUpDto, avatar?: Express.Multer.File): Promise<Vendor>;

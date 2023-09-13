@@ -1,4 +1,4 @@
-import { CreateDatabaseNotificationDto, SendFcmNotificationDto, SendSmsNotificationDto } from '@app/common';
+import { CreateDatabaseNotificationDto, SendPushNotificationPayloadDto, SendSmsNotificationDto } from '@app/common';
 import { FcmNotificationsService } from '../services/fcm-notifications.service';
 import { DatabaseNotificationsService } from '../services/database-notifications.service';
 import { SmsNotificationsService } from '../services/sms-notifications.service';
@@ -13,7 +13,7 @@ export class NotificationsService {
   ) {}
 
   // send fcm notification.
-  async sendFcmNotification(sendFcmNotificationDto: SendFcmNotificationDto): Promise<void> {
+  async sendFcmNotification(sendFcmNotificationDto: SendPushNotificationPayloadDto): Promise<void> {
     await this.fcmNotificationsService.sendNotification(sendFcmNotificationDto);
   }
 

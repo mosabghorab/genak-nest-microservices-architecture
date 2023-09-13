@@ -8,11 +8,7 @@ import { UpdateRoleDto } from '../dtos/update-role.dto';
 
 @Injectable()
 export class RolesService {
-  @InjectRepository(Role) private readonly roleRepository: Repository<Role>;
-
-  constructor(@InjectRepository(Role) roleRepository: Repository<Role>, private readonly rolesPermissionsService: RolesPermissionsService) {
-    this.roleRepository = roleRepository;
-  }
+  constructor(@InjectRepository(Role) private readonly roleRepository: Repository<Role>, private readonly rolesPermissionsService: RolesPermissionsService) {}
 
   // create.
   async create(createRoleDto: CreateRoleDto): Promise<Role> {

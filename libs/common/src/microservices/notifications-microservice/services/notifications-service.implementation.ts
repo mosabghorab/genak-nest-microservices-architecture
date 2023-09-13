@@ -1,5 +1,5 @@
 import { ClientProxy } from '@nestjs/microservices';
-import { CreateDatabaseNotificationDto, INotificationsService, NotificationsMicroserviceConstants, SendFcmNotificationDto, SendSmsNotificationDto } from '@app/common';
+import { CreateDatabaseNotificationDto, INotificationsService, NotificationsMicroserviceConstants, SendPushNotificationPayloadDto, SendSmsNotificationDto } from '@app/common';
 
 export class NotificationsServiceImpl implements INotificationsService {
   constructor(private readonly notificationsMicroservice: ClientProxy, private readonly version: string) {}
@@ -13,8 +13,8 @@ export class NotificationsServiceImpl implements INotificationsService {
   }
 
   // send fcm notification.
-  sendFcmNotification(sendFcmNotificationDto: SendFcmNotificationDto): void {
-    this.notificationsMicroservice.emit<string, SendFcmNotificationDto>(
+  sendFcmNotification(sendFcmNotificationDto: SendPushNotificationPayloadDto): void {
+    this.notificationsMicroservice.emit<string, SendPushNotificationPayloadDto>(
       `${NotificationsMicroserviceConstants.NOTIFICATIONS_SERVICE_SEND_FCM_NOTIFICATION_EVENT_PATTERN}/v${this.version}`,
       sendFcmNotificationDto,
     );

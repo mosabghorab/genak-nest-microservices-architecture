@@ -7,14 +7,14 @@ import {
   AuthMicroserviceConnection,
   AuthMicroserviceConstants,
   CreateDatabaseNotificationDto,
-  FcmNotificationType,
   FcmToken,
   FindAllFcmTokensDto,
   NotificationsMicroserviceConnection,
   NotificationsMicroserviceConstants,
   NotificationTarget,
   PermissionGroup,
-  SendFcmNotificationDto,
+  PushNotificationType,
+  SendPushNotificationPayloadDto,
   UserType,
 } from '@app/common';
 import { ClientProxy } from '@nestjs/microservices';
@@ -65,8 +65,8 @@ export class ComplainCreatedHandler {
         }
       }
       if (fcmTokens.length > 0) {
-        this.notificationsMicroserviceConnection.notificationsServiceImpl.sendFcmNotification(<SendFcmNotificationDto>{
-          type: FcmNotificationType.FCM_TOKENS,
+        this.notificationsMicroserviceConnection.notificationsServiceImpl.sendFcmNotification(<SendPushNotificationPayloadDto>{
+          type: PushNotificationType.TOKENS,
           fcmTokens: fcmTokens,
           title: 'New Complain',
           body: `New complain created by ${complain.complainerUserType}`,

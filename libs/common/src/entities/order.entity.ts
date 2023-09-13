@@ -1,13 +1,4 @@
-import {
-  Column,
-  CreateDateColumn,
-  Entity,
-  JoinColumn,
-  ManyToOne,
-  OneToMany,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
-} from 'typeorm';
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 import { Customer } from './customer.entity';
 import { Vendor } from './vendor.entity';
 import { OrderItem } from './order-item.entity';
@@ -78,13 +69,9 @@ export class Order {
   @OneToMany(() => Complain, (complain) => complain.order, { cascade: true })
   complains: Complain[];
 
-  @OneToMany(
-    () => OrderStatusHistory,
-    (orderStatusHistory) => orderStatusHistory.order,
-    {
-      cascade: true,
-    },
-  )
+  @OneToMany(() => OrderStatusHistory, (orderStatusHistory) => orderStatusHistory.order, {
+    cascade: true,
+  })
   orderStatusHistories: OrderStatusHistory[];
 
   // many to one.
@@ -100,13 +87,9 @@ export class Order {
   @JoinColumn({ name: 'vendorId' })
   vendor: Vendor;
 
-  @ManyToOne(
-    () => CustomerAddress,
-    (customerAddress) => customerAddress.orders,
-    {
-      onDelete: 'CASCADE',
-    },
-  )
+  @ManyToOne(() => CustomerAddress, (customerAddress) => customerAddress.orders, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'customerAddressId' })
   customerAddress: CustomerAddress;
 }

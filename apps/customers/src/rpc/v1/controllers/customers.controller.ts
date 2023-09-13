@@ -1,5 +1,5 @@
 import { Controller } from '@nestjs/common';
-import { Customer, CustomerSignUpDto, CustomersMicroserviceConstants, CustomerUpdateProfileDto, DateFilterDto, FindOneByIdDto, FindOneByPhoneDto, ServiceType } from '@app/common';
+import { Customer, CustomerSignUpDto, CustomersMicroserviceConstants, CustomerUpdateProfileDto, DateFilterDto, FindOneByIdDto, FindOneByPhoneDto, SearchPayloadDto, ServiceType } from '@app/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { CustomersService } from '../services/customers.service';
 
@@ -21,6 +21,13 @@ export class CustomersController {
   })
   findOneByPhone(@Payload() findOneByPhoneDto: FindOneByPhoneDto<Customer>): Promise<Customer | null> {
     return this.customersService.findOneByPhone(findOneByPhoneDto);
+  }
+
+  @MessagePattern({
+    cmd: `${CustomersMicroserviceConstants.CUSTOMERS_SERVICE_SEARCH_BY_NAME_MESSAGE_PATTERN}/v${VERSION}`,
+  })
+  searchByName(@Payload('searchPayloadDto') searchPayloadDto: SearchPayloadDto<Customer>): Promise<Customer[]> {
+    return this.customersService.searchByName(searchPayloadDto);
   }
 
   @MessagePattern({

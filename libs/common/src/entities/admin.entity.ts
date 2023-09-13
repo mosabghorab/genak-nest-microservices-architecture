@@ -34,7 +34,7 @@ export class Admin {
 
   // relations.
   // one to many.
-  @OneToMany(() => AdminsRoles, (adminsRoles) => adminsRoles.admin, {
+  @OneToMany(() => AdminsRoles, (adminsRoles: AdminsRoles) => adminsRoles.admin, {
     cascade: true,
   })
   adminsRoles: AdminsRoles[];

@@ -6,6 +6,7 @@ import {
   FindOneOrFailByIdDto,
   FindOneOrFailByPhoneDto,
   IVendorsService,
+  SearchPayloadDto,
   ServiceType,
   Vendor,
   VendorSignUpDto,
@@ -81,6 +82,20 @@ export class VendorsServiceImpl implements IVendorsService {
       throw new NotFoundException(findOneOrFailByPhoneDto.failureMessage || 'Vendor not found.');
     }
     return vendor;
+  }
+
+  // search by name.
+  searchByName(searchPayloadDto: SearchPayloadDto<Vendor>): Promise<Vendor[]> {
+    return firstValueFrom<Vendor[]>(
+      this.vendorsMicroservice.send<Vendor[], { searchPayloadDto: SearchPayloadDto<Vendor> }>(
+        {
+          cmd: `${VendorsMicroserviceConstants.VENDORS_SERVICE_SEARCH_BY_NAME_MESSAGE_PATTERN}/v${this.version}`,
+        },
+        {
+          searchPayloadDto,
+        },
+      ),
+    );
   }
 
   // create.

@@ -1,22 +1,22 @@
 {
   "$schema": "https://json.schemastore.org/nest-cli",
   "collection": "@nestjs/schematics",
-  "sourceRoot": "apps/genak-nest-fully-microservices/src",
+  "sourceRoot": "apps/main/src",
   "compilerOptions": {
     "deleteOutDir": true,
     "webpack": true,
-    "tsConfigPath": "apps/genak-nest-fully-microservices/tsconfig.app.json"
+    "tsConfigPath": "apps/main/tsconfig.app.json"
   },
   "monorepo": true,
-  "root": "apps/genak-nest-fully-microservices",
+  "root": "apps/main",
   "projects": {
-    "genak-nest-fully-microservices": {
+    "main": {
       "type": "application",
-      "root": "apps/genak-nest-fully-microservices",
+      "root": "apps/main",
       "entryFile": "main",
-      "sourceRoot": "apps/genak-nest-fully-microservices/src",
+      "sourceRoot": "apps/main/src",
       "compilerOptions": {
-        "tsConfigPath": "apps/genak-nest-fully-microservices/tsconfig.app.json"
+        "tsConfigPath": "apps/main/tsconfig.app.json"
       }
     },
     "reasons": {

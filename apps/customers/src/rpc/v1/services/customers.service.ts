@@ -1,7 +1,19 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Customer, CustomerSignUpDto, CustomerUpdateProfileDto, DateFilterDto, DateFilterOption, DateHelpers, FindOneByIdDto, FindOneByPhoneDto, OrderByType, ServiceType } from '@app/common';
+import { ILike, Repository } from 'typeorm';
+import {
+  Customer,
+  CustomerSignUpDto,
+  CustomerUpdateProfileDto,
+  DateFilterDto,
+  DateFilterOption,
+  DateHelpers,
+  FindOneByIdDto,
+  FindOneByPhoneDto,
+  OrderByType,
+  SearchPayloadDto,
+  ServiceType,
+} from '@app/common';
 
 @Injectable()
 export class CustomersService {
@@ -23,6 +35,13 @@ export class CustomersService {
     return this.customerRepository.findOne({
       where: { phone: findOneByPhoneDto.phone },
       relations: findOneByPhoneDto.relations,
+    });
+  }
+
+  // search by name.
+  searchByName(searchPayloadDto: SearchPayloadDto<Customer>): Promise<Customer[]> {
+    return this.customerRepository.find({
+      where: { name: ILike(`%${searchPayloadDto.searchQuery}%`) },
     });
   }
 

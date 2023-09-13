@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Admin, AdminStatus, AdminUpdatePasswordDto, AdminUpdateProfileDto, FindOneByEmailDto, FindOneByIdDto, PermissionGroup } from '@app/common';
+import { ILike, Repository } from 'typeorm';
+import { Admin, AdminStatus, AdminUpdatePasswordDto, AdminUpdateProfileDto, FindOneByEmailDto, FindOneByIdDto, PermissionGroup, SearchPayloadDto } from '@app/common';
 
 @Injectable()
 export class AdminsService {
@@ -23,6 +23,13 @@ export class AdminsService {
     return this.adminRepository.findOne({
       where: { email: findOneByEmailDto.email },
       relations: findOneByEmailDto.relations,
+    });
+  }
+
+  // search by name.
+  searchByName(searchPayloadDto: SearchPayloadDto<Admin>): Promise<Admin[]> {
+    return this.adminRepository.find({
+      where: { name: ILike(`%${searchPayloadDto.searchQuery}%`) },
     });
   }
 

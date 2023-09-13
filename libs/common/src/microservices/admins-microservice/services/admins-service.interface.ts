@@ -1,4 +1,4 @@
-import { Admin, AdminUpdatePasswordDto, AdminUpdateProfileDto, FindOneByEmailDto, FindOneByIdDto, FindOneOrFailByEmailDto, FindOneOrFailByIdDto, PermissionGroup } from '@app/common';
+import { Admin, AdminUpdatePasswordDto, AdminUpdateProfileDto, FindOneByEmailDto, FindOneByIdDto, FindOneOrFailByEmailDto, FindOneOrFailByIdDto, PermissionGroup, SearchPayloadDto } from '@app/common';
 
 export interface IAdminsService {
   // find one by id.
@@ -12,6 +12,9 @@ export interface IAdminsService {
 
   // find one or fail by email.
   findOneOrFailByEmail(findOneOrFailByEmailDto: FindOneOrFailByEmailDto<Admin>): Promise<Admin>;
+
+  // search by name.
+  searchByName(searchPayloadDto: SearchPayloadDto<Admin>): Promise<Admin[]>;
 
   // find all by permission group.
   findAllByPermissionGroup(permissionGroup: PermissionGroup): Promise<Admin[]>;

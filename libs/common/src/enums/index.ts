@@ -1,4 +1,4 @@
-export * from './fcm-notification-type.enum';
+export * from './push-notification-type.enum';
 export * from './notification-target.enum';
 export * from './user-type.enum';
 export * from './order-by-type.enum';

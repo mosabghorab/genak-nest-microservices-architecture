@@ -9,6 +9,7 @@ import {
   FindOneOrFailByIdDto,
   IAdminsService,
   PermissionGroup,
+  SearchPayloadDto,
 } from '@app/common';
 import { firstValueFrom } from 'rxjs';
 import { NotFoundException } from '@nestjs/common';
@@ -64,6 +65,20 @@ export class AdminsServiceImpl implements IAdminsService {
       throw new NotFoundException(findOneOrFailByEmailDto.failureMessage || 'Admin not found.');
     }
     return plainToInstance(Admin, admin);
+  }
+
+  // search by name.
+  searchByName(searchPayloadDto: SearchPayloadDto<Admin>): Promise<Admin[]> {
+    return firstValueFrom<Admin[]>(
+      this.adminsMicroservice.send<Admin[], { searchPayloadDto: SearchPayloadDto<Admin> }>(
+        {
+          cmd: `${AdminsMicroserviceConstants.ADMINS_SERVICE_SEARCH_BY_NAME_MESSAGE_PATTERN}/v${this.version}`,
+        },
+        {
+          searchPayloadDto,
+        },
+      ),
+    );
   }
 
   // find all by permission group.

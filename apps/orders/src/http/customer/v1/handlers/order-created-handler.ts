@@ -4,13 +4,13 @@ import {
   AuthMicroserviceConnection,
   AuthMicroserviceConstants,
   CreateDatabaseNotificationDto,
-  FcmNotificationType,
   FcmToken,
   FindAllFcmTokensDto,
   NotificationsMicroserviceConnection,
   NotificationsMicroserviceConstants,
   NotificationTarget,
-  SendFcmNotificationDto,
+  PushNotificationType,
+  SendPushNotificationPayloadDto,
   UserType,
 } from '@app/common';
 import { ClientProxy } from '@nestjs/microservices';
@@ -49,8 +49,8 @@ export class OrderCreatedHandler {
         })
       ).map((fcmToken: FcmToken) => fcmToken.token);
       if (fcmTokens.length > 0) {
-        this.notificationsMicroserviceConnection.notificationsServiceImpl.sendFcmNotification(<SendFcmNotificationDto>{
-          type: FcmNotificationType.FCM_TOKENS,
+        this.notificationsMicroserviceConnection.notificationsServiceImpl.sendFcmNotification(<SendPushNotificationPayloadDto>{
+          type: PushNotificationType.TOKENS,
           fcmTokens: fcmTokens,
           title: 'New Order',
           body: `You got a new order from: ${customer.name}`,

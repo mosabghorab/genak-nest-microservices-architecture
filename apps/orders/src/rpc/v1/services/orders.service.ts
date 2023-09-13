@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, FindOptionsRelations, Repository, SelectQueryBuilder } from 'typeorm';
-import { DateFilterDto, DateFilterOption, DateHelpers, FindOneByIdDto, FindOneOrderByIdAndServiceTypeDto, Order, ServiceType } from '@app/common';
+import { Between, FindOptionsRelations, ILike, Repository, SelectQueryBuilder } from 'typeorm';
+import { DateFilterDto, DateFilterOption, DateHelpers, FindOneByIdDto, FindOneOrderByIdAndServiceTypeDto, Order, SearchPayloadDto, ServiceType } from '@app/common';
 
 @Injectable()
 export class OrdersService {
@@ -15,6 +15,13 @@ export class OrdersService {
     return this.orderRepository.findOne({
       where: { id: findOneByIdDto.id },
       relations: findOneByIdDto.relations,
+    });
+  }
+
+  // search by unique id.
+  searchByUniqueId(searchPayloadDto: SearchPayloadDto<Order>): Promise<Order[]> {
+    return this.orderRepository.find({
+      where: { uniqueId: ILike(`%${searchPayloadDto.searchQuery}%`) },
     });
   }
 

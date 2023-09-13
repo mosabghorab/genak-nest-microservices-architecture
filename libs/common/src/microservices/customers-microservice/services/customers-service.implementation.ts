@@ -9,6 +9,7 @@ import {
   FindOneOrFailByIdDto,
   FindOneOrFailByPhoneDto,
   ICustomersService,
+  SearchPayloadDto,
   ServiceType,
 } from '@app/common';
 import { ClientProxy } from '@nestjs/microservices';
@@ -64,6 +65,20 @@ export class CustomersServiceImpl implements ICustomersService {
       throw new NotFoundException(findOneOrFailByPhoneDto.failureMessage || 'Customer not found.');
     }
     return customer;
+  }
+
+  // search by name.
+  searchByName(searchPayloadDto: SearchPayloadDto<Customer>): Promise<Customer[]> {
+    return firstValueFrom<Customer[]>(
+      this.customersMicroservice.send<Customer[], { searchPayloadDto: SearchPayloadDto<Customer> }>(
+        {
+          cmd: `${CustomersMicroserviceConstants.CUSTOMERS_SERVICE_SEARCH_BY_NAME_MESSAGE_PATTERN}/v${this.version}`,
+        },
+        {
+          searchPayloadDto,
+        },
+      ),
+    );
   }
 
   // create.

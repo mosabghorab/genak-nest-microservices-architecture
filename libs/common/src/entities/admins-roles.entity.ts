@@ -1,10 +1,4 @@
-import {
-  Column,
-  Entity,
-  JoinColumn,
-  ManyToOne,
-  PrimaryGeneratedColumn,
-} from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { Role } from './role.entity';
 import { Admin } from '@app/common';
 
@@ -21,13 +15,13 @@ export class AdminsRoles {
 
   // relations.
   // many to one.
-  @ManyToOne(() => Admin, (user) => user.adminsRoles, {
+  @ManyToOne(() => Admin, (admin: Admin) => admin.adminsRoles, {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'adminId' })
   admin: Admin;
 
-  @ManyToOne(() => Role, (role) => role.adminsRoles, {
+  @ManyToOne(() => Role, (role: Role) => role.adminsRoles, {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'roleId' })

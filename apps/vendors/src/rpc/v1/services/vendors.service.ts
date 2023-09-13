@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindOptionsRelations, Repository } from 'typeorm';
+import { FindOptionsRelations, ILike, Repository } from 'typeorm';
 import {
   Attachment,
   AttachmentsMicroserviceConnection,
@@ -13,6 +13,7 @@ import {
   FindOneByIdDto,
   FindOneByPhoneDto,
   OrderByType,
+  SearchPayloadDto,
   ServiceType,
   StorageMicroserviceConnection,
   StorageMicroserviceConstants,
@@ -56,6 +57,13 @@ export class VendorsService {
     return this.vendorRepository.findOne({
       where: { phone: findOneByPhoneDto.phone },
       relations: findOneByPhoneDto.relations,
+    });
+  }
+
+  // search by name.
+  searchByName(searchPayloadDto: SearchPayloadDto<Vendor>): Promise<Vendor[]> {
+    return this.vendorRepository.find({
+      where: { name: ILike(`%${searchPayloadDto.searchQuery}%`) },
     });
   }
 

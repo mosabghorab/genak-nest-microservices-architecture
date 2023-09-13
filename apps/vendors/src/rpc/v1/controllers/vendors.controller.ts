@@ -3,6 +3,7 @@ import {
   DateFilterDto,
   FindOneByIdDto,
   FindOneByPhoneDto,
+  SearchPayloadDto,
   ServiceType,
   Vendor,
   VendorSignUpDto,
@@ -33,6 +34,13 @@ export class VendorsController {
   })
   findOneByPhone(@Payload() findOneByPhoneDto: FindOneByPhoneDto<Vendor>): Promise<Vendor | null> {
     return this.vendorsService.findOneByPhone(findOneByPhoneDto);
+  }
+
+  @MessagePattern({
+    cmd: `${VendorsMicroserviceConstants.VENDORS_SERVICE_SEARCH_BY_NAME_MESSAGE_PATTERN}/v${VERSION}`,
+  })
+  searchByName(@Payload('searchPayloadDto') searchPayloadDto: SearchPayloadDto<Vendor>): Promise<Vendor[]> {
+    return this.vendorsService.searchByName(searchPayloadDto);
   }
 
   @MessagePattern({

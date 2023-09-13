@@ -10,7 +10,7 @@ export class DocumentDto {
   name: string;
 
   @Expose()
-  type: DocumentType;
+  type: DocumentDto;
 
   @Expose()
   serviceType: ServiceType;

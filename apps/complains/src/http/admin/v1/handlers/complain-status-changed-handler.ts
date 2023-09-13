@@ -8,7 +8,6 @@ import {
   Customer,
   CustomersMicroserviceConnection,
   CustomersMicroserviceConstants,
-  FcmNotificationType,
   FcmToken,
   FindAllFcmTokensDto,
   FindOneOrFailByIdDto,
@@ -18,7 +17,8 @@ import {
   Order,
   OrdersMicroserviceConnection,
   OrdersMicroserviceConstants,
-  SendFcmNotificationDto,
+  PushNotificationType,
+  SendPushNotificationPayloadDto,
   UserType,
   Vendor,
   VendorsMicroserviceConnection,
@@ -83,8 +83,8 @@ export class ComplainStatusChangedHandler {
           })
         ).map((fcmToken: FcmToken): string => fcmToken.token);
         if (fcmTokens.length > 0) {
-          this.notificationsMicroserviceConnection.notificationsServiceImpl.sendFcmNotification(<SendFcmNotificationDto>{
-            type: FcmNotificationType.FCM_TOKENS,
+          this.notificationsMicroserviceConnection.notificationsServiceImpl.sendFcmNotification(<SendPushNotificationPayloadDto>{
+            type: PushNotificationType.TOKENS,
             fcmTokens: fcmTokens,
             title: 'Complain Status',
             body: `Complain status with order id ${order.uniqueId} changed to ${complain.status}`,
@@ -110,8 +110,8 @@ export class ComplainStatusChangedHandler {
           })
         ).map((fcmToken: FcmToken): string => fcmToken.token);
         if (fcmTokens.length > 0) {
-          this.notificationsMicroserviceConnection.notificationsServiceImpl.sendFcmNotification(<SendFcmNotificationDto>{
-            type: FcmNotificationType.FCM_TOKENS,
+          this.notificationsMicroserviceConnection.notificationsServiceImpl.sendFcmNotification(<SendPushNotificationPayloadDto>{
+            type: PushNotificationType.TOKENS,
             fcmTokens: fcmTokens,
             title: 'Complain Status',
             body: `Complain status with order id ${order.uniqueId} changed to ${complain.status}`,
