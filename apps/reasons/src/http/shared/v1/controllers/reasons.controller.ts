@@ -1,5 +1,5 @@
 import { Controller, Get } from '@nestjs/common';
-import { AllowFor, Reason, ReasonDto, Serialize, UserType } from '@app/common';
+import { AllowFor, Reason, ReasonResponseDto, Serialize, UserType } from '@app/common';
 import { ReasonsService } from '../services/reasons.service';
 
 @AllowFor(UserType.CUSTOMER, UserType.VENDOR)
@@ -7,7 +7,7 @@ import { ReasonsService } from '../services/reasons.service';
 export class ReasonsController {
   constructor(private readonly reasonsService: ReasonsService) {}
 
-  @Serialize(ReasonDto, 'All reasons.')
+  @Serialize(ReasonResponseDto, 'All reasons.')
   @Get()
   findAll(): Promise<Reason[]> {
     return this.reasonsService.findAll();

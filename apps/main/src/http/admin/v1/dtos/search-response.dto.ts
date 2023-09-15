@@ -1,20 +1,29 @@
 import { Expose, Type } from 'class-transformer';
-import { AdminDto, CustomerDto, OrderDto, VendorDto } from '@app/common';
+import { AdminResponseDto, CustomerResponseDto, OrderResponseDto, VendorResponseDto } from '@app/common';
+
+class DataDto {
+  @Expose()
+  @Type(() => CustomerResponseDto)
+  customers: CustomerResponseDto[];
+
+  @Expose()
+  @Type(() => VendorResponseDto)
+  vendors: VendorResponseDto[];
+
+  @Expose()
+  @Type(() => AdminResponseDto)
+  admins: AdminResponseDto[];
+
+  @Expose()
+  @Type(() => OrderResponseDto)
+  orders: OrderResponseDto[];
+}
 
 export class SearchResponseDto {
   @Expose()
-  @Type(() => CustomerDto)
-  customers: CustomerDto[];
+  executionTime: string;
 
   @Expose()
-  @Type(() => VendorDto)
-  vendors: VendorDto[];
-
-  @Expose()
-  @Type(() => AdminDto)
-  admins: AdminDto[];
-
-  @Expose()
-  @Type(() => OrderDto)
-  orders: OrderDto[];
+  @Type(() => DataDto)
+  data: DataDto;
 }

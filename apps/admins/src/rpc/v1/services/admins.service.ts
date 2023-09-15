@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ILike, Repository } from 'typeorm';
-import { Admin, AdminStatus, AdminUpdatePasswordDto, AdminUpdateProfileDto, FindOneByEmailDto, FindOneByIdDto, PermissionGroup, SearchPayloadDto } from '@app/common';
+import { Admin, AdminStatus, AdminUpdatePasswordPayloadDto, AdminUpdateProfilePayloadDto, FindOneByEmailPayloadDto, FindOneByIdPayloadDto, PermissionGroup, SearchPayloadDto } from '@app/common';
 
 @Injectable()
 export class AdminsService {
@@ -11,18 +11,18 @@ export class AdminsService {
   ) {}
 
   // find one by id.
-  findOneById(findOneByIdDto: FindOneByIdDto<Admin>): Promise<Admin | null> {
+  findOneById(findOneByIdPayloadDto: FindOneByIdPayloadDto<Admin>): Promise<Admin | null> {
     return this.adminRepository.findOne({
-      where: { id: findOneByIdDto.id },
-      relations: findOneByIdDto.relations,
+      where: { id: findOneByIdPayloadDto.id },
+      relations: findOneByIdPayloadDto.relations,
     });
   }
 
   // find one by email.
-  findOneByEmail(findOneByEmailDto: FindOneByEmailDto<Admin>): Promise<Admin | null> {
+  findOneByEmail(findOneByEmailPayloadDto: FindOneByEmailPayloadDto<Admin>): Promise<Admin | null> {
     return this.adminRepository.findOne({
-      where: { email: findOneByEmailDto.email },
-      relations: findOneByEmailDto.relations,
+      where: { email: findOneByEmailPayloadDto.email },
+      relations: findOneByEmailPayloadDto.relations,
     });
   }
 
@@ -52,20 +52,24 @@ export class AdminsService {
   }
 
   // update password.
-  async updatePassword(adminUpdatePasswordDto: AdminUpdatePasswordDto): Promise<Admin> {
-    const admin: Admin = await this.findOneById(<FindOneByIdDto<Admin>>{
-      id: adminUpdatePasswordDto.adminId,
-    });
-    admin.password = adminUpdatePasswordDto.newPassword;
+  async updatePassword(adminUpdatePasswordPayloadDto: AdminUpdatePasswordPayloadDto): Promise<Admin> {
+    const admin: Admin = await this.findOneById(
+      new FindOneByIdPayloadDto<Admin>({
+        id: adminUpdatePasswordPayloadDto.adminId,
+      }),
+    );
+    admin.password = adminUpdatePasswordPayloadDto.newPassword;
     return this.adminRepository.save(admin);
   }
 
   // update profile.
-  async updateProfile(adminUpdateProfileDto: AdminUpdateProfileDto): Promise<Admin> {
-    const admin: Admin = await this.findOneById(<FindOneByIdDto<Admin>>{
-      id: adminUpdateProfileDto.adminId,
-    });
-    Object.assign(admin, adminUpdateProfileDto);
+  async updateProfile(adminUpdateProfilePayloadDto: AdminUpdateProfilePayloadDto): Promise<Admin> {
+    const admin: Admin = await this.findOneById(
+      new FindOneByIdPayloadDto<Admin>({
+        id: adminUpdateProfilePayloadDto.adminId,
+      }),
+    );
+    Object.assign(admin, adminUpdateProfilePayloadDto);
     return this.adminRepository.save(admin);
   }
 

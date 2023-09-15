@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { Customer, CustomersMicroserviceConnection, CustomersMicroserviceConstants, CustomerUpdateProfileDto, FindOneOrFailByIdDto } from '@app/common';
+import { Customer, CustomersMicroserviceConnection, CustomersMicroserviceConstants, CustomerUpdateProfilePayloadDto, FindOneOrFailByIdPayloadDto } from '@app/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { UpdateProfileDto } from '../dtos/update-profile.dto';
+import { UpdateProfileRequestDto } from '../dtos/update-profile-request.dto';
 import { CustomerProfileValidation } from '../validations/customer-profile.validation';
 import { Constants } from '../../../constants';
 
@@ -14,18 +14,22 @@ export class CustomerProfileService {
   }
 
   // update.
-  async update(customerId: number, updateProfileDto: UpdateProfileDto): Promise<Customer> {
-    await this.customerProfileValidation.validateUpdate(customerId, updateProfileDto);
-    return this.customersMicroserviceConnection.customersServiceImpl.updateProfile(<CustomerUpdateProfileDto>{
-      customerId,
-      ...updateProfileDto,
-    });
+  async update(customerId: number, updateProfileRequestDto: UpdateProfileRequestDto): Promise<Customer> {
+    await this.customerProfileValidation.validateUpdate(customerId, updateProfileRequestDto);
+    return this.customersMicroserviceConnection.customersServiceImpl.updateProfile(
+      new CustomerUpdateProfilePayloadDto({
+        customerId,
+        ...updateProfileRequestDto,
+      }),
+    );
   }
 
   // find.
   find(customerId: number): Promise<Customer> {
-    return this.customersMicroserviceConnection.customersServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Customer>>{
-      id: customerId,
-    });
+    return this.customersMicroserviceConnection.customersServiceImpl.findOneOrFailById(
+      new FindOneOrFailByIdPayloadDto<Customer>({
+        id: customerId,
+      }),
+    );
   }
 }

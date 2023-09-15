@@ -1,5 +1,15 @@
 import { Controller } from '@nestjs/common';
-import { Customer, CustomerSignUpDto, CustomersMicroserviceConstants, CustomerUpdateProfileDto, DateFilterDto, FindOneByIdDto, FindOneByPhoneDto, SearchPayloadDto, ServiceType } from '@app/common';
+import {
+  Customer,
+  CustomerSignUpPayloadDto,
+  CustomersMicroserviceConstants,
+  CustomerUpdateProfilePayloadDto,
+  DateFilterPayloadDto,
+  FindOneByIdPayloadDto,
+  FindOneByPhonePayloadDto,
+  SearchPayloadDto,
+  ServiceType,
+} from '@app/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { CustomersService } from '../services/customers.service';
 
@@ -12,15 +22,15 @@ export class CustomersController {
   @MessagePattern({
     cmd: `${CustomersMicroserviceConstants.CUSTOMERS_SERVICE_FIND_ONE_BY_ID_MESSAGE_PATTERN}/v${VERSION}`,
   })
-  findOneById(@Payload() findOneByIdDto: FindOneByIdDto<Customer>): Promise<Customer | null> {
-    return this.customersService.findOneById(findOneByIdDto);
+  findOneById(@Payload('findOneByIdPayloadDto') findOneByIdPayloadDto: FindOneByIdPayloadDto<Customer>): Promise<Customer | null> {
+    return this.customersService.findOneById(findOneByIdPayloadDto);
   }
 
   @MessagePattern({
     cmd: `${CustomersMicroserviceConstants.CUSTOMERS_SERVICE_FIND_ONE_BY_PHONE_MESSAGE_PATTERN}/v${VERSION}`,
   })
-  findOneByPhone(@Payload() findOneByPhoneDto: FindOneByPhoneDto<Customer>): Promise<Customer | null> {
-    return this.customersService.findOneByPhone(findOneByPhoneDto);
+  findOneByPhone(@Payload('findOneByPhonePayloadDto') findOneByPhonePayloadDto: FindOneByPhonePayloadDto<Customer>): Promise<Customer | null> {
+    return this.customersService.findOneByPhone(findOneByPhonePayloadDto);
   }
 
   @MessagePattern({
@@ -33,8 +43,8 @@ export class CustomersController {
   @MessagePattern({
     cmd: `${CustomersMicroserviceConstants.CUSTOMERS_SERVICE_CREATE_MESSAGE_PATTERN}/v${VERSION}`,
   })
-  create(@Payload() customerSignUpDto: CustomerSignUpDto): Promise<Customer> {
-    return this.customersService.create(customerSignUpDto);
+  create(@Payload('customerSignUpPayloadDto') customerSignUpPayloadDto: CustomerSignUpPayloadDto): Promise<Customer> {
+    return this.customersService.create(customerSignUpPayloadDto);
   }
 
   @MessagePattern({
@@ -47,8 +57,8 @@ export class CustomersController {
   @MessagePattern({
     cmd: `${CustomersMicroserviceConstants.CUSTOMERS_SERVICE_UPDATE_PROFILE_MESSAGE_PATTERN}/v${VERSION}`,
   })
-  updateProfile(@Payload() customerUpdateProfileDto: CustomerUpdateProfileDto): Promise<Customer> {
-    return this.customersService.updateProfile(customerUpdateProfileDto);
+  updateProfile(@Payload('customerUpdateProfilePayloadDto') customerUpdateProfilePayloadDto: CustomerUpdateProfilePayloadDto): Promise<Customer> {
+    return this.customersService.updateProfile(customerUpdateProfilePayloadDto);
   }
 
   @MessagePattern({
@@ -61,7 +71,7 @@ export class CustomersController {
   @MessagePattern({
     cmd: `${CustomersMicroserviceConstants.CUSTOMERS_SERVICE_FIND_BEST_BUYERS_WITH_ORDERS_COUNT_MESSAGE_PATTERN}/v${VERSION}`,
   })
-  findBestBuyersWithOrdersCount(@Payload('serviceType') serviceType: ServiceType, @Payload('dateFilterDto') dateFilterDto: DateFilterDto): Promise<Customer[]> {
-    return this.customersService.findBestBuyersWithOrdersCount(serviceType, dateFilterDto);
+  findBestBuyersWithOrdersCount(@Payload('serviceType') serviceType: ServiceType, @Payload('dateFilterPayloadDto') dateFilterPayloadDto: DateFilterPayloadDto): Promise<Customer[]> {
+    return this.customersService.findBestBuyersWithOrdersCount(serviceType, dateFilterPayloadDto);
   }
 }

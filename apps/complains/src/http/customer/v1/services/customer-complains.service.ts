@@ -4,18 +4,18 @@ import { Repository } from 'typeorm';
 import {
   ClientUserType,
   Complain,
-  FindOneOrFailByIdDto,
+  FindOneOrFailByIdPayloadDto,
   Order,
   OrdersMicroserviceConnection,
   OrdersMicroserviceConstants,
   StorageMicroserviceConnection,
   StorageMicroserviceConstants,
-  UploadFileDto,
+  UploadFilePayloadDto,
 } from '@app/common';
 import { Constants } from '../../../../constants';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ClientProxy } from '@nestjs/microservices';
-import { CreateComplainDto } from '../../../shared/v1/dtos/create-complain.dto';
+import { CreateComplainRequestDto } from '../../../shared/v1/dtos/create-complain-request.dto';
 import { ComplainCreatedEvent } from '../../../shared/v1/events/complain-created.event';
 
 @Injectable()
@@ -37,16 +37,20 @@ export class CustomerComplainsService {
   }
 
   // create.
-  async create(customerId: number, createComplainDto: CreateComplainDto, image?: Express.Multer.File): Promise<Complain> {
-    const order: Order = await this.ordersMicroserviceConnection.ordersServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Order>>{
-      id: createComplainDto.orderId,
-    });
+  async create(customerId: number, createComplainRequestDto: CreateComplainRequestDto, image?: Express.Multer.File): Promise<Complain> {
+    const order: Order = await this.ordersMicroserviceConnection.ordersServiceImpl.findOneOrFailById(
+      new FindOneOrFailByIdPayloadDto<Order>({
+        id: createComplainRequestDto.orderId,
+      }),
+    );
     let imageUrl: string;
     if (image) {
-      imageUrl = await this.storageMicroserviceConnection.storageServiceImpl.uploadFile(<UploadFileDto>{
-        prefixPath: Constants.COMPLAINS_IMAGES_PREFIX_PATH,
-        file: image,
-      });
+      imageUrl = await this.storageMicroserviceConnection.storageServiceImpl.uploadFile(
+        new UploadFilePayloadDto({
+          prefixPath: Constants.COMPLAINS_IMAGES_PREFIX_PATH,
+          file: image,
+        }),
+      );
     }
     const savedComplain: Complain = await this.complainRepository.save(
       await this.complainRepository.create({
@@ -54,7 +58,7 @@ export class CustomerComplainsService {
         complainerUserType: ClientUserType.CUSTOMER,
         image: imageUrl,
         serviceType: order.serviceType,
-        ...createComplainDto,
+        ...createComplainRequestDto,
       }),
     );
     if (savedComplain) {

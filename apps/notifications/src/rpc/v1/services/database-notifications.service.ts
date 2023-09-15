@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { CreateDatabaseNotificationDto, Notification } from '@app/common';
+import { CreateDatabaseNotificationPayloadDto, Notification } from '@app/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
@@ -8,7 +8,7 @@ export class DatabaseNotificationsService {
   constructor(@InjectRepository(Notification) private readonly notificationRepository: Repository<Notification>) {}
 
   // create.
-  async create(createDatabaseNotificationDto: CreateDatabaseNotificationDto): Promise<Notification> {
-    return this.notificationRepository.save(await this.notificationRepository.create(createDatabaseNotificationDto));
+  async create(createDatabaseNotificationPayloadDto: CreateDatabaseNotificationPayloadDto): Promise<Notification> {
+    return this.notificationRepository.save(await this.notificationRepository.create(createDatabaseNotificationPayloadDto));
   }
 }

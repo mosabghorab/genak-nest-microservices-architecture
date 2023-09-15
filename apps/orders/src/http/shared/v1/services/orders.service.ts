@@ -6,8 +6,8 @@ import { Constants } from '../../../../constants';
 import {
   AuthedUser,
   DateHelpers,
-  FindOneByIdDto,
-  FindOneOrFailByIdDto,
+  FindOneByIdPayloadDto,
+  FindOneOrFailByIdPayloadDto,
   Order,
   OrderStatus,
   OrderStatusHistory,
@@ -16,7 +16,7 @@ import {
   ReasonsMicroserviceConstants,
 } from '@app/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { UpdateOrderStatusDto } from '../dtos/update-order-status.dto';
+import { UpdateOrderStatusRequestDto } from '../dtos/update-order-status-request.dto';
 import { OrderStatusChangedEvent } from '../events/order-status-changed.event';
 
 @Injectable()
@@ -34,37 +34,46 @@ export class OrdersService {
   }
 
   // find one by id.
-  findOneById(findOneByIdDto: FindOneByIdDto<Order>): Promise<Order | null> {
-    return this.orderRepository.findOne({ where: { id: findOneByIdDto.id }, relations: findOneByIdDto.relations });
+  findOneById(findOneByIdPayloadDto: FindOneByIdPayloadDto<Order>): Promise<Order | null> {
+    return this.orderRepository.findOne({
+      where: { id: findOneByIdPayloadDto.id },
+      relations: findOneByIdPayloadDto.relations,
+    });
   }
 
   // find one or fail by id.
-  async findOneOrFailById(findOneOrFailByIdDto: FindOneOrFailByIdDto<Order>): Promise<Order> {
-    const order: Order = await this.findOneById(<FindOneByIdDto<Order>>{
-      id: findOneOrFailByIdDto.id,
-      relations: findOneOrFailByIdDto.relations,
-    });
+  async findOneOrFailById(findOneOrFailByIdPayloadDto: FindOneOrFailByIdPayloadDto<Order>): Promise<Order> {
+    const order: Order = await this.findOneById(
+      new FindOneByIdPayloadDto<Order>({
+        id: findOneOrFailByIdPayloadDto.id,
+        relations: findOneOrFailByIdPayloadDto.relations,
+      }),
+    );
     if (!order) {
-      throw new BadRequestException(findOneOrFailByIdDto.failureMessage || 'Order not found.');
+      throw new BadRequestException(findOneOrFailByIdPayloadDto.failureMessage || 'Order not found.');
     }
     return order;
   }
 
   // update status.
-  async updateStatus(authedUser: AuthedUser, orderId: number, updateOrderStatusDto: UpdateOrderStatusDto): Promise<Order> {
-    const order: Order = await this.findOneOrFailById(<FindOneOrFailByIdDto<Order>>{
-      id: orderId,
-      relations: {
-        orderStatusHistories: true,
-      },
-    });
-    if (updateOrderStatusDto.reasonId) {
-      const reason: Reason = await this.reasonsMicroserviceConnection.reasonsServiceImpl.findOneOrFailById(<FindOneByIdDto<Reason>>{
-        id: updateOrderStatusDto.reasonId,
-      });
-      updateOrderStatusDto.note = reason.name;
+  async updateStatus(authedUser: AuthedUser, orderId: number, updateOrderStatusRequestDto: UpdateOrderStatusRequestDto): Promise<Order> {
+    const order: Order = await this.findOneOrFailById(
+      new FindOneOrFailByIdPayloadDto<Order>({
+        id: orderId,
+        relations: {
+          orderStatusHistories: true,
+        },
+      }),
+    );
+    if (updateOrderStatusRequestDto.reasonId) {
+      const reason: Reason = await this.reasonsMicroserviceConnection.reasonsServiceImpl.findOneOrFailById(
+        new FindOneByIdPayloadDto<Reason>({
+          id: updateOrderStatusRequestDto.reasonId,
+        }),
+      );
+      updateOrderStatusRequestDto.note = reason.name;
     }
-    order.status = updateOrderStatusDto.status;
+    order.status = updateOrderStatusRequestDto.status;
     if (order.status === OrderStatus.ACCEPTED) {
       order.startTime = new Date();
     } else if (order.status === OrderStatus.COMPLETED) {
@@ -73,9 +82,9 @@ export class OrdersService {
     }
     order.orderStatusHistories.push(<OrderStatusHistory>{
       orderId,
-      orderStatus: updateOrderStatusDto.status,
-      reasonId: updateOrderStatusDto.reasonId,
-      note: updateOrderStatusDto.note,
+      orderStatus: updateOrderStatusRequestDto.status,
+      reasonId: updateOrderStatusRequestDto.reasonId,
+      note: updateOrderStatusRequestDto.note,
     });
     const savedOrder: Order = await this.orderRepository.save(order);
     if (savedOrder) {

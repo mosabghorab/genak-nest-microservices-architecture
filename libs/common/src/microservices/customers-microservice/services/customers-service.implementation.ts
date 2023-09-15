@@ -1,13 +1,13 @@
 import {
   Customer,
-  CustomerSignUpDto,
+  CustomerSignUpPayloadDto,
   CustomersMicroserviceConstants,
-  CustomerUpdateProfileDto,
-  DateFilterDto,
-  FindOneByIdDto,
-  FindOneByPhoneDto,
-  FindOneOrFailByIdDto,
-  FindOneOrFailByPhoneDto,
+  CustomerUpdateProfilePayloadDto,
+  DateFilterPayloadDto,
+  FindOneByIdPayloadDto,
+  FindOneByPhonePayloadDto,
+  FindOneOrFailByIdPayloadDto,
+  FindOneOrFailByPhonePayloadDto,
   ICustomersService,
   SearchPayloadDto,
   ServiceType,
@@ -20,49 +20,53 @@ export class CustomersServiceImpl implements ICustomersService {
   constructor(private readonly customersMicroservice: ClientProxy, private readonly version: string) {}
 
   // find one by id.
-  findOneById(findOneByIdDto: FindOneByIdDto<Customer>): Promise<Customer | null> {
+  findOneById(findOneByIdPayloadDto: FindOneByIdPayloadDto<Customer>): Promise<Customer | null> {
     return firstValueFrom<Customer>(
-      this.customersMicroservice.send<Customer, FindOneByIdDto<Customer>>(
+      this.customersMicroservice.send<Customer, { findOneByIdPayloadDto: FindOneByIdPayloadDto<Customer> }>(
         {
           cmd: `${CustomersMicroserviceConstants.CUSTOMERS_SERVICE_FIND_ONE_BY_ID_MESSAGE_PATTERN}/v${this.version}`,
         },
-        findOneByIdDto,
+        { findOneByIdPayloadDto },
       ),
     );
   }
 
   // find one or fail by id.
-  async findOneOrFailById(findOneOrFailByIdDto: FindOneOrFailByIdDto<Customer>): Promise<Customer> {
-    const customer: Customer = await this.findOneById(<FindOneByIdDto<Customer>>{
-      id: findOneOrFailByIdDto.id,
-      relations: findOneOrFailByIdDto.relations,
-    });
+  async findOneOrFailById(findOneOrFailByIdPayloadDto: FindOneOrFailByIdPayloadDto<Customer>): Promise<Customer> {
+    const customer: Customer = await this.findOneById(
+      new FindOneByIdPayloadDto<Customer>({
+        id: findOneOrFailByIdPayloadDto.id,
+        relations: findOneOrFailByIdPayloadDto.relations,
+      }),
+    );
     if (!customer) {
-      throw new NotFoundException(findOneOrFailByIdDto.failureMessage || 'Customer not found.');
+      throw new NotFoundException(findOneOrFailByIdPayloadDto.failureMessage || 'Customer not found.');
     }
     return customer;
   }
 
   // find one by phone.
-  findOneByPhone(findOneByPhoneDto: FindOneByPhoneDto<Customer>): Promise<Customer | null> {
+  findOneByPhone(findOneByPhonePayloadDto: FindOneByPhonePayloadDto<Customer>): Promise<Customer | null> {
     return firstValueFrom<Customer>(
-      this.customersMicroservice.send<Customer, FindOneByPhoneDto<Customer>>(
+      this.customersMicroservice.send<Customer, { findOneByPhonePayloadDto: FindOneByPhonePayloadDto<Customer> }>(
         {
           cmd: `${CustomersMicroserviceConstants.CUSTOMERS_SERVICE_FIND_ONE_BY_PHONE_MESSAGE_PATTERN}/v${this.version}`,
         },
-        findOneByPhoneDto,
+        { findOneByPhonePayloadDto },
       ),
     );
   }
 
   // find one or fail by phone.
-  async findOneOrFailByPhone(findOneOrFailByPhoneDto: FindOneOrFailByPhoneDto<Customer>): Promise<Customer> {
-    const customer: Customer = await this.findOneByPhone(<FindOneByPhoneDto<Customer>>{
-      phone: findOneOrFailByPhoneDto.phone,
-      relations: findOneOrFailByPhoneDto.relations,
-    });
+  async findOneOrFailByPhone(findOneOrFailByPhonePayloadDto: FindOneOrFailByPhonePayloadDto<Customer>): Promise<Customer> {
+    const customer: Customer = await this.findOneByPhone(
+      new FindOneByPhonePayloadDto<Customer>({
+        phone: findOneOrFailByPhonePayloadDto.phone,
+        relations: findOneOrFailByPhonePayloadDto.relations,
+      }),
+    );
     if (!customer) {
-      throw new NotFoundException(findOneOrFailByPhoneDto.failureMessage || 'Customer not found.');
+      throw new NotFoundException(findOneOrFailByPhonePayloadDto.failureMessage || 'Customer not found.');
     }
     return customer;
   }
@@ -82,13 +86,13 @@ export class CustomersServiceImpl implements ICustomersService {
   }
 
   // create.
-  create(customerSignUpDto: CustomerSignUpDto): Promise<Customer> {
+  create(customerSignUpPayloadDto: CustomerSignUpPayloadDto): Promise<Customer> {
     return firstValueFrom<Customer>(
-      this.customersMicroservice.send<Customer, CustomerSignUpDto>(
+      this.customersMicroservice.send<Customer, { customerSignUpPayloadDto: CustomerSignUpPayloadDto }>(
         {
           cmd: `${CustomersMicroserviceConstants.CUSTOMERS_SERVICE_CREATE_MESSAGE_PATTERN}/v${this.version}`,
         },
-        customerSignUpDto,
+        { customerSignUpPayloadDto },
       ),
     );
   }
@@ -106,13 +110,13 @@ export class CustomersServiceImpl implements ICustomersService {
   }
 
   // update profile.
-  updateProfile(customerUpdateProfileDto: CustomerUpdateProfileDto): Promise<Customer> {
+  updateProfile(customerUpdateProfilePayloadDto: CustomerUpdateProfilePayloadDto): Promise<Customer> {
     return firstValueFrom<Customer>(
-      this.customersMicroservice.send<Customer, CustomerUpdateProfileDto>(
+      this.customersMicroservice.send<Customer, { customerUpdateProfilePayloadDto: CustomerUpdateProfilePayloadDto }>(
         {
           cmd: `${CustomersMicroserviceConstants.CUSTOMERS_SERVICE_UPDATE_PROFILE_MESSAGE_PATTERN}/v${this.version}`,
         },
-        customerUpdateProfileDto,
+        { customerUpdateProfilePayloadDto },
       ),
     );
   }
@@ -130,15 +134,21 @@ export class CustomersServiceImpl implements ICustomersService {
   }
 
   // find best buyers with orders count.
-  findBestBuyersWithOrdersCount(serviceType: ServiceType, dateFilterDto: DateFilterDto): Promise<Customer[]> {
+  findBestBuyersWithOrdersCount(serviceType: ServiceType, dateFilterPayloadDto: DateFilterPayloadDto): Promise<Customer[]> {
     return firstValueFrom<Customer[]>(
-      this.customersMicroservice.send<Customer[], { serviceType: ServiceType; dateFilterDto: DateFilterDto }>(
+      this.customersMicroservice.send<
+        Customer[],
+        {
+          serviceType: ServiceType;
+          dateFilterPayloadDto: DateFilterPayloadDto;
+        }
+      >(
         {
           cmd: `${CustomersMicroserviceConstants.CUSTOMERS_SERVICE_FIND_BEST_BUYERS_WITH_ORDERS_COUNT_MESSAGE_PATTERN}/v${this.version}`,
         },
         {
           serviceType,
-          dateFilterDto,
+          dateFilterPayloadDto,
         },
       ),
     );

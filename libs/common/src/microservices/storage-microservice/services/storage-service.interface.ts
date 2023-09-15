@@ -1,9 +1,9 @@
-import { DeleteFileDto, UploadFileDto } from '@app/common';
+import { DeleteFilePayloadDto, UploadFilePayloadDto } from '@app/common';
 
 export interface IStorageService {
   // upload file.
-  uploadFile(uploadFileDto: UploadFileDto): Promise<string>;
+  uploadFile(uploadFilePayloadDto: UploadFilePayloadDto): Promise<string>;
 
   // delete file.
-  deleteFile(deleteFileDto: DeleteFileDto): Promise<boolean>;
+  deleteFile(deleteFilePayloadDto: DeleteFilePayloadDto): Promise<boolean>;
 }

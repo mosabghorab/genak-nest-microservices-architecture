@@ -4,13 +4,13 @@ import {
   AuthMicroserviceConnection,
   AuthMicroserviceConstants,
   ClientUserType,
-  CreateDatabaseNotificationDto,
+  CreateDatabaseNotificationPayloadDto,
   Customer,
   CustomersMicroserviceConnection,
   CustomersMicroserviceConstants,
   FcmToken,
-  FindAllFcmTokensDto,
-  FindOneOrFailByIdDto,
+  FindAllPushTokensPayloadDto,
+  FindOneOrFailByIdPayloadDto,
   NotificationsMicroserviceConnection,
   NotificationsMicroserviceConstants,
   NotificationTarget,
@@ -68,56 +68,72 @@ export class ComplainStatusChangedHandler {
     let fcmTokens: string[] = [];
     if (complain.complainerUserType === ClientUserType.CUSTOMER) {
       const isNotificationsEnabled: boolean = (
-        await this.customersMicroserviceConnection.customersServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Customer>>{
-          id: complain.complainerId,
-        })
+        await this.customersMicroserviceConnection.customersServiceImpl.findOneOrFailById(
+          new FindOneOrFailByIdPayloadDto<Customer>({
+            id: complain.complainerId,
+          }),
+        )
       ).notificationsEnabled;
       if (isNotificationsEnabled) {
-        const order: Order = await this.ordersMicroserviceConnection.ordersServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Order>>{
-          id: complain.orderId,
-        });
+        const order: Order = await this.ordersMicroserviceConnection.ordersServiceImpl.findOneOrFailById(
+          new FindOneOrFailByIdPayloadDto<Order>({
+            id: complain.orderId,
+          }),
+        );
         fcmTokens = (
-          await this.authMicroserviceConnection.fcmTokensServiceImpl.findAll(<FindAllFcmTokensDto>{
-            tokenableId: complain.complainerId,
-            tokenableType: UserType.CUSTOMER,
-          })
+          await this.authMicroserviceConnection.fcmTokensServiceImpl.findAll(
+            new FindAllPushTokensPayloadDto({
+              tokenableId: complain.complainerId,
+              tokenableType: UserType.CUSTOMER,
+            }),
+          )
         ).map((fcmToken: FcmToken): string => fcmToken.token);
         if (fcmTokens.length > 0) {
-          this.notificationsMicroserviceConnection.notificationsServiceImpl.sendFcmNotification(<SendPushNotificationPayloadDto>{
-            type: PushNotificationType.TOKENS,
-            fcmTokens: fcmTokens,
-            title: 'Complain Status',
-            body: `Complain status with order id ${order.uniqueId} changed to ${complain.status}`,
-            notificationTarget: NotificationTarget.COMPLAIN,
-            notificationTargetId: complain.id,
-          });
+          this.notificationsMicroserviceConnection.notificationsServiceImpl.sendFcmNotification(
+            new SendPushNotificationPayloadDto({
+              type: PushNotificationType.TOKENS,
+              fcmTokens: fcmTokens,
+              title: 'Complain Status',
+              body: `Complain status with order id ${order.uniqueId} changed to ${complain.status}`,
+              notificationTarget: NotificationTarget.COMPLAIN,
+              notificationTargetId: complain.id,
+            }),
+          );
         }
       }
     } else {
       const isNotificationsEnabled: boolean = (
-        await this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Vendor>>{
-          id: complain.complainerId,
-        })
+        await this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneOrFailById(
+          new FindOneOrFailByIdPayloadDto<Vendor>({
+            id: complain.complainerId,
+          }),
+        )
       ).notificationsEnabled;
       if (isNotificationsEnabled) {
-        const order: Order = await this.ordersMicroserviceConnection.ordersServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Order>>{
-          id: complain.orderId,
-        });
+        const order: Order = await this.ordersMicroserviceConnection.ordersServiceImpl.findOneOrFailById(
+          new FindOneOrFailByIdPayloadDto<Order>({
+            id: complain.orderId,
+          }),
+        );
         fcmTokens = (
-          await this.authMicroserviceConnection.fcmTokensServiceImpl.findAll(<FindAllFcmTokensDto>{
-            tokenableId: complain.complainerId,
-            tokenableType: UserType.VENDOR,
-          })
+          await this.authMicroserviceConnection.fcmTokensServiceImpl.findAll(
+            new FindAllPushTokensPayloadDto({
+              tokenableId: complain.complainerId,
+              tokenableType: UserType.VENDOR,
+            }),
+          )
         ).map((fcmToken: FcmToken): string => fcmToken.token);
         if (fcmTokens.length > 0) {
-          this.notificationsMicroserviceConnection.notificationsServiceImpl.sendFcmNotification(<SendPushNotificationPayloadDto>{
-            type: PushNotificationType.TOKENS,
-            fcmTokens: fcmTokens,
-            title: 'Complain Status',
-            body: `Complain status with order id ${order.uniqueId} changed to ${complain.status}`,
-            notificationTarget: NotificationTarget.COMPLAIN,
-            notificationTargetId: complain.id,
-          });
+          this.notificationsMicroserviceConnection.notificationsServiceImpl.sendFcmNotification(
+            new SendPushNotificationPayloadDto({
+              type: PushNotificationType.TOKENS,
+              fcmTokens: fcmTokens,
+              title: 'Complain Status',
+              body: `Complain status with order id ${order.uniqueId} changed to ${complain.status}`,
+              notificationTarget: NotificationTarget.COMPLAIN,
+              notificationTargetId: complain.id,
+            }),
+          );
         }
       }
     }
@@ -126,23 +142,25 @@ export class ComplainStatusChangedHandler {
   // create database notification.
   private async _createDatabaseNotification(complainStatusChangedEvent: ComplainStatusChangedEvent): Promise<void> {
     const { complain }: ComplainStatusChangedEvent = complainStatusChangedEvent;
-    const order: Order = await this.ordersMicroserviceConnection.ordersServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Order>>{
-      id: complain.orderId,
-    });
+    const order: Order = await this.ordersMicroserviceConnection.ordersServiceImpl.findOneOrFailById(
+      new FindOneOrFailByIdPayloadDto<Order>({
+        id: complain.orderId,
+      }),
+    );
     let userType: UserType;
     if (complain.complainerUserType === ClientUserType.CUSTOMER) {
       userType = UserType.CUSTOMER;
     } else {
       userType = UserType.VENDOR;
     }
-    const createDatabaseNotificationDto: CreateDatabaseNotificationDto = <CreateDatabaseNotificationDto>{
+    const createDatabaseNotificationPayloadDto: CreateDatabaseNotificationPayloadDto = new CreateDatabaseNotificationPayloadDto({
       notifiableId: complain.complainerId,
       notifiableType: userType,
       notificationTarget: NotificationTarget.COMPLAIN,
       notificationTargetId: complain.id,
       title: 'Complain Status',
       body: `Complain status with order id ${order.uniqueId} changed to ${complain.status}`,
-    };
-    this.notificationsMicroserviceConnection.notificationsServiceImpl.createDatabaseNotification(createDatabaseNotificationDto);
+    });
+    this.notificationsMicroserviceConnection.notificationsServiceImpl.createDatabaseNotification(createDatabaseNotificationPayloadDto);
   }
 }

@@ -1,14 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import {
-  Document,
-  FindAllDocumentsDto,
-  FindOneByIdDto,
-  FindOneOrFailByIdDto,
-} from '@app/common';
-import { CreateDocumentDto } from '../dtos/create-document.dto';
-import { UpdateDocumentDto } from '../dtos/update-document.dto';
+import { Document, FindOneByIdPayloadDto, FindOneOrFailByIdPayloadDto } from '@app/common';
+import { CreateDocumentRequestDto } from '../dtos/create-document-request.dto';
+import { UpdateDocumentRequestDto } from '../dtos/update-document-request.dto';
+import { FindAllDocumentsDto } from '../dtos/find-all-documents.dto';
 
 @Injectable()
 export class AdminDocumentsService {
@@ -18,29 +14,23 @@ export class AdminDocumentsService {
   ) {}
 
   // find one by id.
-  findOneById(
-    findOneByIdDto: FindOneByIdDto<Document>,
-  ): Promise<Document | null> {
+  findOneById(findOneByIdPayloadDto: FindOneByIdPayloadDto<Document>): Promise<Document | null> {
     return this.documentRepository.findOne({
-      where: { id: findOneByIdDto.id },
-      relations: findOneByIdDto.relations,
+      where: { id: findOneByIdPayloadDto.id },
+      relations: findOneByIdPayloadDto.relations,
     });
   }
 
   // find one or fail by id.
-  async findOneOrFailById(
-    findOneOrFailByIdDto: FindOneOrFailByIdDto<Document>,
-  ): Promise<Document> {
-    const document: Document = await this.findOneById(<
-      FindOneByIdDto<Document>
-    >{
-      id: findOneOrFailByIdDto.id,
-      relations: findOneOrFailByIdDto.relations,
-    });
+  async findOneOrFailById(findOneOrFailByIdPayloadDto: FindOneOrFailByIdPayloadDto<Document>): Promise<Document> {
+    const document: Document = await this.findOneById(
+      new FindOneByIdPayloadDto<Document>({
+        id: findOneOrFailByIdPayloadDto.id,
+        relations: findOneOrFailByIdPayloadDto.relations,
+      }),
+    );
     if (!document) {
-      throw new NotFoundException(
-        findOneOrFailByIdDto.failureMessage || 'Document not found.',
-      );
+      throw new NotFoundException(findOneOrFailByIdPayloadDto.failureMessage || 'Document not found.');
     }
     return document;
   }
@@ -56,33 +46,28 @@ export class AdminDocumentsService {
   }
 
   // create.
-  async create(createDocumentDto: CreateDocumentDto): Promise<Document> {
-    return this.documentRepository.save(
-      await this.documentRepository.create(createDocumentDto),
-    );
+  async create(createDocumentRequestDto: CreateDocumentRequestDto): Promise<Document> {
+    return this.documentRepository.save(await this.documentRepository.create(createDocumentRequestDto));
   }
 
   // update.
-  async update(
-    id: number,
-    updateDocumentDto: UpdateDocumentDto,
-  ): Promise<Document> {
-    const document: Document = await this.findOneOrFailById(<
-      FindOneOrFailByIdDto<Document>
-    >{
-      id,
-    });
-    Object.assign(document, updateDocumentDto);
+  async update(id: number, updateDocumentRequestDto: UpdateDocumentRequestDto): Promise<Document> {
+    const document: Document = await this.findOneOrFailById(
+      new FindOneOrFailByIdPayloadDto<Document>({
+        id,
+      }),
+    );
+    Object.assign(document, updateDocumentRequestDto);
     return this.documentRepository.save(document);
   }
 
   // remove.
   async remove(id: number): Promise<Document> {
-    const document: Document = await this.findOneOrFailById(<
-      FindOneOrFailByIdDto<Document>
-    >{
-      id,
-    });
+    const document: Document = await this.findOneOrFailById(
+      new FindOneOrFailByIdPayloadDto<Document>({
+        id,
+      }),
+    );
     return this.documentRepository.remove(document);
   }
 }

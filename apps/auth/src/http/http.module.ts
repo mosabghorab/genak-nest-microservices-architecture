@@ -17,7 +17,7 @@ import { VendorAuthController } from './vendor/v1/controllers/vendor-auth.contro
 import { AdminAuthService } from './admin/v1/services/admin-auth.service';
 import { CustomerAuthService } from './customer/v1/services/customer-auth.service';
 import { VendorAuthService } from './vendor/v1/services/vendor-auth.service';
-import { FcmTokensService } from './shared/v1/services/fcm-tokens.service';
+import { PushTokensService } from './shared/v1/services/push-tokens.service';
 import { VerificationCodesService } from './shared/v1/services/verification-codes.service';
 import { CustomerAuthValidation } from './customer/v1/validations/customer-auth.validation';
 import { VendorAuthValidation } from './vendor/v1/validations/vendor-auth.validation';
@@ -36,6 +36,6 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     CustomClientsModule.register(NotificationsMicroserviceConstants.NAME, NotificationsMicroserviceConstants.CONFIG_NAME),
   ],
   controllers: [AdminAuthController, CustomerAuthController, VendorAuthController],
-  providers: [AdminAuthService, CustomerAuthService, VendorAuthService, FcmTokensService, VerificationCodesService, CustomerAuthValidation, VendorAuthValidation, VerificationCodeCreatedHandler],
+  providers: [AdminAuthService, CustomerAuthService, VendorAuthService, PushTokensService, VerificationCodesService, CustomerAuthValidation, VendorAuthValidation, VerificationCodeCreatedHandler],
 })
 export class HttpModule {}

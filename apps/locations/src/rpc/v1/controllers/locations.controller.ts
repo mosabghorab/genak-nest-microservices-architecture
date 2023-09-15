@@ -1,5 +1,5 @@
 import { Controller } from '@nestjs/common';
-import { DateFilterDto, FindOneByIdDto, Location, LocationsMicroserviceConstants, ServiceType } from '@app/common';
+import { DateFilterPayloadDto, FindOneByIdPayloadDto, Location, LocationsMicroserviceConstants, ServiceType } from '@app/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { LocationsService } from '../services/locations.service';
 
@@ -12,22 +12,22 @@ export class LocationsController {
   @MessagePattern({
     cmd: `${LocationsMicroserviceConstants.LOCATIONS_SERVICE_FIND_ONE_BY_ID_MESSAGE_PATTERN}/v${VERSION}`,
   })
-  findOneById(@Payload() findOneByIdDto: FindOneByIdDto<Location>): Promise<Location | null> {
-    return this.locationsService.findOneById(findOneByIdDto);
+  findOneById(@Payload('findOneByIdPayloadDto') findOneByIdPayloadDto: FindOneByIdPayloadDto<Location>): Promise<Location | null> {
+    return this.locationsService.findOneById(findOneByIdPayloadDto);
   }
 
   @MessagePattern({
     cmd: `${LocationsMicroserviceConstants.LOCATIONS_SERVICE_FIND_GOVERNORATES_WITH_ORDERS_COUNT_MESSAGE_PATTERN}/v${VERSION}`,
   })
-  findGovernoratesWithOrdersCount(@Payload('serviceType') serviceType: ServiceType, @Payload('dateFilterDto') dateFilterDto?: DateFilterDto): Promise<Location[]> {
-    return this.locationsService.findGovernoratesWithOrdersCount(serviceType, dateFilterDto);
+  findGovernoratesWithOrdersCount(@Payload('serviceType') serviceType: ServiceType, @Payload('dateFilterPayloadDto') dateFilterPayloadDto?: DateFilterPayloadDto): Promise<Location[]> {
+    return this.locationsService.findGovernoratesWithOrdersCount(serviceType, dateFilterPayloadDto);
   }
 
   @MessagePattern({
     cmd: `${LocationsMicroserviceConstants.LOCATIONS_SERVICE_FIND_REGIONS_WITH_ORDERS_COUNT_MESSAGE_PATTERN}/v${VERSION}`,
   })
-  findRegionsWithOrdersCount(@Payload('serviceType') serviceType: ServiceType, @Payload('dateFilterDto') dateFilterDto: DateFilterDto): Promise<Location[]> {
-    return this.locationsService.findRegionsWithOrdersCount(serviceType, dateFilterDto);
+  findRegionsWithOrdersCount(@Payload('serviceType') serviceType: ServiceType, @Payload('dateFilterPayloadDto') dateFilterPayloadDto: DateFilterPayloadDto): Promise<Location[]> {
+    return this.locationsService.findRegionsWithOrdersCount(serviceType, dateFilterPayloadDto);
   }
 
   @MessagePattern({

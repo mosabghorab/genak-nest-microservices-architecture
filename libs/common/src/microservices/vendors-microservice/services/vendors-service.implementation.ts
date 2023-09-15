@@ -1,19 +1,19 @@
 import { ClientProxy } from '@nestjs/microservices';
 import {
-  DateFilterDto,
-  FindOneByIdDto,
-  FindOneByPhoneDto,
-  FindOneOrFailByIdDto,
-  FindOneOrFailByPhoneDto,
+  DateFilterPayloadDto,
+  FindOneByIdPayloadDto,
+  FindOneByPhonePayloadDto,
+  FindOneOrFailByIdPayloadDto,
+  FindOneOrFailByPhonePayloadDto,
   IVendorsService,
   SearchPayloadDto,
   ServiceType,
   Vendor,
-  VendorSignUpDto,
+  VendorSignUpPayloadDto,
   VendorsMicroserviceConstants,
   VendorStatus,
-  VendorUpdateProfileDto,
-  VendorUploadDocumentsDto,
+  VendorUpdateProfilePayloadDto,
+  VendorUploadDocumentsPayloadDto,
 } from '@app/common';
 import { firstValueFrom } from 'rxjs';
 import { NotFoundException } from '@nestjs/common';
@@ -23,63 +23,53 @@ export class VendorsServiceImpl implements IVendorsService {
   constructor(private readonly vendorsMicroservice: ClientProxy, private readonly version: string) {}
 
   // find one by id.
-  findOneById(findOneByIdDto: FindOneByIdDto<Vendor>): Promise<Vendor | null> {
+  findOneById(findOneByIdPayloadDto: FindOneByIdPayloadDto<Vendor>): Promise<Vendor | null> {
     return firstValueFrom<Vendor>(
-      this.vendorsMicroservice.send<Vendor, FindOneByIdDto<Vendor>>(
+      this.vendorsMicroservice.send<Vendor, { findOneByIdPayloadDto: FindOneByIdPayloadDto<Vendor> }>(
         {
           cmd: `${VendorsMicroserviceConstants.VENDORS_SERVICE_FIND_ONE_BY_ID_MESSAGE_PATTERN}/v${this.version}`,
         },
-        findOneByIdDto,
+        { findOneByIdPayloadDto },
       ),
     );
   }
 
   // find one or fail by id.
-  async findOneOrFailById(findOneOrFailByIdDto: FindOneOrFailByIdDto<Vendor>): Promise<Vendor> {
-    const vendor: Vendor = await firstValueFrom<Vendor>(
-      this.vendorsMicroservice.send<Vendor, FindOneByIdDto<Vendor>>(
-        {
-          cmd: `${VendorsMicroserviceConstants.VENDORS_SERVICE_FIND_ONE_BY_ID_MESSAGE_PATTERN}/v${this.version}`,
-        },
-        <FindOneByIdDto<Vendor>>{
-          id: findOneOrFailByIdDto.id,
-          relations: findOneOrFailByIdDto.relations,
-        },
-      ),
+  async findOneOrFailById(findOneOrFailByIdPayloadDto: FindOneOrFailByIdPayloadDto<Vendor>): Promise<Vendor> {
+    const vendor: Vendor = await this.findOneById(
+      new FindOneByIdPayloadDto<Vendor>({
+        id: findOneOrFailByIdPayloadDto.id,
+        relations: findOneOrFailByIdPayloadDto.relations,
+      }),
     );
     if (!vendor) {
-      throw new NotFoundException(findOneOrFailByIdDto.failureMessage || 'Vendor not found.');
+      throw new NotFoundException(findOneOrFailByIdPayloadDto.failureMessage || 'Vendor not found.');
     }
     return vendor;
   }
 
   // find one by phone.
-  findOneByPhone(findOneByPhoneDto: FindOneByPhoneDto<Vendor>): Promise<Vendor | null> {
+  findOneByPhone(findOneByPhonePayloadDto: FindOneByPhonePayloadDto<Vendor>): Promise<Vendor | null> {
     return firstValueFrom<Vendor>(
-      this.vendorsMicroservice.send<Vendor, FindOneByPhoneDto<Vendor>>(
+      this.vendorsMicroservice.send<Vendor, { findOneByPhonePayloadDto: FindOneByPhonePayloadDto<Vendor> }>(
         {
           cmd: `${VendorsMicroserviceConstants.VENDORS_SERVICE_FIND_ONE_BY_PHONE_MESSAGE_PATTERN}/v${this.version}`,
         },
-        findOneByPhoneDto,
+        { findOneByPhonePayloadDto },
       ),
     );
   }
 
   // find one or fail by phone.
-  async findOneOrFailByPhone(findOneOrFailByPhoneDto: FindOneOrFailByPhoneDto<Vendor>): Promise<Vendor> {
-    const vendor: Vendor = await firstValueFrom<Vendor>(
-      this.vendorsMicroservice.send<Vendor, FindOneByPhoneDto<Vendor>>(
-        {
-          cmd: `${VendorsMicroserviceConstants.VENDORS_SERVICE_FIND_ONE_BY_PHONE_MESSAGE_PATTERN}/v${this.version}`,
-        },
-        <FindOneByPhoneDto<Vendor>>{
-          phone: findOneOrFailByPhoneDto.phone,
-          relations: findOneOrFailByPhoneDto.relations,
-        },
-      ),
+  async findOneOrFailByPhone(findOneOrFailByPhonePayloadDto: FindOneOrFailByPhonePayloadDto<Vendor>): Promise<Vendor> {
+    const vendor: Vendor = await this.findOneByPhone(
+      new FindOneByPhonePayloadDto<Vendor>({
+        phone: findOneOrFailByPhonePayloadDto.phone,
+        relations: findOneOrFailByPhonePayloadDto.relations,
+      }),
     );
     if (!vendor) {
-      throw new NotFoundException(findOneOrFailByPhoneDto.failureMessage || 'Vendor not found.');
+      throw new NotFoundException(findOneOrFailByPhonePayloadDto.failureMessage || 'Vendor not found.');
     }
     return vendor;
   }
@@ -99,12 +89,12 @@ export class VendorsServiceImpl implements IVendorsService {
   }
 
   // create.
-  create(vendorSignUpDto: VendorSignUpDto, avatar?: Express.Multer.File): Promise<Vendor> {
+  create(vendorSignUpPayloadDto: VendorSignUpPayloadDto, avatar?: Express.Multer.File): Promise<Vendor> {
     return firstValueFrom<Vendor>(
       this.vendorsMicroservice.send<
         Vendor,
         {
-          vendorSignUpDto: VendorSignUpDto;
+          vendorSignUpPayloadDto: VendorSignUpPayloadDto;
           avatar: Express.Multer.File;
         }
       >(
@@ -112,7 +102,7 @@ export class VendorsServiceImpl implements IVendorsService {
           cmd: `${VendorsMicroserviceConstants.VENDORS_SERVICE_CREATE_MESSAGE_PATTERN}/v${this.version}`,
         },
         {
-          vendorSignUpDto,
+          vendorSignUpPayloadDto,
           avatar,
         },
       ),
@@ -132,25 +122,25 @@ export class VendorsServiceImpl implements IVendorsService {
   }
 
   // upload documents.
-  uploadDocuments(vendorUploadDocumentsDto: VendorUploadDocumentsDto): Promise<Vendor> {
+  uploadDocuments(vendorUploadDocumentsPayloadDto: VendorUploadDocumentsPayloadDto): Promise<Vendor> {
     return firstValueFrom<Vendor>(
-      this.vendorsMicroservice.send<Vendor, VendorUploadDocumentsDto>(
+      this.vendorsMicroservice.send<Vendor, { vendorUploadDocumentsPayloadDto: VendorUploadDocumentsPayloadDto }>(
         {
           cmd: `${VendorsMicroserviceConstants.VENDORS_SERVICE_UPLOAD_DOCUMENTS_MESSAGE_PATTERN}/v${this.version}`,
         },
-        vendorUploadDocumentsDto,
+        { vendorUploadDocumentsPayloadDto },
       ),
     );
   }
 
   // update profile.
-  updateProfile(vendorUpdateProfileDto: VendorUpdateProfileDto): Promise<Vendor> {
+  updateProfile(vendorUpdateProfilePayloadDto: VendorUpdateProfilePayloadDto): Promise<Vendor> {
     return firstValueFrom<Vendor>(
-      this.vendorsMicroservice.send<Vendor, VendorUpdateProfileDto>(
+      this.vendorsMicroservice.send<Vendor, { vendorUpdateProfilePayloadDto: VendorUpdateProfilePayloadDto }>(
         {
           cmd: `${VendorsMicroserviceConstants.VENDORS_SERVICE_UPDATE_PROFILE_MESSAGE_PATTERN}/v${this.version}`,
         },
-        vendorUpdateProfileDto,
+        { vendorUpdateProfilePayloadDto },
       ),
     );
   }
@@ -171,15 +161,15 @@ export class VendorsServiceImpl implements IVendorsService {
   }
 
   // find best sellers with orders count.
-  findBestSellersWithOrdersCount(serviceType: ServiceType, dateFilterDto: DateFilterDto): Promise<Vendor[]> {
+  findBestSellersWithOrdersCount(serviceType: ServiceType, dateFilterPayloadDto: DateFilterPayloadDto): Promise<Vendor[]> {
     return firstValueFrom<Vendor[]>(
-      this.vendorsMicroservice.send<Vendor[], { serviceType: ServiceType; dateFilterDto: DateFilterDto }>(
+      this.vendorsMicroservice.send<Vendor[], { serviceType: ServiceType; dateFilterPayloadDto: DateFilterPayloadDto }>(
         {
           cmd: `${VendorsMicroserviceConstants.VENDORS_SERVICE_FIND_BEST_SELLERS_WITH_ORDERS_COUNT_MESSAGE_PATTERN}/v${this.version}`,
         },
         {
           serviceType,
-          dateFilterDto,
+          dateFilterPayloadDto,
         },
       ),
     );

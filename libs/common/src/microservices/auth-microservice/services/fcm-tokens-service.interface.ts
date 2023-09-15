@@ -1,5 +1,5 @@
-import { FcmToken, FindAllFcmTokensDto } from '@app/common';
+import { FcmToken, FindAllPushTokensPayloadDto } from '@app/common';
 
 export interface IFcmTokensService {
-  findAll(findAllFcmTokensDto: FindAllFcmTokensDto): Promise<FcmToken[]>;
+  findAll(findAllPushTokensPayloadDto: FindAllPushTokensPayloadDto): Promise<FcmToken[]>;
 }

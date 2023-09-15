@@ -1,4 +1,4 @@
-import { DateFilterDto, FindOneByIdDto, FindOneOrFailByIdDto, ILocationsService, Location, LocationsMicroserviceConstants, ServiceType } from '@app/common';
+import { DateFilterPayloadDto, FindOneByIdPayloadDto, FindOneOrFailByIdPayloadDto, ILocationsService, Location, LocationsMicroserviceConstants, ServiceType } from '@app/common';
 import { firstValueFrom } from 'rxjs';
 import { ClientProxy } from '@nestjs/microservices';
 import { NotFoundException } from '@nestjs/common';
@@ -7,25 +7,27 @@ export class LocationsServiceImpl implements ILocationsService {
   constructor(private readonly locationsMicroservice: ClientProxy, private readonly version: string) {}
 
   // find one by id.
-  findOneById(findOneByIdDto: FindOneByIdDto<Location>): Promise<Location | null> {
+  findOneById(findOneByIdPayloadDto: FindOneByIdPayloadDto<Location>): Promise<Location | null> {
     return firstValueFrom<Location>(
-      this.locationsMicroservice.send<Location, FindOneByIdDto<Location>>(
+      this.locationsMicroservice.send<Location, { findOneByIdPayloadDto: FindOneByIdPayloadDto<Location> }>(
         {
           cmd: `${LocationsMicroserviceConstants.LOCATIONS_SERVICE_FIND_ONE_BY_ID_MESSAGE_PATTERN}/v${this.version}`,
         },
-        findOneByIdDto,
+        { findOneByIdPayloadDto },
       ),
     );
   }
 
   // find one or fail by id.
-  async findOneOrFailById(findOneOrFailByIdDto: FindOneOrFailByIdDto<Location>): Promise<Location> {
-    const location: Location = await this.findOneById(<FindOneByIdDto<Location>>{
-      id: findOneOrFailByIdDto.id,
-      relations: findOneOrFailByIdDto.relations,
-    });
+  async findOneOrFailById(findOneOrFailByIdPayloadDto: FindOneOrFailByIdPayloadDto<Location>): Promise<Location> {
+    const location: Location = await this.findOneById(
+      new FindOneByIdPayloadDto<Location>({
+        id: findOneOrFailByIdPayloadDto.id,
+        relations: findOneOrFailByIdPayloadDto.relations,
+      }),
+    );
     if (!location) {
-      throw new NotFoundException(findOneOrFailByIdDto.failureMessage || 'Location not found.');
+      throw new NotFoundException(findOneOrFailByIdPayloadDto.failureMessage || 'Location not found.');
     }
     return location;
   }
@@ -43,15 +45,21 @@ export class LocationsServiceImpl implements ILocationsService {
   }
 
   // find governorates with orders count.
-  findGovernoratesWithOrdersCount(serviceType: ServiceType, dateFilterDto?: DateFilterDto): Promise<Location[]> {
+  findGovernoratesWithOrdersCount(serviceType: ServiceType, dateFilterPayloadDto?: DateFilterPayloadDto): Promise<Location[]> {
     return firstValueFrom<Location[]>(
-      this.locationsMicroservice.send<Location[], { serviceType: ServiceType; dateFilterDto: DateFilterDto }>(
+      this.locationsMicroservice.send<
+        Location[],
+        {
+          serviceType: ServiceType;
+          dateFilterPayloadDto: DateFilterPayloadDto;
+        }
+      >(
         {
           cmd: `${LocationsMicroserviceConstants.LOCATIONS_SERVICE_FIND_GOVERNORATES_WITH_ORDERS_COUNT_MESSAGE_PATTERN}/v${this.version}`,
         },
         {
           serviceType,
-          dateFilterDto,
+          dateFilterPayloadDto,
         },
       ),
     );
@@ -82,15 +90,21 @@ export class LocationsServiceImpl implements ILocationsService {
   }
 
   // find regions with orders count.
-  findRegionsWithOrdersCount(serviceType: ServiceType, dateFilterDto: DateFilterDto): Promise<Location[]> {
+  findRegionsWithOrdersCount(serviceType: ServiceType, dateFilterPayloadDto: DateFilterPayloadDto): Promise<Location[]> {
     return firstValueFrom<Location[]>(
-      this.locationsMicroservice.send<Location[], { serviceType: ServiceType; dateFilterDto: DateFilterDto }>(
+      this.locationsMicroservice.send<
+        Location[],
+        {
+          serviceType: ServiceType;
+          dateFilterPayloadDto: DateFilterPayloadDto;
+        }
+      >(
         {
           cmd: `${LocationsMicroserviceConstants.LOCATIONS_SERVICE_FIND_REGIONS_WITH_ORDERS_COUNT_MESSAGE_PATTERN}/v${this.version}`,
         },
         {
           serviceType,
-          dateFilterDto,
+          dateFilterPayloadDto,
         },
       ),
     );

@@ -1,15 +1,15 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { ReportsService } from '../services/reports.service';
 import { AdminMustCanDo, AllowFor, Customer, Location, Order, PermissionAction, PermissionGroup, PermissionsTarget, Product, Serialize, UserType, Vendor } from '@app/common';
-import { VendorsReportsDto } from '../dtos/vendors-reports.dto';
-import { FindVendorsReportsDto } from '../dtos/find-vendors-reports.dto';
-import { CustomersReportsDto } from '../dtos/customers-reports.dto';
-import { SalesReportsDto } from '../dtos/sales-reports.dto';
-import { FindSalesReportsDto } from '../dtos/find-sales-reports.dto';
-import { SalesReportsWithFilterDto } from '../dtos/sales-reports-with-filter.dto';
-import { FindSalesReportsWithFilterDto } from '../dtos/find-sales-reports-with-filter.dto';
-import { GeneralReportsDto } from '../dtos/general-reports.dto';
-import { FindGeneralReportsDto } from '../dtos/find-general-reports.dto';
+import { VendorsReportsResponseDto } from '../dtos/vendors-reports-response.dto';
+import { FindVendorsReportsRequestDto } from '../dtos/find-vendors-reports-request.dto';
+import { CustomersReportsResponseDto } from '../dtos/customers-reports-response.dto';
+import { SalesReportsResponseDto } from '../dtos/sales-reports-response.dto';
+import { FindSalesReportsRequestDto } from '../dtos/find-sales-reports-request.dto';
+import { SalesReportsWithFilterResponseDto } from '../dtos/sales-reports-with-filter-response.dto';
+import { FindSalesReportsWithFilterRequestDto } from '../dtos/find-sales-reports-with-filter-request.dto';
+import { GeneralReportsResponseDto } from '../dtos/general-reports-response.dto';
+import { FindGeneralReportsRequestDto } from '../dtos/find-general-reports-request.dto';
 
 @AllowFor(UserType.ADMIN)
 @PermissionsTarget(PermissionGroup.REPORTS)
@@ -18,9 +18,9 @@ export class ReportsController {
   constructor(private readonly reportsService: ReportsService) {}
 
   @AdminMustCanDo(PermissionAction.VIEW)
-  @Serialize(GeneralReportsDto, 'General reports.')
+  @Serialize(GeneralReportsResponseDto, 'General reports.')
   @Get('general-reports')
-  findGeneralReports(@Query() findGeneralReportsDto: FindGeneralReportsDto): Promise<{
+  findGeneralReports(@Query() findGeneralReportsRequestDto: FindGeneralReportsRequestDto): Promise<{
     latestVendors: Vendor[];
     ordersCount: number;
     governoratesWithVendorsAndCustomersAndOrdersCount: Location[];
@@ -29,32 +29,32 @@ export class ReportsController {
     vendorsCount: number;
     usersCount: number;
   }> {
-    return this.reportsService.findGeneralReports(findGeneralReportsDto);
+    return this.reportsService.findGeneralReports(findGeneralReportsRequestDto);
   }
 
   @AdminMustCanDo(PermissionAction.VIEW)
-  @Serialize(VendorsReportsDto, 'Vendors reports.')
+  @Serialize(VendorsReportsResponseDto, 'Vendors reports.')
   @Get('vendors-reports')
-  findVendorsReports(@Query() findVendorsReportsDto: FindVendorsReportsDto): Promise<{
+  findVendorsReports(@Query() findVendorsReportsRequestDto: FindVendorsReportsRequestDto): Promise<{
     governoratesWithVendorsCount: Location[];
     documentsRequiredVendorsCount: number;
     pendingVendorsCount: number;
     activeVendorsCount: number;
   }> {
-    return this.reportsService.findVendorsReports(findVendorsReportsDto);
+    return this.reportsService.findVendorsReports(findVendorsReportsRequestDto);
   }
 
   @AdminMustCanDo(PermissionAction.VIEW)
-  @Serialize(CustomersReportsDto, 'Customers reports.')
+  @Serialize(CustomersReportsResponseDto, 'Customers reports.')
   @Get('customers-reports')
   findCustomersReports(): Promise<{ customersCount: number; governoratesWithCustomersCount: Location[] }> {
     return this.reportsService.findCustomersReports();
   }
 
   @AdminMustCanDo(PermissionAction.VIEW)
-  @Serialize(SalesReportsDto, 'Sales reports.')
+  @Serialize(SalesReportsResponseDto, 'Sales reports.')
   @Get('sales-reports')
-  findSalesReports(@Query() findSalesReportsDto: FindSalesReportsDto): Promise<{
+  findSalesReports(@Query() findSalesReportsRequestDto: FindSalesReportsRequestDto): Promise<{
     customOrderItemsTotalQuantities: number;
     ordersCount: number;
     totalSales: number;
@@ -62,13 +62,13 @@ export class ReportsController {
     governoratesWithOrdersCount: Location[];
     customOrderItemsTotalSales: number;
   }> {
-    return this.reportsService.findSalesReports(findSalesReportsDto);
+    return this.reportsService.findSalesReports(findSalesReportsRequestDto);
   }
 
   @AdminMustCanDo(PermissionAction.VIEW)
-  @Serialize(SalesReportsWithFilterDto, 'Sales reports with filter.')
+  @Serialize(SalesReportsWithFilterResponseDto, 'Sales reports with filter.')
   @Get('sales-reports-with-filter')
-  findSalesReportsWithFilter(@Query() findSalesReportsWithFilterDto: FindSalesReportsWithFilterDto): Promise<{
+  findSalesReportsWithFilter(@Query() findSalesReportsWithFilterRequestDto: FindSalesReportsWithFilterRequestDto): Promise<{
     customOrderItemsTotalQuantities: number;
     ordersCount: number;
     vendorsBestSellersWithOrdersCount: Vendor[];
@@ -80,6 +80,6 @@ export class ReportsController {
     governoratesWithOrdersCount: Location[];
     customOrderItemsTotalSales: number;
   }> {
-    return this.reportsService.findSalesReportsWithFilter(findSalesReportsWithFilterDto);
+    return this.reportsService.findSalesReportsWithFilter(findSalesReportsWithFilterRequestDto);
   }
 }

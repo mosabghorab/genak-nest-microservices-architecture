@@ -1,10 +1,10 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { DeleteFileDto, FindOneByIdDto, FindOneOrFailByIdDto, Product, StorageMicroserviceConnection, StorageMicroserviceConstants, UploadFileDto } from '@app/common';
-import { FindAllProductsDto } from '../dtos/find-all-products.dto';
-import { CreateProductDto } from '../dtos/create-product.dto';
-import { UpdateProductDto } from '../dtos/update-product.dto';
+import { DeleteFilePayloadDto, FindOneByIdPayloadDto, FindOneOrFailByIdPayloadDto, Product, StorageMicroserviceConnection, StorageMicroserviceConstants, UploadFilePayloadDto } from '@app/common';
+import { FindAllProductsRequestDto } from '../dtos/find-all-products-request.dto';
+import { CreateProductRequestDto } from '../dtos/create-product-request.dto';
+import { UpdateProductRequestDto } from '../dtos/update-product-request.dto';
 import { Constants } from '../../../../constants';
 import { ClientProxy } from '@nestjs/microservices';
 
@@ -22,72 +22,84 @@ export class AdminProductsService {
   }
 
   // find one by id.
-  findOneById(findOneByIdDto: FindOneByIdDto<Product>): Promise<Product | null> {
+  findOneById(findOneByIdPayloadDto: FindOneByIdPayloadDto<Product>): Promise<Product | null> {
     return this.productRepository.findOne({
-      where: { id: findOneByIdDto.id },
-      relations: findOneByIdDto.relations,
+      where: { id: findOneByIdPayloadDto.id },
+      relations: findOneByIdPayloadDto.relations,
     });
   }
 
   // find one or fail by id.
-  async findOneOrFailById(findOneOrFailByIdDto: FindOneOrFailByIdDto<Product>): Promise<Product> {
-    const product: Product = await this.findOneById(<FindOneByIdDto<Product>>{
-      id: findOneOrFailByIdDto.id,
-      relations: findOneOrFailByIdDto.relations,
-    });
+  async findOneOrFailById(findOneOrFailByIdPayloadDto: FindOneOrFailByIdPayloadDto<Product>): Promise<Product> {
+    const product: Product = await this.findOneById(
+      new FindOneByIdPayloadDto<Product>({
+        id: findOneOrFailByIdPayloadDto.id,
+        relations: findOneOrFailByIdPayloadDto.relations,
+      }),
+    );
     if (!product) {
-      throw new NotFoundException(findOneOrFailByIdDto.failureMessage || 'Product not found.');
+      throw new NotFoundException(findOneOrFailByIdPayloadDto.failureMessage || 'Product not found.');
     }
     return product;
   }
 
   // find all.
-  findAll(findAllProductsDto: FindAllProductsDto): Promise<Product[]> {
+  findAll(findAllProductsRequestDto: FindAllProductsRequestDto): Promise<Product[]> {
     return this.productRepository.find({
       where: {
-        serviceType: findAllProductsDto.serviceType,
+        serviceType: findAllProductsRequestDto.serviceType,
       },
     });
   }
 
   // create.
-  async create(createProductDto: CreateProductDto, image: Express.Multer.File): Promise<Product> {
-    const imageUrl: string = await this.storageMicroserviceConnection.storageServiceImpl.uploadFile(<UploadFileDto>{
-      prefixPath: Constants.PRODUCTS_IMAGES_PREFIX_PATH,
-      file: image,
-    });
+  async create(createProductRequestDto: CreateProductRequestDto, image: Express.Multer.File): Promise<Product> {
+    const imageUrl: string = await this.storageMicroserviceConnection.storageServiceImpl.uploadFile(
+      new UploadFilePayloadDto({
+        prefixPath: Constants.PRODUCTS_IMAGES_PREFIX_PATH,
+        file: image,
+      }),
+    );
     return this.productRepository.save(
       await this.productRepository.create({
         image: imageUrl,
-        ...createProductDto,
+        ...createProductRequestDto,
       }),
     );
   }
 
   // update.
-  async update(id: number, updateProductDto: UpdateProductDto, image?: Express.Multer.File): Promise<Product> {
-    const product: Product = await this.findOneOrFailById(<FindOneOrFailByIdDto<Product>>{
-      id,
-    });
+  async update(id: number, updateProductRequestDto: UpdateProductRequestDto, image?: Express.Multer.File): Promise<Product> {
+    const product: Product = await this.findOneOrFailById(
+      new FindOneOrFailByIdPayloadDto<Product>({
+        id,
+      }),
+    );
     if (image) {
-      await this.storageMicroserviceConnection.storageServiceImpl.deleteFile(<DeleteFileDto>{
-        prefixPath: Constants.PRODUCTS_IMAGES_PREFIX_PATH,
-        fileUrl: product.image,
-      });
-      product.image = await this.storageMicroserviceConnection.storageServiceImpl.uploadFile(<UploadFileDto>{
-        prefixPath: Constants.PRODUCTS_IMAGES_PREFIX_PATH,
-        file: image,
-      });
+      await this.storageMicroserviceConnection.storageServiceImpl.deleteFile(
+        new DeleteFilePayloadDto({
+          prefixPath: Constants.PRODUCTS_IMAGES_PREFIX_PATH,
+          fileUrl: product.image,
+        }),
+      );
+      product.image = await this.storageMicroserviceConnection.storageServiceImpl.uploadFile(
+        new UploadFilePayloadDto({
+          prefixPath: Constants.PRODUCTS_IMAGES_PREFIX_PATH,
+          file: image,
+        }),
+      );
     }
-    Object.assign(product, updateProductDto);
+    Object.assign(product, updateProductRequestDto);
     return this.productRepository.save(product);
   }
 
   // remove.
   async remove(id: number): Promise<Product> {
-    const product: Product = await this.findOneOrFailById(<FindOneOrFailByIdDto<Product>>{
-      id,
-    });
+    const product: Product = await this.findOneOrFailById(
+      new FindOneOrFailByIdPayloadDto<Product>({
+        id,
+      }),
+    );
     return this.productRepository.remove(product);
   }
 }

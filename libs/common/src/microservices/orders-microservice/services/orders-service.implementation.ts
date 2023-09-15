@@ -1,9 +1,9 @@
 import {
-  DateFilterDto,
-  FindOneByIdDto,
-  FindOneOrderByIdAndServiceTypeDto,
-  FindOneOrderOrFailByIdAndServiceTypeDto,
-  FindOneOrFailByIdDto,
+  DateFilterPayloadDto,
+  FindOneByIdPayloadDto,
+  FindOneOrderByIdAndServiceTypePayloadDto,
+  FindOneOrderOrFailByIdAndServiceTypePayloadDto,
+  FindOneOrFailByIdPayloadDto,
   IOrdersService,
   Order,
   OrdersMicroserviceConstants,
@@ -19,25 +19,27 @@ export class OrdersServiceImpl implements IOrdersService {
   constructor(private readonly ordersMicroservice: ClientProxy, private readonly version: string) {}
 
   // find one by id.
-  findOneById(findOneByIdDto: FindOneByIdDto<Order>): Promise<Order | null> {
+  findOneById(findOneByIdPayloadDto: FindOneByIdPayloadDto<Order>): Promise<Order | null> {
     return firstValueFrom<Order>(
-      this.ordersMicroservice.send<Order, FindOneByIdDto<Order>>(
+      this.ordersMicroservice.send<Order, { findOneByIdPayloadDto: FindOneByIdPayloadDto<Order> }>(
         {
           cmd: `${OrdersMicroserviceConstants.ORDERS_SERVICE_FIND_ONE_BY_ID_MESSAGE_PATTERN}/v${this.version}`,
         },
-        findOneByIdDto,
+        { findOneByIdPayloadDto },
       ),
     );
   }
 
   // find one or fail by id.
-  async findOneOrFailById(findOneOrFailByIdDto: FindOneOrFailByIdDto<Order>): Promise<Order> {
-    const order: Order = await this.findOneById(<FindOneByIdDto<Order>>{
-      id: findOneOrFailByIdDto.id,
-      relations: findOneOrFailByIdDto.relations,
-    });
+  async findOneOrFailById(findOneOrFailByIdPayloadDto: FindOneOrFailByIdPayloadDto<Order>): Promise<Order> {
+    const order: Order = await this.findOneById(
+      new FindOneByIdPayloadDto<Order>({
+        id: findOneOrFailByIdPayloadDto.id,
+        relations: findOneOrFailByIdPayloadDto.relations,
+      }),
+    );
     if (!order) {
-      throw new NotFoundException(findOneOrFailByIdDto.failureMessage || 'Order not found.');
+      throw new NotFoundException(findOneOrFailByIdPayloadDto.failureMessage || 'Order not found.');
     }
     return order;
   }
@@ -57,40 +59,47 @@ export class OrdersServiceImpl implements IOrdersService {
   }
 
   // find one by id and service type.
-  findOneByIdAndServiceType(findOneOrderByIdAndServiceTypeDto: FindOneOrderByIdAndServiceTypeDto): Promise<Order | null> {
+  findOneByIdAndServiceType(findOneOrderByIdAndServiceTypePayloadDto: FindOneOrderByIdAndServiceTypePayloadDto): Promise<Order | null> {
     return firstValueFrom<Order>(
-      this.ordersMicroservice.send<Order, FindOneOrderByIdAndServiceTypeDto>(
+      this.ordersMicroservice.send<
+        Order,
+        {
+          findOneOrderByIdAndServiceTypePayloadDto: FindOneOrderByIdAndServiceTypePayloadDto;
+        }
+      >(
         {
           cmd: `${OrdersMicroserviceConstants.ORDERS_SERVICE_FIND_ONE_BY_ID_AND_SERVICE_TYPE_MESSAGE_PATTERN}/v${this.version}`,
         },
-        findOneOrderByIdAndServiceTypeDto,
+        { findOneOrderByIdAndServiceTypePayloadDto },
       ),
     );
   }
 
   // find one or fail by id and service type.
-  async findOneOrFailByIdAndServiceType(findOneOrderOrFailByIdAndServiceTypeDto: FindOneOrderOrFailByIdAndServiceTypeDto): Promise<Order> {
-    const order: Order = await this.findOneByIdAndServiceType(<FindOneOrderByIdAndServiceTypeDto>{
-      id: findOneOrderOrFailByIdAndServiceTypeDto.id,
-      relations: findOneOrderOrFailByIdAndServiceTypeDto.relations,
-      serviceType: findOneOrderOrFailByIdAndServiceTypeDto.serviceType,
-    });
+  async findOneOrFailByIdAndServiceType(findOneOrderOrFailByIdAndServiceTypePayloadDto: FindOneOrderOrFailByIdAndServiceTypePayloadDto): Promise<Order> {
+    const order: Order = await this.findOneByIdAndServiceType(
+      new FindOneOrderByIdAndServiceTypePayloadDto({
+        id: findOneOrderOrFailByIdAndServiceTypePayloadDto.id,
+        relations: findOneOrderOrFailByIdAndServiceTypePayloadDto.relations,
+        serviceType: findOneOrderOrFailByIdAndServiceTypePayloadDto.serviceType,
+      }),
+    );
     if (!order) {
-      throw new NotFoundException(findOneOrderOrFailByIdAndServiceTypeDto.failureMessage || 'Order not found.');
+      throw new NotFoundException(findOneOrderOrFailByIdAndServiceTypePayloadDto.failureMessage || 'Order not found.');
     }
     return order;
   }
 
   // count.
-  count(serviceType?: ServiceType, dateFilterDto?: DateFilterDto): Promise<number> {
+  count(serviceType?: ServiceType, dateFilterPayloadDto?: DateFilterPayloadDto): Promise<number> {
     return firstValueFrom<number>(
-      this.ordersMicroservice.send<number, { serviceType?: ServiceType; dateFilterDto?: DateFilterDto }>(
+      this.ordersMicroservice.send<number, { serviceType?: ServiceType; dateFilterPayloadDto?: DateFilterPayloadDto }>(
         {
           cmd: `${OrdersMicroserviceConstants.ORDERS_SERVICE_COUNT_MESSAGE_PATTERN}/v${this.version}`,
         },
         {
           serviceType,
-          dateFilterDto,
+          dateFilterPayloadDto,
         },
       ),
     );
@@ -120,15 +129,21 @@ export class OrdersServiceImpl implements IOrdersService {
   }
 
   // total sales.
-  totalSales(serviceType: ServiceType, dateFilterDto?: DateFilterDto): Promise<{ totalSales: string }> {
+  totalSales(serviceType: ServiceType, dateFilterPayloadDto?: DateFilterPayloadDto): Promise<{ totalSales: string }> {
     return firstValueFrom<{ totalSales: string }>(
-      this.ordersMicroservice.send<{ totalSales: string }, { serviceType: ServiceType; dateFilterDto?: DateFilterDto }>(
+      this.ordersMicroservice.send<
+        { totalSales: string },
+        {
+          serviceType: ServiceType;
+          dateFilterPayloadDto?: DateFilterPayloadDto;
+        }
+      >(
         {
           cmd: `${OrdersMicroserviceConstants.ORDERS_SERVICE_TOTAL_SALES_MESSAGE_PATTERN}/v${this.version}`,
         },
         {
           serviceType,
-          dateFilterDto,
+          dateFilterPayloadDto,
         },
       ),
     );

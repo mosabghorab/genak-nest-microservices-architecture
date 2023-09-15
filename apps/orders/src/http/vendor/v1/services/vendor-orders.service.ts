@@ -1,8 +1,8 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { FindOneByIdDto, FindOneOrFailByIdDto, Order, Vendor, VendorsMicroserviceConnection, VendorsMicroserviceConstants } from '@app/common';
-import { FindAllOrdersDto } from '../dtos/find-all-orders.dto';
+import { FindOneByIdPayloadDto, FindOneOrFailByIdPayloadDto, Order, OrderStatus, Vendor, VendorsMicroserviceConnection, VendorsMicroserviceConstants } from '@app/common';
+import { FindAllOrdersRequestDto } from '../dtos/find-all-orders-request.dto';
 import { ClientProxy } from '@nestjs/microservices';
 import { Constants } from '../../../../constants';
 
@@ -20,27 +20,34 @@ export class VendorOrdersService {
   }
 
   // find one by id.
-  findOneById(findOneByIdDto: FindOneByIdDto<Order>): Promise<Order | null> {
-    return this.orderRepository.findOne({ where: { id: findOneByIdDto.id }, relations: findOneByIdDto.relations });
+  findOneById(findOneByIdPayloadDto: FindOneByIdPayloadDto<Order>): Promise<Order | null> {
+    return this.orderRepository.findOne({
+      where: { id: findOneByIdPayloadDto.id },
+      relations: findOneByIdPayloadDto.relations,
+    });
   }
 
   // find one or fail by id.
-  async findOneOrFailById(findOneOrFailByIdDto: FindOneOrFailByIdDto<Order>): Promise<Order> {
-    const order: Order = await this.findOneById(<FindOneByIdDto<Order>>{
-      id: findOneOrFailByIdDto.id,
-      relations: findOneOrFailByIdDto.relations,
-    });
+  async findOneOrFailById(findOneOrFailByIdPayloadDto: FindOneOrFailByIdPayloadDto<Order>): Promise<Order> {
+    const order: Order = await this.findOneById(
+      new FindOneByIdPayloadDto<Order>({
+        id: findOneOrFailByIdPayloadDto.id,
+        relations: findOneOrFailByIdPayloadDto.relations,
+      }),
+    );
     if (!order) {
-      throw new BadRequestException(findOneOrFailByIdDto.failureMessage || 'Order not found.');
+      throw new BadRequestException(findOneOrFailByIdPayloadDto.failureMessage || 'Order not found.');
     }
     return order;
   }
 
   // find all.
-  async findAll(vendorId: number, findAllOrdersDto: FindAllOrdersDto): Promise<Order[]> {
-    const vendor: Vendor = await this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Vendor>>{
-      id: vendorId,
-    });
+  async findAll(vendorId: number, findAllOrdersRequestDto: FindAllOrdersRequestDto): Promise<Order[]> {
+    const vendor: Vendor = await this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneOrFailById(
+      new FindOneOrFailByIdPayloadDto<Vendor>({
+        id: vendorId,
+      }),
+    );
     return this.orderRepository
       .createQueryBuilder('order')
       .leftJoinAndSelect('order.customer', 'customer')
@@ -52,9 +59,15 @@ export class VendorOrdersService {
         serviceType: vendor.serviceType,
       })
       .andWhere('order.status IN (:...statuses)', {
-        statuses: findAllOrdersDto.statuses,
+        statuses: findAllOrdersRequestDto.statuses,
       })
-      .addOrderBy('CASE order.status ' + findAllOrdersDto.statuses.map((status, index) => `WHEN '${status}' THEN ${index} `).join('') + 'ELSE ' + (findAllOrdersDto.statuses.length + 1) + ' END')
+      .addOrderBy(
+        'CASE order.status ' +
+          findAllOrdersRequestDto.statuses.map((status: OrderStatus, index: number): string => `WHEN '${status}' THEN ${index} `).join('') +
+          'ELSE ' +
+          (findAllOrdersRequestDto.statuses.length + 1) +
+          ' END',
+      )
       .getMany();
   }
 }

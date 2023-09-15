@@ -1,5 +1,5 @@
 import { Controller } from '@nestjs/common';
-import { DateFilterDto, OrdersMicroserviceConstants } from '@app/common';
+import { DateFilterPayloadDto, OrdersMicroserviceConstants } from '@app/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { OrderItemService } from '../services/order-item.service';
 
@@ -12,10 +12,10 @@ export class OrderItemsController {
   @MessagePattern({
     cmd: `${OrdersMicroserviceConstants.ORDER_ITEMS_SERVICE_FIND_CUSTOM_ORDER_ITEMS_TOTAL_SALES_AND_QUANTITIES_MESSAGE_PATTERN}/v${VERSION}`,
   })
-  findCustomOrderItemsTotalSalesAndQuantities(@Payload('dateFilterDto') dateFilterDto?: DateFilterDto): Promise<{
+  findCustomOrderItemsTotalSalesAndQuantities(@Payload('dateFilterPayloadDto') dateFilterPayloadDto?: DateFilterPayloadDto): Promise<{
     totalSales: string;
     totalQuantities: string;
   }> {
-    return this.orderItemService.findCustomOrderItemsTotalSalesAndQuantities(dateFilterDto);
+    return this.orderItemService.findCustomOrderItemsTotalSalesAndQuantities(dateFilterPayloadDto);
   }
 }

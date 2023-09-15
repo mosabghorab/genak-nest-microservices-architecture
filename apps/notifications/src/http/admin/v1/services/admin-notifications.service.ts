@@ -11,8 +11,8 @@ import {
   CustomersMicroserviceConnection,
   CustomersMicroserviceConstants,
   FcmToken,
-  FindAllFcmTokensDto,
-  FindOneOrFailByIdDto,
+  FindAllPushTokensPayloadDto,
+  FindOneOrFailByIdPayloadDto,
   NotificationTarget,
   PushNotificationType,
   SendPushNotificationPayloadDto,
@@ -52,30 +52,38 @@ export class AdminNotificationsService {
         let notificationsEnabled: boolean;
         if (sendPushNotificationRequestDto.userType === UserType.CUSTOMER) {
           notificationsEnabled = (
-            await this.customersMicroserviceConnection.customersServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Customer>>{
-              id: userId,
-            })
+            await this.customersMicroserviceConnection.customersServiceImpl.findOneOrFailById(
+              new FindOneOrFailByIdPayloadDto<Customer>({
+                id: userId,
+              }),
+            )
           ).notificationsEnabled;
         } else if (sendPushNotificationRequestDto.userType === UserType.VENDOR) {
           notificationsEnabled = (
-            await this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Vendor>>{
-              id: userId,
-            })
+            await this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneOrFailById(
+              new FindOneOrFailByIdPayloadDto<Vendor>({
+                id: userId,
+              }),
+            )
           ).notificationsEnabled;
         } else if (sendPushNotificationRequestDto.userType === UserType.ADMIN) {
           notificationsEnabled = (
-            await this.adminsMicroserviceConnection.adminsServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Admin>>{
-              id: userId,
-            })
+            await this.adminsMicroserviceConnection.adminsServiceImpl.findOneOrFailById(
+              new FindOneOrFailByIdPayloadDto<Admin>({
+                id: userId,
+              }),
+            )
           ).notificationsEnabled;
         }
         if (!notificationsEnabled) continue;
         fcmTokens.push(
           ...(
-            await this.authMicroserviceConnection.fcmTokensServiceImpl.findAll(<FindAllFcmTokensDto>{
-              tokenableId: userId,
-              tokenableType: sendPushNotificationRequestDto.userType,
-            })
+            await this.authMicroserviceConnection.fcmTokensServiceImpl.findAll(
+              new FindAllPushTokensPayloadDto({
+                tokenableId: userId,
+                tokenableType: sendPushNotificationRequestDto.userType,
+              }),
+            )
           ).map((fcmToken: FcmToken) => fcmToken.token),
         );
       }

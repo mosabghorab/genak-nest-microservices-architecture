@@ -1,9 +1,9 @@
 import { forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder } from 'typeorm';
-import { ClientUserType, FindOneByIdDto, FindOneOrFailByIdDto, Vendor, VendorStatus } from '@app/common';
+import { ClientUserType, FindOneByIdPayloadDto, FindOneOrFailByIdPayloadDto, Vendor, VendorStatus } from '@app/common';
 import { CustomerVendorsValidation } from '../validations/customer-vendors.validation';
-import { FindAllVendorsDto } from '../dtos/find-all-vendors.dto';
+import { FindAllVendorsRequestDto } from '../dtos/find-all-vendors-request.dto';
 
 @Injectable()
 export class CustomerVendorsService {
@@ -15,25 +15,30 @@ export class CustomerVendorsService {
   ) {}
 
   // find one by id.
-  findOneById(findOneByIdDto: FindOneByIdDto<Vendor>): Promise<Vendor | null> {
-    return this.vendorRepository.findOne({ where: { id: findOneByIdDto.id }, relations: findOneByIdDto.relations });
+  findOneById(findOneByIdPayloadDto: FindOneByIdPayloadDto<Vendor>): Promise<Vendor | null> {
+    return this.vendorRepository.findOne({
+      where: { id: findOneByIdPayloadDto.id },
+      relations: findOneByIdPayloadDto.relations,
+    });
   }
 
   // find one or fail by id.
-  async findOneOrFailById(findOneOrFailByIdDto: FindOneOrFailByIdDto<Vendor>): Promise<Vendor> {
-    const vendor: Vendor = await this.findOneById(<FindOneByIdDto<Vendor>>{
-      id: findOneOrFailByIdDto.id,
-      relations: findOneOrFailByIdDto.relations,
-    });
+  async findOneOrFailById(findOneOrFailByIdPayloadDto: FindOneOrFailByIdPayloadDto<Vendor>): Promise<Vendor> {
+    const vendor: Vendor = await this.findOneById(
+      new FindOneByIdPayloadDto<Vendor>({
+        id: findOneOrFailByIdPayloadDto.id,
+        relations: findOneOrFailByIdPayloadDto.relations,
+      }),
+    );
     if (!vendor) {
-      throw new NotFoundException(findOneOrFailByIdDto.failureMessage || 'Vendor not found.');
+      throw new NotFoundException(findOneOrFailByIdPayloadDto.failureMessage || 'Vendor not found.');
     }
     return vendor;
   }
 
   // find all.
-  async findAll(findAllVendorsDto: FindAllVendorsDto): Promise<Vendor[]> {
-    await this.customerVendorsValidation.validateFindAll(findAllVendorsDto);
+  async findAll(findAllVendorsRequestDto: FindAllVendorsRequestDto): Promise<Vendor[]> {
+    await this.customerVendorsValidation.validateFindAll(findAllVendorsRequestDto);
     const queryBuilder: SelectQueryBuilder<Vendor> = this.vendorRepository
       .createQueryBuilder('vendor')
       .leftJoinAndSelect('vendor.governorate', 'governorate')
@@ -42,14 +47,14 @@ export class CustomerVendorsService {
         reviewedBy: ClientUserType.CUSTOMER,
       })
       .addSelect(['AVG(order.averageTimeMinutes) AS averageTimeMinutes', 'AVG(review.rate) AS averageRate', 'COUNT(DISTINCT review.id) AS reviewsCount']);
-    if (findAllVendorsDto.regionsIds) {
+    if (findAllVendorsRequestDto.regionsIds) {
       queryBuilder.innerJoin('vendor.locationsVendors', 'locationVendor', 'locationVendor.locationId IN (:...regionsIds)', {
-        regionsIds: findAllVendorsDto.regionsIds,
+        regionsIds: findAllVendorsRequestDto.regionsIds,
       });
     }
     queryBuilder
       .where('vendor.serviceType = :serviceType', {
-        serviceType: findAllVendorsDto.serviceType,
+        serviceType: findAllVendorsRequestDto.serviceType,
       })
       .andWhere('vendor.status = :status', {
         status: VendorStatus.ACTIVE,
@@ -57,14 +62,14 @@ export class CustomerVendorsService {
       .andWhere('vendor.available = :available', {
         available: true,
       });
-    if (findAllVendorsDto.governorateId) {
+    if (findAllVendorsRequestDto.governorateId) {
       queryBuilder.andWhere('vendor.governorateId = :governorateId', {
-        governorateId: findAllVendorsDto.governorateId,
+        governorateId: findAllVendorsRequestDto.governorateId,
       });
     }
-    if (findAllVendorsDto.name) {
+    if (findAllVendorsRequestDto.name) {
       queryBuilder.andWhere('vendor.name LIKE :name', {
-        name: `%${findAllVendorsDto.name}%`,
+        name: `%${findAllVendorsRequestDto.name}%`,
       });
     }
     queryBuilder.groupBy('vendor.id');

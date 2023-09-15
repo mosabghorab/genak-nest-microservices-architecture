@@ -7,16 +7,16 @@ import {
   CustomersMicroserviceConstants,
   DateFilterOption,
   DateHelpers,
-  FindOneByIdDto,
-  FindOneOrFailByIdDto,
+  FindOneByIdPayloadDto,
+  FindOneOrFailByIdPayloadDto,
   Order,
   Vendor,
   VendorsMicroserviceConnection,
   VendorsMicroserviceConstants,
 } from '@app/common';
-import { FindAllOrdersDto } from '../dtos/find-all-orders.dto';
-import { FindVendorOrdersDto } from '../dtos/find-vendor-orders.dto';
-import { FindCustomerOrdersDto } from '../dtos/find-customer-orders.dto';
+import { FindAllOrdersRequestDto } from '../dtos/find-all-orders-request.dto';
+import { FindVendorOrdersRequestDto } from '../dtos/find-vendor-orders-request.dto';
+import { FindCustomerOrdersRequestDto } from '../dtos/find-customer-orders-request.dto';
 import { ClientProxy } from '@nestjs/microservices';
 import { Constants } from '../../../../constants';
 import { Workbook, Worksheet } from 'exceljs';
@@ -41,24 +41,29 @@ export class AdminOrdersService {
   }
 
   // find one by id.
-  findOneById(findOneByIdDto: FindOneByIdDto<Order>): Promise<Order | null> {
-    return this.orderRepository.findOne({ where: { id: findOneByIdDto.id }, relations: findOneByIdDto.relations });
+  findOneById(findOneByIdPayloadDto: FindOneByIdPayloadDto<Order>): Promise<Order | null> {
+    return this.orderRepository.findOne({
+      where: { id: findOneByIdPayloadDto.id },
+      relations: findOneByIdPayloadDto.relations,
+    });
   }
 
   // find one or fail by id.
-  async findOneOrFailById(findOneOrFailByIdDto: FindOneOrFailByIdDto<Order>): Promise<Order> {
-    const order: Order = await this.findOneById(<FindOneByIdDto<Order>>{
-      id: findOneOrFailByIdDto.id,
-      relations: findOneOrFailByIdDto.relations,
-    });
+  async findOneOrFailById(findOneOrFailByIdPayloadDto: FindOneOrFailByIdPayloadDto<Order>): Promise<Order> {
+    const order: Order = await this.findOneById(
+      new FindOneByIdPayloadDto<Order>({
+        id: findOneOrFailByIdPayloadDto.id,
+        relations: findOneOrFailByIdPayloadDto.relations,
+      }),
+    );
     if (!order) {
-      throw new BadRequestException(findOneOrFailByIdDto.failureMessage || 'Order not found.');
+      throw new BadRequestException(findOneOrFailByIdPayloadDto.failureMessage || 'Order not found.');
     }
     return order;
   }
 
   // find all.
-  async findAll(findAllOrdersDto: FindAllOrdersDto): Promise<
+  async findAll(findAllOrdersRequestDto: FindAllOrdersRequestDto): Promise<
     | {
         total: number;
         perPage: number;
@@ -68,34 +73,34 @@ export class AdminOrdersService {
       }
     | { total: number; data: Order[] }
   > {
-    const offset: number = (findAllOrdersDto.page - 1) * findAllOrdersDto.limit;
+    const offset: number = (findAllOrdersRequestDto.page - 1) * findAllOrdersRequestDto.limit;
     let dateRange: { startDate: Date; endDate: Date };
-    if (findAllOrdersDto.dateFilterOption === DateFilterOption.CUSTOM) {
+    if (findAllOrdersRequestDto.dateFilterOption === DateFilterOption.CUSTOM) {
       dateRange = {
-        startDate: findAllOrdersDto.startDate,
-        endDate: findAllOrdersDto.endDate,
+        startDate: findAllOrdersRequestDto.startDate,
+        endDate: findAllOrdersRequestDto.endDate,
       };
     } else {
-      dateRange = DateHelpers.getDateRangeForDateFilterOption(findAllOrdersDto.dateFilterOption);
+      dateRange = DateHelpers.getDateRangeForDateFilterOption(findAllOrdersRequestDto.dateFilterOption);
     }
     const [orders, count]: [Order[], number] = await this.orderRepository.findAndCount({
       where: {
-        serviceType: findAllOrdersDto.serviceType,
-        status: findAllOrdersDto.status,
+        serviceType: findAllOrdersRequestDto.serviceType,
+        status: findAllOrdersRequestDto.status,
         createdAt: Between(dateRange.startDate, dateRange.endDate),
       },
       relations: {
         customer: true,
         vendor: true,
       },
-      skip: findAllOrdersDto.paginationEnable ? offset : null,
-      take: findAllOrdersDto.paginationEnable ? findAllOrdersDto.limit : null,
+      skip: findAllOrdersRequestDto.paginationEnable ? offset : null,
+      take: findAllOrdersRequestDto.paginationEnable ? findAllOrdersRequestDto.limit : null,
     });
-    return findAllOrdersDto.paginationEnable
+    return findAllOrdersRequestDto.paginationEnable
       ? {
-          perPage: findAllOrdersDto.limit,
-          currentPage: findAllOrdersDto.page,
-          lastPage: Math.ceil(count / findAllOrdersDto.limit),
+          perPage: findAllOrdersRequestDto.limit,
+          currentPage: findAllOrdersRequestDto.page,
+          lastPage: Math.ceil(count / findAllOrdersRequestDto.limit),
           total: count,
           data: orders,
         }
@@ -108,7 +113,7 @@ export class AdminOrdersService {
   // find all by customer id.
   async findAllByCustomerId(
     customerId: number,
-    findCustomerOrdersDto: FindCustomerOrdersDto,
+    findCustomerOrdersRequestDto: FindCustomerOrdersRequestDto,
   ): Promise<
     | {
         total: number;
@@ -120,18 +125,20 @@ export class AdminOrdersService {
       }
     | { total: number; data: Order[]; ordersTotalPrice: any }
   > {
-    await this.customersMicroserviceConnection.customersServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Customer>>{
-      id: customerId,
-    });
-    const offset: number = (findCustomerOrdersDto.page - 1) * findCustomerOrdersDto.limit;
+    await this.customersMicroserviceConnection.customersServiceImpl.findOneOrFailById(
+      new FindOneOrFailByIdPayloadDto<Customer>({
+        id: customerId,
+      }),
+    );
+    const offset: number = (findCustomerOrdersRequestDto.page - 1) * findCustomerOrdersRequestDto.limit;
     let dateRange: { startDate: Date; endDate: Date };
-    if (findCustomerOrdersDto.dateFilterOption === DateFilterOption.CUSTOM) {
+    if (findCustomerOrdersRequestDto.dateFilterOption === DateFilterOption.CUSTOM) {
       dateRange = {
-        startDate: findCustomerOrdersDto.startDate,
-        endDate: findCustomerOrdersDto.endDate,
+        startDate: findCustomerOrdersRequestDto.startDate,
+        endDate: findCustomerOrdersRequestDto.endDate,
       };
     } else {
-      dateRange = DateHelpers.getDateRangeForDateFilterOption(findCustomerOrdersDto.dateFilterOption);
+      dateRange = DateHelpers.getDateRangeForDateFilterOption(findCustomerOrdersRequestDto.dateFilterOption);
     }
     const mainQueryBuilder: SelectQueryBuilder<Order> = this.orderRepository
       .createQueryBuilder('order')
@@ -139,26 +146,26 @@ export class AdminOrdersService {
         customerId,
       })
       .andWhere('order.serviceType = :serviceType', {
-        serviceType: findCustomerOrdersDto.serviceType,
+        serviceType: findCustomerOrdersRequestDto.serviceType,
       })
       .andWhere('order.createdAt BETWEEN :startDate AND :endDate', {
         startDate: dateRange.startDate,
         endDate: dateRange.endDate,
       });
-    if (findCustomerOrdersDto.status) {
+    if (findCustomerOrdersRequestDto.status) {
       mainQueryBuilder.andWhere('order.status = :status', {
-        status: findCustomerOrdersDto.status,
+        status: findCustomerOrdersRequestDto.status,
       });
     }
     const ordersQueryBuilder: SelectQueryBuilder<Order> = mainQueryBuilder.clone().leftJoinAndSelect('order.vendor', 'vendor');
-    if (findCustomerOrdersDto.paginationEnable) ordersQueryBuilder.skip(offset).take(findCustomerOrdersDto.limit);
+    if (findCustomerOrdersRequestDto.paginationEnable) ordersQueryBuilder.skip(offset).take(findCustomerOrdersRequestDto.limit);
     const [orders, count]: [Order[], number] = await ordersQueryBuilder.getManyAndCount();
     const { ordersTotalPrice } = await mainQueryBuilder.clone().select('SUM(order.total)', 'ordersTotalPrice').getRawOne();
-    return findCustomerOrdersDto.paginationEnable
+    return findCustomerOrdersRequestDto.paginationEnable
       ? {
-          perPage: findCustomerOrdersDto.limit,
-          currentPage: findCustomerOrdersDto.page,
-          lastPage: Math.ceil(count / findCustomerOrdersDto.limit),
+          perPage: findCustomerOrdersRequestDto.limit,
+          currentPage: findCustomerOrdersRequestDto.page,
+          lastPage: Math.ceil(count / findCustomerOrdersRequestDto.limit),
           total: count,
           ordersTotalPrice: ordersTotalPrice || 0,
           data: orders,
@@ -173,7 +180,7 @@ export class AdminOrdersService {
   // find all by vendor id.
   async findAllByVendorId(
     vendorId: number,
-    findVendorOrdersDto: FindVendorOrdersDto,
+    findVendorOrdersRequestDto: FindVendorOrdersRequestDto,
   ): Promise<
     | {
         total: number;
@@ -186,9 +193,11 @@ export class AdminOrdersService {
       }
     | { total: number; ordersAverageTimeMinutes: number; data: Order[]; ordersTotalPrice: any }
   > {
-    await this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Vendor>>{
-      id: vendorId,
-    });
+    await this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneOrFailById(
+      new FindOneOrFailByIdPayloadDto<Vendor>({
+        id: vendorId,
+      }),
+    );
     const { ordersAverageTimeMinutes } = await this.orderRepository
       .createQueryBuilder('order')
       .select('AVG(order.averageTimeMinutes)', 'ordersAverageTimeMinutes')
@@ -196,18 +205,18 @@ export class AdminOrdersService {
         vendorId,
       })
       .andWhere('order.serviceType = :serviceType', {
-        serviceType: findVendorOrdersDto.serviceType,
+        serviceType: findVendorOrdersRequestDto.serviceType,
       })
       .getRawOne();
-    const offset: number = (findVendorOrdersDto.page - 1) * findVendorOrdersDto.limit;
+    const offset: number = (findVendorOrdersRequestDto.page - 1) * findVendorOrdersRequestDto.limit;
     let dateRange: { startDate: Date; endDate: Date };
-    if (findVendorOrdersDto.dateFilterOption === DateFilterOption.CUSTOM) {
+    if (findVendorOrdersRequestDto.dateFilterOption === DateFilterOption.CUSTOM) {
       dateRange = {
-        startDate: findVendorOrdersDto.startDate,
-        endDate: findVendorOrdersDto.endDate,
+        startDate: findVendorOrdersRequestDto.startDate,
+        endDate: findVendorOrdersRequestDto.endDate,
       };
     } else {
-      dateRange = DateHelpers.getDateRangeForDateFilterOption(findVendorOrdersDto.dateFilterOption);
+      dateRange = DateHelpers.getDateRangeForDateFilterOption(findVendorOrdersRequestDto.dateFilterOption);
     }
     const mainQueryBuilder: SelectQueryBuilder<Order> = this.orderRepository
       .createQueryBuilder('order')
@@ -215,27 +224,26 @@ export class AdminOrdersService {
         vendorId,
       })
       .andWhere('order.serviceType = :serviceType', {
-        serviceType: findVendorOrdersDto.serviceType,
+        serviceType: findVendorOrdersRequestDto.serviceType,
       })
       .andWhere('order.createdAt BETWEEN :startDate AND :endDate', {
         startDate: dateRange.startDate,
         endDate: dateRange.endDate,
       });
-    if (findVendorOrdersDto.status) {
+    if (findVendorOrdersRequestDto.status) {
       mainQueryBuilder.andWhere('order.status = :status', {
-        status: findVendorOrdersDto.status,
+        status: findVendorOrdersRequestDto.status,
       });
     }
-
     const ordersQueryBuilder: SelectQueryBuilder<Order> = mainQueryBuilder.clone().leftJoinAndSelect('order.customer', 'customer');
-    if (findVendorOrdersDto.paginationEnable) ordersQueryBuilder.skip(offset).take(findVendorOrdersDto.limit);
+    if (findVendorOrdersRequestDto.paginationEnable) ordersQueryBuilder.skip(offset).take(findVendorOrdersRequestDto.limit);
     const [orders, count]: [Order[], number] = await ordersQueryBuilder.getManyAndCount();
     const { ordersTotalPrice } = await mainQueryBuilder.clone().select('SUM(order.total)', 'ordersTotalPrice').getRawOne();
-    return findVendorOrdersDto.paginationEnable
+    return findVendorOrdersRequestDto.paginationEnable
       ? {
-          perPage: findVendorOrdersDto.limit,
-          currentPage: findVendorOrdersDto.page,
-          lastPage: Math.ceil(count / findVendorOrdersDto.limit),
+          perPage: findVendorOrdersRequestDto.limit,
+          currentPage: findVendorOrdersRequestDto.page,
+          lastPage: Math.ceil(count / findVendorOrdersRequestDto.limit),
           total: count,
           ordersTotalPrice: ordersTotalPrice || 0,
           ordersAverageTimeMinutes: Math.floor(ordersAverageTimeMinutes) || 0,
@@ -251,15 +259,17 @@ export class AdminOrdersService {
 
   // remove.
   async remove(id: number): Promise<Order> {
-    const order: Order = await this.findOneOrFailById(<FindOneOrFailByIdDto<Order>>{
-      id,
-    });
+    const order: Order = await this.findOneOrFailById(
+      new FindOneOrFailByIdPayloadDto<Order>({
+        id,
+      }),
+    );
     return this.orderRepository.remove(order);
   }
 
   // export all.
-  async exportAll(findAllOrdersDto: FindAllOrdersDto): Promise<StreamableFile> {
-    const { data }: { data: Order[] } = await this.findAll(findAllOrdersDto);
+  async exportAll(findAllOrdersRequestDto: FindAllOrdersRequestDto): Promise<StreamableFile> {
+    const { data }: { data: Order[] } = await this.findAll(findAllOrdersRequestDto);
     const workbook: Workbook = new Workbook();
     const worksheet: Worksheet = workbook.addWorksheet('الطلبات');
     // add headers.
@@ -280,8 +290,8 @@ export class AdminOrdersService {
   }
 
   // export all by customer id.
-  async exportAllByCustomerId(customerId: number, findCustomerOrdersDto: FindCustomerOrdersDto): Promise<StreamableFile> {
-    const { data }: { data: Order[] } = await this.findAllByCustomerId(customerId, findCustomerOrdersDto);
+  async exportAllByCustomerId(customerId: number, findCustomerOrdersRequestDto: FindCustomerOrdersRequestDto): Promise<StreamableFile> {
+    const { data }: { data: Order[] } = await this.findAllByCustomerId(customerId, findCustomerOrdersRequestDto);
     const workbook: Workbook = new Workbook();
     const worksheet: Worksheet = workbook.addWorksheet('الطلبات');
     // add headers.
@@ -302,8 +312,8 @@ export class AdminOrdersService {
   }
 
   // export all by vendor id.
-  async exportAllByVendorId(vendorId: number, findVendorOrdersDto: FindVendorOrdersDto): Promise<StreamableFile> {
-    const { data }: { data: Order[] } = await this.findAllByVendorId(vendorId, findVendorOrdersDto);
+  async exportAllByVendorId(vendorId: number, findVendorOrdersRequestDto: FindVendorOrdersRequestDto): Promise<StreamableFile> {
+    const { data }: { data: Order[] } = await this.findAllByVendorId(vendorId, findVendorOrdersRequestDto);
     const workbook: Workbook = new Workbook();
     const worksheet: Worksheet = workbook.addWorksheet('الطلبات');
     // add headers.

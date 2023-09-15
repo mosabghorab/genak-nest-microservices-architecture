@@ -1,29 +1,38 @@
-import { DateFilterDto, FindOneByIdDto, FindOneOrderByIdAndServiceTypeDto, FindOneOrderOrFailByIdAndServiceTypeDto, FindOneOrFailByIdDto, Order, SearchPayloadDto, ServiceType } from '@app/common';
+import {
+  DateFilterPayloadDto,
+  FindOneByIdPayloadDto,
+  FindOneOrderByIdAndServiceTypePayloadDto,
+  FindOneOrderOrFailByIdAndServiceTypePayloadDto,
+  FindOneOrFailByIdPayloadDto,
+  Order,
+  SearchPayloadDto,
+  ServiceType,
+} from '@app/common';
 import { FindOptionsRelations } from 'typeorm';
 
 export interface IOrdersService {
   // find one by id.
-  findOneById(findOneByIdDto: FindOneByIdDto<Order>): Promise<Order | null>;
+  findOneById(findOneByIdPayloadDto: FindOneByIdPayloadDto<Order>): Promise<Order | null>;
 
   // find one or fail by id.
-  findOneOrFailById(findOneOrFailByIdDto: FindOneOrFailByIdDto<Order>): Promise<Order>;
+  findOneOrFailById(findOneOrFailByIdPayloadDto: FindOneOrFailByIdPayloadDto<Order>): Promise<Order>;
 
   // search by unique id.
   searchByUniqueId(searchPayloadDto: SearchPayloadDto<Order>): Promise<Order[]>;
 
   // find one by id and service type.
-  findOneByIdAndServiceType(findOneOrderByIdAndServiceTypeDto: FindOneOrderByIdAndServiceTypeDto): Promise<Order | null>;
+  findOneByIdAndServiceType(findOneOrderByIdAndServiceTypePayloadDto: FindOneOrderByIdAndServiceTypePayloadDto): Promise<Order | null>;
 
   // find one or fail by id and service type.
-  findOneOrFailByIdAndServiceType(findOneOrderOrFailByIdAndServiceTypeDto: FindOneOrderOrFailByIdAndServiceTypeDto): Promise<Order>;
+  findOneOrFailByIdAndServiceType(findOneOrderOrFailByIdAndServiceTypePayloadDto: FindOneOrderOrFailByIdAndServiceTypePayloadDto): Promise<Order>;
 
   // count.
-  count(serviceType?: ServiceType, dateFilterDto?: DateFilterDto): Promise<number>;
+  count(serviceType?: ServiceType, dateFilterPayloadDto?: DateFilterPayloadDto): Promise<number>;
 
   // total sales.
   totalSales(
     serviceType: ServiceType,
-    dateFilterDto?: DateFilterDto,
+    dateFilterPayloadDto?: DateFilterPayloadDto,
   ): Promise<{
     totalSales: string;
   }>;

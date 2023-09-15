@@ -1,7 +1,7 @@
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { ClientUserType, OrderByType, SendSmsNotificationDto, VerificationCode } from '@app/common';
+import { ClientUserType, OrderByType, SendSmsNotificationPayloadDto, VerificationCode } from '@app/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Constants } from '../../../../constants';
 import { VerificationCodeCreatedEvent } from '../events/verification-code-created.event';
@@ -41,10 +41,12 @@ export class VerificationCodesService {
     if (verificationCode) {
       this.eventEmitter.emit(
         Constants.VERIFICATION_CODE_CREATED_EVENT,
-        new VerificationCodeCreatedEvent(<SendSmsNotificationDto>{
-          phone,
-          message: `رمز التفعيل الخاص بجيناك هو : ${code}`,
-        }),
+        new VerificationCodeCreatedEvent(
+          new SendSmsNotificationPayloadDto({
+            phone,
+            message: `Your verification code for genak app is : ${code}`,
+          }),
+        ),
       );
     }
   }

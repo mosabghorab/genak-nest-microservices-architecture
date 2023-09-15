@@ -5,7 +5,7 @@ import {
   Customer,
   CustomersMicroserviceConnection,
   CustomersMicroserviceConstants,
-  DateFilterDto,
+  DateFilterPayloadDto,
   Location,
   LocationsMicroserviceConnection,
   LocationsMicroserviceConstants,
@@ -23,10 +23,10 @@ import {
 } from '@app/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { Constants } from '../../../../constants';
-import { FindVendorsReportsDto } from '../dtos/find-vendors-reports.dto';
-import { FindSalesReportsDto } from '../dtos/find-sales-reports.dto';
-import { FindSalesReportsWithFilterDto } from '../dtos/find-sales-reports-with-filter.dto';
-import { FindGeneralReportsDto } from '../dtos/find-general-reports.dto';
+import { FindVendorsReportsRequestDto } from '../dtos/find-vendors-reports-request.dto';
+import { FindSalesReportsRequestDto } from '../dtos/find-sales-reports-request.dto';
+import { FindSalesReportsWithFilterRequestDto } from '../dtos/find-sales-reports-with-filter-request.dto';
+import { FindGeneralReportsRequestDto } from '../dtos/find-general-reports-request.dto';
 
 @Injectable()
 export class ReportsService {
@@ -60,7 +60,7 @@ export class ReportsService {
   }
 
   // find general reports.
-  async findGeneralReports(findGeneralReportsDto: FindGeneralReportsDto): Promise<{
+  async findGeneralReports(findGeneralReportsRequestDto: FindGeneralReportsRequestDto): Promise<{
     latestVendors: Vendor[];
     ordersCount: number;
     governoratesWithVendorsAndCustomersAndOrdersCount: Location[];
@@ -72,16 +72,16 @@ export class ReportsService {
     const customersCount: number = await this.customersMicroserviceConnection.customersServiceImpl.count();
     const adminsCount: number = await this.adminsMicroserviceConnection.adminsServiceImpl.count();
     const allVendorsCount: number = await this.vendorsMicroserviceConnection.vendorsServiceImpl.count();
-    const vendorsCountByServiceType: number = await this.vendorsMicroserviceConnection.vendorsServiceImpl.count(findGeneralReportsDto.serviceType);
-    const ordersCount: number = await this.ordersMicroserviceConnection.ordersServiceImpl.count(findGeneralReportsDto.serviceType);
+    const vendorsCountByServiceType: number = await this.vendorsMicroserviceConnection.vendorsServiceImpl.count(findGeneralReportsRequestDto.serviceType);
+    const ordersCount: number = await this.ordersMicroserviceConnection.ordersServiceImpl.count(findGeneralReportsRequestDto.serviceType);
     const governoratesWithVendorsAndCustomersAndOrdersCount: Location[] = await this.locationsMicroserviceConnection.locationsServiceImpl.findGovernoratesWithVendorsAndCustomersAndOrdersCount(
-      findGeneralReportsDto.serviceType,
+      findGeneralReportsRequestDto.serviceType,
     );
-    const latestOrders: Order[] = await this.ordersMicroserviceConnection.ordersServiceImpl.findLatest(10, findGeneralReportsDto.serviceType, {
+    const latestOrders: Order[] = await this.ordersMicroserviceConnection.ordersServiceImpl.findLatest(10, findGeneralReportsRequestDto.serviceType, {
       customer: true,
       vendor: true,
     });
-    const latestVendors: Vendor[] = await this.vendorsMicroserviceConnection.vendorsServiceImpl.findLatest(10, findGeneralReportsDto.serviceType);
+    const latestVendors: Vendor[] = await this.vendorsMicroserviceConnection.vendorsServiceImpl.findLatest(10, findGeneralReportsRequestDto.serviceType);
     return {
       usersCount: allVendorsCount + customersCount + adminsCount,
       customersCount,
@@ -94,16 +94,16 @@ export class ReportsService {
   }
 
   // find vendors reports.
-  async findVendorsReports(findVendorsReportsDto: FindVendorsReportsDto): Promise<{
+  async findVendorsReports(findVendorsReportsRequestDto: FindVendorsReportsRequestDto): Promise<{
     governoratesWithVendorsCount: Location[];
     documentsRequiredVendorsCount: number;
     pendingVendorsCount: number;
     activeVendorsCount: number;
   }> {
-    const documentsRequiredVendorsCount: number = await this.vendorsMicroserviceConnection.vendorsServiceImpl.count(findVendorsReportsDto.serviceType, VendorStatus.DOCUMENTS_REQUIRED);
-    const pendingVendorsCount: number = await this.vendorsMicroserviceConnection.vendorsServiceImpl.count(findVendorsReportsDto.serviceType, VendorStatus.PENDING);
-    const activeVendorsCount: number = await this.vendorsMicroserviceConnection.vendorsServiceImpl.count(findVendorsReportsDto.serviceType, VendorStatus.ACTIVE);
-    const governoratesWithVendorsCount: Location[] = await this.locationsMicroserviceConnection.locationsServiceImpl.findGovernoratesWithVendorsCount(findVendorsReportsDto.serviceType);
+    const documentsRequiredVendorsCount: number = await this.vendorsMicroserviceConnection.vendorsServiceImpl.count(findVendorsReportsRequestDto.serviceType, VendorStatus.DOCUMENTS_REQUIRED);
+    const pendingVendorsCount: number = await this.vendorsMicroserviceConnection.vendorsServiceImpl.count(findVendorsReportsRequestDto.serviceType, VendorStatus.PENDING);
+    const activeVendorsCount: number = await this.vendorsMicroserviceConnection.vendorsServiceImpl.count(findVendorsReportsRequestDto.serviceType, VendorStatus.ACTIVE);
+    const governoratesWithVendorsCount: Location[] = await this.locationsMicroserviceConnection.locationsServiceImpl.findGovernoratesWithVendorsCount(findVendorsReportsRequestDto.serviceType);
     return {
       documentsRequiredVendorsCount,
       pendingVendorsCount,
@@ -123,7 +123,7 @@ export class ReportsService {
   }
 
   // find sales reports.
-  async findSalesReports(findSalesReportsDto: FindSalesReportsDto): Promise<{
+  async findSalesReports(findSalesReportsRequestDto: FindSalesReportsRequestDto): Promise<{
     customOrderItemsTotalQuantities: number;
     ordersCount: number;
     totalSales: number;
@@ -131,13 +131,13 @@ export class ReportsService {
     governoratesWithOrdersCount: Location[];
     customOrderItemsTotalSales: number;
   }> {
-    const ordersCount: number = await this.ordersMicroserviceConnection.ordersServiceImpl.count(findSalesReportsDto.serviceType);
-    const totalSales: number = parseFloat((await this.ordersMicroserviceConnection.ordersServiceImpl.totalSales(findSalesReportsDto.serviceType)).totalSales) || 0;
-    const governoratesWithOrdersCount: Location[] = await this.locationsMicroserviceConnection.locationsServiceImpl.findGovernoratesWithOrdersCount(findSalesReportsDto.serviceType);
-    const productsWithTotalSales: Product[] = await this.productsMicroserviceConnection.productsServiceImpl.findWithTotalSales(findSalesReportsDto.serviceType);
+    const ordersCount: number = await this.ordersMicroserviceConnection.ordersServiceImpl.count(findSalesReportsRequestDto.serviceType);
+    const totalSales: number = parseFloat((await this.ordersMicroserviceConnection.ordersServiceImpl.totalSales(findSalesReportsRequestDto.serviceType)).totalSales) || 0;
+    const governoratesWithOrdersCount: Location[] = await this.locationsMicroserviceConnection.locationsServiceImpl.findGovernoratesWithOrdersCount(findSalesReportsRequestDto.serviceType);
+    const productsWithTotalSales: Product[] = await this.productsMicroserviceConnection.productsServiceImpl.findWithTotalSales(findSalesReportsRequestDto.serviceType);
     let customOrderItemsTotalSales: number;
     let customOrderItemsTotalQuantities: number;
-    if (findSalesReportsDto.serviceType === ServiceType.WATER) {
+    if (findSalesReportsRequestDto.serviceType === ServiceType.WATER) {
       const {
         totalSales,
         totalQuantities,
@@ -159,7 +159,7 @@ export class ReportsService {
   }
 
   // find sales reports with filter.
-  async findSalesReportsWithFilter(findSalesReportsWithFilterDto: FindSalesReportsWithFilterDto): Promise<{
+  async findSalesReportsWithFilter(findSalesReportsWithFilterRequestDto: FindSalesReportsWithFilterRequestDto): Promise<{
     customOrderItemsTotalQuantities: number;
     ordersCount: number;
     vendorsBestSellersWithOrdersCount: Vendor[];
@@ -171,76 +171,93 @@ export class ReportsService {
     governoratesWithOrdersCount: Location[];
     customOrderItemsTotalSales: number;
   }> {
-    const ordersCount: number = await this.ordersMicroserviceConnection.ordersServiceImpl.count(findSalesReportsWithFilterDto.serviceType, <DateFilterDto>{
-      dateFilterOption: findSalesReportsWithFilterDto.dateFilterOption,
-      startDate: findSalesReportsWithFilterDto.startDate,
-      endDate: findSalesReportsWithFilterDto.endDate,
-    });
+    const ordersCount: number = await this.ordersMicroserviceConnection.ordersServiceImpl.count(
+      findSalesReportsWithFilterRequestDto.serviceType,
+      new DateFilterPayloadDto({
+        dateFilterOption: findSalesReportsWithFilterRequestDto.dateFilterOption,
+        startDate: findSalesReportsWithFilterRequestDto.startDate,
+        endDate: findSalesReportsWithFilterRequestDto.endDate,
+      }),
+    );
     const totalSales: number =
       parseFloat(
         (
-          await this.ordersMicroserviceConnection.ordersServiceImpl.totalSales(findSalesReportsWithFilterDto.serviceType, <DateFilterDto>{
-            dateFilterOption: findSalesReportsWithFilterDto.dateFilterOption,
-            startDate: findSalesReportsWithFilterDto.startDate,
-            endDate: findSalesReportsWithFilterDto.endDate,
-          })
+          await this.ordersMicroserviceConnection.ordersServiceImpl.totalSales(
+            findSalesReportsWithFilterRequestDto.serviceType,
+            new DateFilterPayloadDto({
+              dateFilterOption: findSalesReportsWithFilterRequestDto.dateFilterOption,
+              startDate: findSalesReportsWithFilterRequestDto.startDate,
+              endDate: findSalesReportsWithFilterRequestDto.endDate,
+            }),
+          )
         ).totalSales,
       ) || 0;
 
-    const governoratesWithOrdersCount: Location[] = await this.locationsMicroserviceConnection.locationsServiceImpl.findGovernoratesWithOrdersCount(findSalesReportsWithFilterDto.serviceType, <
-      DateFilterDto
-    >{
-      dateFilterOption: findSalesReportsWithFilterDto.dateFilterOption,
-      startDate: findSalesReportsWithFilterDto.startDate,
-      endDate: findSalesReportsWithFilterDto.endDate,
-    });
+    const governoratesWithOrdersCount: Location[] = await this.locationsMicroserviceConnection.locationsServiceImpl.findGovernoratesWithOrdersCount(
+      findSalesReportsWithFilterRequestDto.serviceType,
+      new DateFilterPayloadDto({
+        dateFilterOption: findSalesReportsWithFilterRequestDto.dateFilterOption,
+        startDate: findSalesReportsWithFilterRequestDto.startDate,
+        endDate: findSalesReportsWithFilterRequestDto.endDate,
+      }),
+    );
 
-    const regionsWithOrdersCount: Location[] = await this.locationsMicroserviceConnection.locationsServiceImpl.findRegionsWithOrdersCount(findSalesReportsWithFilterDto.serviceType, <DateFilterDto>{
-      dateFilterOption: findSalesReportsWithFilterDto.dateFilterOption,
-      startDate: findSalesReportsWithFilterDto.startDate,
-      endDate: findSalesReportsWithFilterDto.endDate,
-    });
+    const regionsWithOrdersCount: Location[] = await this.locationsMicroserviceConnection.locationsServiceImpl.findRegionsWithOrdersCount(
+      findSalesReportsWithFilterRequestDto.serviceType,
+      new DateFilterPayloadDto({
+        dateFilterOption: findSalesReportsWithFilterRequestDto.dateFilterOption,
+        startDate: findSalesReportsWithFilterRequestDto.startDate,
+        endDate: findSalesReportsWithFilterRequestDto.endDate,
+      }),
+    );
 
-    const productsWithTotalSales: Product[] = await this.productsMicroserviceConnection.productsServiceImpl.findWithTotalSales(findSalesReportsWithFilterDto.serviceType, <DateFilterDto>{
-      dateFilterOption: findSalesReportsWithFilterDto.dateFilterOption,
-      startDate: findSalesReportsWithFilterDto.startDate,
-      endDate: findSalesReportsWithFilterDto.endDate,
+    const productsWithTotalSales: Product[] = await this.productsMicroserviceConnection.productsServiceImpl.findWithTotalSales(findSalesReportsWithFilterRequestDto.serviceType, <DateFilterPayloadDto>{
+      dateFilterOption: findSalesReportsWithFilterRequestDto.dateFilterOption,
+      startDate: findSalesReportsWithFilterRequestDto.startDate,
+      endDate: findSalesReportsWithFilterRequestDto.endDate,
     });
-    const productsWithOrdersCount: Product[] = await this.productsMicroserviceConnection.productsServiceImpl.findWithOrdersCount(findSalesReportsWithFilterDto.serviceType, <DateFilterDto>{
-      dateFilterOption: findSalesReportsWithFilterDto.dateFilterOption,
-      startDate: findSalesReportsWithFilterDto.startDate,
-      endDate: findSalesReportsWithFilterDto.endDate,
-    });
+    const productsWithOrdersCount: Product[] = await this.productsMicroserviceConnection.productsServiceImpl.findWithOrdersCount(
+      findSalesReportsWithFilterRequestDto.serviceType,
+      new DateFilterPayloadDto({
+        dateFilterOption: findSalesReportsWithFilterRequestDto.dateFilterOption,
+        startDate: findSalesReportsWithFilterRequestDto.startDate,
+        endDate: findSalesReportsWithFilterRequestDto.endDate,
+      }),
+    );
 
-    const vendorsBestSellersWithOrdersCount: Vendor[] = await this.vendorsMicroserviceConnection.vendorsServiceImpl.findBestSellersWithOrdersCount(findSalesReportsWithFilterDto.serviceType, <
-      DateFilterDto
-    >{
-      dateFilterOption: findSalesReportsWithFilterDto.dateFilterOption,
-      startDate: findSalesReportsWithFilterDto.startDate,
-      endDate: findSalesReportsWithFilterDto.endDate,
-    });
+    const vendorsBestSellersWithOrdersCount: Vendor[] = await this.vendorsMicroserviceConnection.vendorsServiceImpl.findBestSellersWithOrdersCount(
+      findSalesReportsWithFilterRequestDto.serviceType,
+      new DateFilterPayloadDto({
+        dateFilterOption: findSalesReportsWithFilterRequestDto.dateFilterOption,
+        startDate: findSalesReportsWithFilterRequestDto.startDate,
+        endDate: findSalesReportsWithFilterRequestDto.endDate,
+      }),
+    );
 
-    const customersBestBuyersWithOrdersCount: Customer[] = await this.customersMicroserviceConnection.customersServiceImpl.findBestBuyersWithOrdersCount(findSalesReportsWithFilterDto.serviceType, <
-      DateFilterDto
-    >{
-      dateFilterOption: findSalesReportsWithFilterDto.dateFilterOption,
-      startDate: findSalesReportsWithFilterDto.startDate,
-      endDate: findSalesReportsWithFilterDto.endDate,
-    });
+    const customersBestBuyersWithOrdersCount: Customer[] = await this.customersMicroserviceConnection.customersServiceImpl.findBestBuyersWithOrdersCount(
+      findSalesReportsWithFilterRequestDto.serviceType,
+      new DateFilterPayloadDto({
+        dateFilterOption: findSalesReportsWithFilterRequestDto.dateFilterOption,
+        startDate: findSalesReportsWithFilterRequestDto.startDate,
+        endDate: findSalesReportsWithFilterRequestDto.endDate,
+      }),
+    );
     let customOrderItemsTotalSales: number;
     let customOrderItemsTotalQuantities: number;
-    if (findSalesReportsWithFilterDto.serviceType === ServiceType.WATER) {
+    if (findSalesReportsWithFilterRequestDto.serviceType === ServiceType.WATER) {
       const {
         totalSales,
         totalQuantities,
       }: {
         totalSales: string;
         totalQuantities: string;
-      } = await this.ordersMicroserviceConnection.orderItemsServiceImpl.findCustomOrderItemsTotalSalesAndQuantities(<DateFilterDto>{
-        dateFilterOption: findSalesReportsWithFilterDto.dateFilterOption,
-        startDate: findSalesReportsWithFilterDto.startDate,
-        endDate: findSalesReportsWithFilterDto.endDate,
-      });
+      } = await this.ordersMicroserviceConnection.orderItemsServiceImpl.findCustomOrderItemsTotalSalesAndQuantities(
+        new DateFilterPayloadDto({
+          dateFilterOption: findSalesReportsWithFilterRequestDto.dateFilterOption,
+          startDate: findSalesReportsWithFilterRequestDto.startDate,
+          endDate: findSalesReportsWithFilterRequestDto.endDate,
+        }),
+      );
       customOrderItemsTotalSales = parseFloat(totalSales) || 0;
       customOrderItemsTotalQuantities = parseInt(totalQuantities) || 0;
     }

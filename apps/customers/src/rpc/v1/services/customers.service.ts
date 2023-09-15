@@ -3,13 +3,13 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { ILike, Repository } from 'typeorm';
 import {
   Customer,
-  CustomerSignUpDto,
-  CustomerUpdateProfileDto,
-  DateFilterDto,
+  CustomerSignUpPayloadDto,
+  CustomerUpdateProfilePayloadDto,
   DateFilterOption,
+  DateFilterPayloadDto,
   DateHelpers,
-  FindOneByIdDto,
-  FindOneByPhoneDto,
+  FindOneByIdPayloadDto,
+  FindOneByPhonePayloadDto,
   OrderByType,
   SearchPayloadDto,
   ServiceType,
@@ -23,18 +23,18 @@ export class CustomersService {
   ) {}
 
   // find one by id.
-  findOneById(findOneByIdDto: FindOneByIdDto<Customer>): Promise<Customer | null> {
+  findOneById(findOneByIdPayloadDto: FindOneByIdPayloadDto<Customer>): Promise<Customer | null> {
     return this.customerRepository.findOne({
-      where: { id: findOneByIdDto.id },
-      relations: findOneByIdDto.relations,
+      where: { id: findOneByIdPayloadDto.id },
+      relations: findOneByIdPayloadDto.relations,
     });
   }
 
   // find one by phone.
-  findOneByPhone(findOneByPhoneDto: FindOneByPhoneDto<Customer>): Promise<Customer | null> {
+  findOneByPhone(findOneByPhonePayloadDto: FindOneByPhonePayloadDto<Customer>): Promise<Customer | null> {
     return this.customerRepository.findOne({
-      where: { phone: findOneByPhoneDto.phone },
-      relations: findOneByPhoneDto.relations,
+      where: { phone: findOneByPhonePayloadDto.phone },
+      relations: findOneByPhonePayloadDto.relations,
     });
   }
 
@@ -46,16 +46,18 @@ export class CustomersService {
   }
 
   // create.
-  async create(customerSignUpDto: CustomerSignUpDto): Promise<Customer> {
-    return this.customerRepository.save(await this.customerRepository.create(customerSignUpDto));
+  async create(customerSignUpPayloadDto: CustomerSignUpPayloadDto): Promise<Customer> {
+    return this.customerRepository.save(await this.customerRepository.create(customerSignUpPayloadDto));
   }
 
   // update profile.
-  async updateProfile(customerUpdateProfileDto: CustomerUpdateProfileDto): Promise<Customer> {
-    const customer: Customer = await this.findOneById(<FindOneByIdDto<Customer>>{
-      id: customerUpdateProfileDto.customerId,
-    });
-    Object.assign(customer, customerUpdateProfileDto);
+  async updateProfile(customerUpdateProfilePayloadDto: CustomerUpdateProfilePayloadDto): Promise<Customer> {
+    const customer: Customer = await this.findOneById(
+      new FindOneByIdPayloadDto<Customer>({
+        id: customerUpdateProfilePayloadDto.customerId,
+      }),
+    );
+    Object.assign(customer, customerUpdateProfilePayloadDto);
     return this.customerRepository.save(customer);
   }
 
@@ -70,15 +72,15 @@ export class CustomersService {
   }
 
   // find best buyers with orders count.
-  async findBestBuyersWithOrdersCount(serviceType: ServiceType, dateFilterDto: DateFilterDto): Promise<Customer[]> {
+  async findBestBuyersWithOrdersCount(serviceType: ServiceType, dateFilterPayloadDto: DateFilterPayloadDto): Promise<Customer[]> {
     let dateRange: { startDate: Date; endDate: Date };
-    if (dateFilterDto.dateFilterOption === DateFilterOption.CUSTOM) {
+    if (dateFilterPayloadDto.dateFilterOption === DateFilterOption.CUSTOM) {
       dateRange = {
-        startDate: dateFilterDto.startDate,
-        endDate: dateFilterDto.endDate,
+        startDate: dateFilterPayloadDto.startDate,
+        endDate: dateFilterPayloadDto.endDate,
       };
     } else {
-      dateRange = DateHelpers.getDateRangeForDateFilterOption(dateFilterDto.dateFilterOption);
+      dateRange = DateHelpers.getDateRangeForDateFilterOption(dateFilterPayloadDto.dateFilterOption);
     }
     const { entities, raw }: { entities: Customer[]; raw: any[] } = await this.customerRepository
       .createQueryBuilder('customer')

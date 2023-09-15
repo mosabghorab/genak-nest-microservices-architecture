@@ -38,4 +38,13 @@ export abstract class Helpers {
       adminRole.role.rolesPermissions.some((rolePermission: any) => rolePermission.permission.action === action && rolePermission.permission.group === group),
     );
   }
+
+  // timerify.
+  static async timerify<T>(func: any): Promise<{ executionTime: string; data: T }> {
+    const startTime: [number, number] = process.hrtime();
+    const data: T = await func();
+    const endTime: [number, number] = process.hrtime(startTime);
+    const executionTime = `${(endTime[0] * 1000 + endTime[1] / 1e6).toFixed(2)}ms`;
+    return { executionTime, data };
+  }
 }

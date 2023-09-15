@@ -3,24 +3,24 @@ import {
   Attachment,
   AttachmentStatus,
   CommonConstants,
-  CreateAttachmentDto,
+  CreateAttachmentPayloadDto,
   Document,
   DocumentsMicroserviceConnection,
   DocumentsMicroserviceConstants,
   DocumentType,
-  FindAllDocumentsDto,
-  FindOneByPhoneDto,
-  FindOneOrFailByIdDto,
+  FindAllDocumentsPayloadDto,
+  FindOneByPhonePayloadDto,
+  FindOneOrFailByIdPayloadDto,
   Location,
   LocationsMicroserviceConnection,
   LocationsMicroserviceConstants,
   Vendor,
-  VendorSignUpDto,
   VendorsMicroserviceConnection,
   VendorsMicroserviceConstants,
 } from '@app/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { Constants } from '../../../../constants';
+import { SignUpDto } from '../dtos/sign-up.dto';
 
 @Injectable()
 export class VendorAuthValidation {
@@ -42,17 +42,21 @@ export class VendorAuthValidation {
   }
 
   // validate sign up.
-  async validateSignUp(vendorSignUpDto: VendorSignUpDto): Promise<void> {
-    const vendor: Vendor = await this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneByPhone(<FindOneByPhoneDto<Vendor>>{
-      phone: vendorSignUpDto.phone,
-    });
+  async validateSignUp(signUpDto: SignUpDto): Promise<void> {
+    const vendor: Vendor = await this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneByPhone(
+      new FindOneByPhonePayloadDto<Vendor>({
+        phone: signUpDto.phone,
+      }),
+    );
     if (vendor) {
       throw new BadRequestException('Phone is already exists.');
     }
-    await this.locationsMicroserviceConnection.locationsServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Location>>{
-      id: vendorSignUpDto.governorateId,
-      failureMessage: 'Governorate not found.',
-    });
+    await this.locationsMicroserviceConnection.locationsServiceImpl.findOneOrFailById(
+      new FindOneOrFailByIdPayloadDto<Location>({
+        id: signUpDto.governorateId,
+        failureMessage: 'Governorate not found.',
+      }),
+    );
   }
 
   // validate upload documents.
@@ -61,24 +65,28 @@ export class VendorAuthValidation {
     files?: Express.Multer.File[],
   ): Promise<{
     vendor: Vendor;
-    createAttachmentDtoList: CreateAttachmentDto[];
+    createAttachmentPayloadDtoList: CreateAttachmentPayloadDto[];
   }> {
     if (!files || files.length === 0) {
       throw new BadRequestException('Please upload the required documents.');
     }
-    const vendor: Vendor = await this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Vendor>>{
-      id: vendorId,
-      relations: {
-        attachments: true,
-      },
-    });
-    const documents: Document[] = await this.documentsMicroserviceConnection.documentsServiceImpl.findAll(<FindAllDocumentsDto>{
-      serviceType: vendor.serviceType,
-    });
+    const vendor: Vendor = await this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneOrFailById(
+      new FindOneOrFailByIdPayloadDto<Vendor>({
+        id: vendorId,
+        relations: {
+          attachments: true,
+        },
+      }),
+    );
+    const documents: Document[] = await this.documentsMicroserviceConnection.documentsServiceImpl.findAll(
+      new FindAllDocumentsPayloadDto({
+        serviceType: vendor.serviceType,
+      }),
+    );
     if (!documents || documents.length === 0) {
       throw new BadRequestException('There are no documents to upload.');
     }
-    const createAttachmentDtoList: CreateAttachmentDto[] = [];
+    const createAttachmentPayloadDtoList: CreateAttachmentPayloadDto[] = [];
     for (let i = 0; i < documents.length; i++) {
       const document: Document = documents[i];
       const fileIndex: number = files.findIndex((file: Express.Multer.File) => file.fieldname === document.id.toString());
@@ -91,26 +99,30 @@ export class VendorAuthValidation {
       const file: Express.Multer.File = files[fileIndex];
       if (document.type === DocumentType.IMAGE) {
         if (new RegExp(CommonConstants.IMAGE_MIMETYPE_REGX).test(file.mimetype)) {
-          createAttachmentDtoList.push(<CreateAttachmentDto>{
-            documentId: document.id,
-            vendorId: vendorId,
-            file: file,
-          });
+          createAttachmentPayloadDtoList.push(
+            new CreateAttachmentPayloadDto({
+              documentId: document.id,
+              vendorId: vendorId,
+              file: file,
+            }),
+          );
         } else {
           throw new BadRequestException(`${document.name} must be an image of [${CommonConstants.IMAGE_MIMETYPE_REGX}].`);
         }
       } else {
         if (new RegExp(CommonConstants.FILE_MIMETYPE_REGX).test(file.mimetype)) {
-          createAttachmentDtoList.push(<CreateAttachmentDto>{
-            documentId: document.id,
-            vendorId: vendorId,
-            file: file,
-          });
+          createAttachmentPayloadDtoList.push(
+            new CreateAttachmentPayloadDto({
+              documentId: document.id,
+              vendorId: vendorId,
+              file: file,
+            }),
+          );
         } else {
           throw new BadRequestException(`${document.name} must be an file of [${CommonConstants.FILE_MIMETYPE_REGX}].`);
         }
       }
     }
-    return { createAttachmentDtoList: createAttachmentDtoList, vendor };
+    return { createAttachmentPayloadDtoList, vendor };
   }
 }

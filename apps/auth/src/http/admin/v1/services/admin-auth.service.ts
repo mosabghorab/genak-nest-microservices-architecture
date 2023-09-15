@@ -6,20 +6,20 @@ import {
   AdminsMicroserviceConstants,
   AdminsRoles,
   AdminStatus,
-  AdminUpdatePasswordDto,
+  AdminUpdatePasswordPayloadDto,
   AuthedUser,
   FcmToken,
-  FindOneOrFailByEmailDto,
-  FindOneOrFailByIdDto,
+  FindOneOrFailByEmailPayloadDto,
+  FindOneOrFailByIdPayloadDto,
   UserType,
 } from '@app/common';
-import { SignInWithEmailAndPasswordDto } from '../dtos/sign-in-with-email-and-password.dto';
-import { FcmTokensService } from '../../../shared/v1/services/fcm-tokens.service';
+import { SignInWithEmailAndPasswordRequestDto } from '../dtos/sign-in-with-email-and-password-request.dto';
+import { PushTokensService } from '../../../shared/v1/services/push-tokens.service';
 import { ClientProxy } from '@nestjs/microservices';
 import { Constants } from '../../../../constants';
-import { ChangePasswordDto } from '../dtos/change-password.dto';
-import { CreateFcmTokenDto } from '../../../shared/v1/dtos/create-fcm-token.dto';
-import { FindOneFcmTokenDto } from '../../../shared/v1/dtos/find-one-fcm-token.dto';
+import { ChangePasswordRequestDto } from '../dtos/change-password-request.dto';
+import { CreatePushTokenPayloadDto } from '../../../shared/v1/dtos/create-push-token-payload.dto';
+import { FindOnePushTokenPayloadDto } from '../../../shared/v1/dtos/find-one-push-token-payload.dto';
 
 @Injectable()
 export class AdminAuthService {
@@ -27,34 +27,36 @@ export class AdminAuthService {
 
   constructor(
     private readonly jwtService: JwtService,
-    private readonly fcmTokensService: FcmTokensService,
+    private readonly fcmTokensService: PushTokensService,
     @Inject(AdminsMicroserviceConstants.NAME) private readonly adminsMicroservice: ClientProxy,
   ) {
     this.adminsMicroserviceConnection = new AdminsMicroserviceConnection(adminsMicroservice, Constants.ADMINS_MICROSERVICE_VERSION);
   }
 
   // sign in with email and password.
-  async signInWithEmailAndPassword(signInWithEmailAndPasswordDto: SignInWithEmailAndPasswordDto): Promise<any> {
-    const admin: Admin = await this.adminsMicroserviceConnection.adminsServiceImpl.findOneOrFailByEmail(<FindOneOrFailByEmailDto<Admin>>{
-      email: signInWithEmailAndPasswordDto.email,
-      relations: { adminsRoles: { role: { rolesPermissions: { permission: true } } } },
-    });
-    if (!(await admin.comparePassword(signInWithEmailAndPasswordDto.password))) {
+  async signInWithEmailAndPassword(signInWithEmailAndPasswordRequestDto: SignInWithEmailAndPasswordRequestDto): Promise<any> {
+    const admin: Admin = await this.adminsMicroserviceConnection.adminsServiceImpl.findOneOrFailByEmail(
+      new FindOneOrFailByEmailPayloadDto<Admin>({
+        email: signInWithEmailAndPasswordRequestDto.email,
+        relations: { adminsRoles: { role: { rolesPermissions: { permission: true } } } },
+      }),
+    );
+    if (!(await admin.comparePassword(signInWithEmailAndPasswordRequestDto.password))) {
       throw new UnauthorizedException('Wrong email or password.');
     }
     if (admin.status !== AdminStatus.ACTIVE) {
       throw new UnauthorizedException(`Can't sign in with this account , account is ${admin.status}`);
     }
-    const fcmToken: FcmToken = await this.fcmTokensService.findOne(<FindOneFcmTokenDto>{
+    const fcmToken: FcmToken = await this.fcmTokensService.findOne(<FindOnePushTokenPayloadDto>{
       tokenableId: admin.id,
       tokenableType: UserType.ADMIN,
-      token: signInWithEmailAndPasswordDto.fcmToken,
+      token: signInWithEmailAndPasswordRequestDto.fcmToken,
     });
     if (!fcmToken) {
-      await this.fcmTokensService.create(<CreateFcmTokenDto>{
+      await this.fcmTokensService.create(<CreatePushTokenPayloadDto>{
         tokenableId: admin.id,
         tokenableType: UserType.ADMIN,
-        token: signInWithEmailAndPasswordDto.fcmToken,
+        token: signInWithEmailAndPasswordRequestDto.fcmToken,
       });
     }
     const accessToken: string = await this.jwtService.signAsync(<AuthedUser>{
@@ -74,16 +76,20 @@ export class AdminAuthService {
   }
 
   // change password.
-  async changePassword(adminId: number, changePasswordDto: ChangePasswordDto): Promise<Admin> {
-    const admin: Admin = await this.adminsMicroserviceConnection.adminsServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Admin>>{
-      id: adminId,
-    });
-    if (!(await admin.comparePassword(changePasswordDto.oldPassword))) {
+  async changePassword(adminId: number, changePasswordRequestDto: ChangePasswordRequestDto): Promise<Admin> {
+    const admin: Admin = await this.adminsMicroserviceConnection.adminsServiceImpl.findOneOrFailById(
+      new FindOneOrFailByIdPayloadDto<Admin>({
+        id: adminId,
+      }),
+    );
+    if (!(await admin.comparePassword(changePasswordRequestDto.oldPassword))) {
       throw new BadRequestException('Wrong old password.');
     }
-    return this.adminsMicroserviceConnection.adminsServiceImpl.updatePassword(<AdminUpdatePasswordDto>{
-      adminId: adminId,
-      newPassword: changePasswordDto.newPassword,
-    });
+    return this.adminsMicroserviceConnection.adminsServiceImpl.updatePassword(
+      new AdminUpdatePasswordPayloadDto({
+        adminId: adminId,
+        newPassword: changePasswordRequestDto.newPassword,
+      }),
+    );
   }
 }

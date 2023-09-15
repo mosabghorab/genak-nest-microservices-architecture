@@ -6,6 +6,7 @@ import {
   Customer,
   CustomersMicroserviceConnection,
   CustomersMicroserviceConstants,
+  Helpers,
   Order,
   OrdersMicroserviceConnection,
   OrdersMicroserviceConstants,
@@ -42,32 +43,46 @@ export class SearchService {
   }
 
   // search.
-  async search(searchRequestDto: SearchRequestDto): Promise<{
-    orders: Order[];
-    customers: Customer[];
-    vendors: Vendor[];
-    admins: Admin[];
+  search(searchRequestDto: SearchRequestDto): Promise<{
+    executionTime: string;
+    data: Promise<{ orders: Order[]; customers: Customer[]; vendors: Vendor[]; admins: Admin[] }>;
   }> {
-    const customers: Customer[] = await this.customersMicroserviceConnection.customersServiceImpl.searchByName(
-      new SearchPayloadDto({
-        searchQuery: searchRequestDto.searchQuery,
-      }),
+    return Helpers.timerify<
+      Promise<{
+        orders: Order[];
+        customers: Customer[];
+        vendors: Vendor[];
+        admins: Admin[];
+      }>
+    >(
+      async (): Promise<{
+        orders: Order[];
+        customers: Customer[];
+        vendors: Vendor[];
+        admins: Admin[];
+      }> => {
+        const customers: Customer[] = await this.customersMicroserviceConnection.customersServiceImpl.searchByName(
+          new SearchPayloadDto({
+            searchQuery: searchRequestDto.searchQuery,
+          }),
+        );
+        const vendors: Vendor[] = await this.vendorsMicroserviceConnection.vendorsServiceImpl.searchByName(
+          new SearchPayloadDto({
+            searchQuery: searchRequestDto.searchQuery,
+          }),
+        );
+        const admins: Admin[] = await this.adminsMicroserviceConnection.adminsServiceImpl.searchByName(
+          new SearchPayloadDto({
+            searchQuery: searchRequestDto.searchQuery,
+          }),
+        );
+        const orders: Order[] = await this.ordersMicroserviceConnection.ordersServiceImpl.searchByUniqueId(
+          new SearchPayloadDto({
+            searchQuery: searchRequestDto.searchQuery,
+          }),
+        );
+        return { customers, vendors, admins, orders };
+      },
     );
-    const vendors: Vendor[] = await this.vendorsMicroserviceConnection.vendorsServiceImpl.searchByName(
-      new SearchPayloadDto({
-        searchQuery: searchRequestDto.searchQuery,
-      }),
-    );
-    const admins: Admin[] = await this.adminsMicroserviceConnection.adminsServiceImpl.searchByName(
-      new SearchPayloadDto({
-        searchQuery: searchRequestDto.searchQuery,
-      }),
-    );
-    const orders: Order[] = await this.ordersMicroserviceConnection.ordersServiceImpl.searchByUniqueId(
-      new SearchPayloadDto({
-        searchQuery: searchRequestDto.searchQuery,
-      }),
-    );
-    return { customers, vendors, admins, orders };
   }
 }

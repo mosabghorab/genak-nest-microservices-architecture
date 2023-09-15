@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Patch } from '@nestjs/common';
-import { UpdateProfileDto } from '../dtos/update-profile.dto';
-import { AllowFor, AuthedUser, Customer, CustomerDto, GetAuthedUser, Serialize, UserType } from '@app/common';
+import { UpdateProfileRequestDto } from '../dtos/update-profile-request.dto';
+import { AllowFor, AuthedUser, Customer, CustomerResponseDto, GetAuthedUser, Serialize, UserType } from '@app/common';
 import { CustomerProfileService } from '../services/customer-profile.service';
 
 @AllowFor(UserType.CUSTOMER)
@@ -8,13 +8,13 @@ import { CustomerProfileService } from '../services/customer-profile.service';
 export class CustomerProfileController {
   constructor(private readonly customerProfileService: CustomerProfileService) {}
 
-  @Serialize(CustomerDto, 'Profile updated successfully.')
+  @Serialize(CustomerResponseDto, 'Profile updated successfully.')
   @Patch()
-  update(@GetAuthedUser() authedUser: AuthedUser, @Body() updateProfileDto: UpdateProfileDto): Promise<Customer> {
-    return this.customerProfileService.update(authedUser.id, updateProfileDto);
+  update(@GetAuthedUser() authedUser: AuthedUser, @Body() updateProfileRequestDto: UpdateProfileRequestDto): Promise<Customer> {
+    return this.customerProfileService.update(authedUser.id, updateProfileRequestDto);
   }
 
-  @Serialize(CustomerDto, 'Profile retrieved successfully.')
+  @Serialize(CustomerResponseDto, 'Profile retrieved successfully.')
   @Get()
   find(@GetAuthedUser() authedUser: AuthedUser): Promise<Customer> {
     return this.customerProfileService.find(authedUser.id);

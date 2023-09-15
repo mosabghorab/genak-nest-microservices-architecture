@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
 import { CustomerAddressesService } from '../services/customer-addresses.service';
-import { CreateCustomerAddressDto } from '../dtos/create-customer-address.dto';
-import { UpdateCustomerAddressDto } from '../dtos/update-customer-address.dto';
+import { CreateCustomerAddressRequestDto } from '../dtos/create-customer-address-request.dto';
+import { UpdateCustomerAddressRequestDto } from '../dtos/update-customer-address-request.dto';
 import { AllowFor, AuthedUser, CustomerAddress, CustomerAddressDto, GetAuthedUser, Serialize, UserType } from '@app/common';
 
 @AllowFor(UserType.CUSTOMER)
@@ -11,8 +11,8 @@ export class CustomerAddressesController {
 
   @Serialize(CustomerAddressDto, 'Address created successfully.')
   @Post()
-  create(@GetAuthedUser() authedUser: AuthedUser, @Body() createCustomersAddressDto: CreateCustomerAddressDto): Promise<CustomerAddress> {
-    return this.customerAddressesService.create(authedUser.id, createCustomersAddressDto);
+  create(@GetAuthedUser() authedUser: AuthedUser, @Body() createCustomerAddressRequestDto: CreateCustomerAddressRequestDto): Promise<CustomerAddress> {
+    return this.customerAddressesService.create(authedUser.id, createCustomerAddressRequestDto);
   }
 
   @Serialize(CustomerAddressDto, 'All addresses.')
@@ -23,8 +23,8 @@ export class CustomerAddressesController {
 
   @Serialize(CustomerAddressDto, 'Address updated successfully.')
   @Patch(':id')
-  update(@Param('id') id: number, @Body() updateCustomersAddressDto: UpdateCustomerAddressDto): Promise<CustomerAddress> {
-    return this.customerAddressesService.update(id, updateCustomersAddressDto);
+  update(@Param('id') id: number, @Body() updateCustomerAddressRequestDto: UpdateCustomerAddressRequestDto): Promise<CustomerAddress> {
+    return this.customerAddressesService.update(id, updateCustomerAddressRequestDto);
   }
 
   @Serialize(CustomerAddressDto, 'Address removed successfully.')

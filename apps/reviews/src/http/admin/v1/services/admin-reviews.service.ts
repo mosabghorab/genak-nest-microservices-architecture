@@ -1,8 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, Repository } from 'typeorm';
-import { DateFilterOption, DateHelpers, FindOneByIdDto, FindOneOrFailByIdDto, Review } from '@app/common';
-import { FindAllReviewsDto } from '../dtos/find-all-reviews.dto';
+import { DateFilterOption, DateHelpers, FindOneByIdPayloadDto, FindOneOrFailByIdPayloadDto, Review } from '@app/common';
+import { FindAllReviewsRequestDto } from '../dtos/find-all-reviews-request.dto';
 
 @Injectable()
 export class AdminReviewsService {
@@ -12,49 +12,51 @@ export class AdminReviewsService {
   ) {}
 
   // find one by id.
-  findOneById(findOneByIdDto: FindOneByIdDto<Review>): Promise<Review | null> {
+  findOneById(findOneByIdPayloadDto: FindOneByIdPayloadDto<Review>): Promise<Review | null> {
     return this.reviewRepository.findOne({
-      where: { id: findOneByIdDto.id },
-      relations: findOneByIdDto.relations,
+      where: { id: findOneByIdPayloadDto.id },
+      relations: findOneByIdPayloadDto.relations,
     });
   }
 
   // find one or fail by id.
-  async findOneOrFailById(findOneOrFailByIdDto: FindOneOrFailByIdDto<Review>): Promise<Review> {
-    const review: Review = await this.findOneById(<FindOneByIdDto<Review>>{
-      id: findOneOrFailByIdDto.id,
-      relations: findOneOrFailByIdDto.relations,
-    });
+  async findOneOrFailById(findOneOrFailByIdPayloadDto: FindOneOrFailByIdPayloadDto<Review>): Promise<Review> {
+    const review: Review = await this.findOneById(
+      new FindOneByIdPayloadDto<Review>({
+        id: findOneOrFailByIdPayloadDto.id,
+        relations: findOneOrFailByIdPayloadDto.relations,
+      }),
+    );
     if (!review) {
-      throw new NotFoundException(findOneOrFailByIdDto.failureMessage || 'Review not found.');
+      throw new NotFoundException(findOneOrFailByIdPayloadDto.failureMessage || 'Review not found.');
     }
     return review;
   }
 
   // find all.
-  async findAll(findAllReviewsDto: FindAllReviewsDto): Promise<{
+  async findAll(findAllReviewsRequestDto: FindAllReviewsRequestDto): Promise<{
     total: number;
     perPage: number;
     lastPage: number;
     data: Review[];
     currentPage: number;
   }> {
-    const offset: number = (findAllReviewsDto.page - 1) * findAllReviewsDto.limit;
+    const offset: number = (findAllReviewsRequestDto.page - 1) * findAllReviewsRequestDto.limit;
     let dateRange: { startDate: Date; endDate: Date };
-    if (findAllReviewsDto.dateFilterOption === DateFilterOption.CUSTOM) {
+    if (findAllReviewsRequestDto.dateFilterOption === DateFilterOption.CUSTOM) {
       dateRange = {
-        startDate: findAllReviewsDto.startDate,
-        endDate: findAllReviewsDto.endDate,
+        startDate: findAllReviewsRequestDto.startDate,
+        endDate: findAllReviewsRequestDto.endDate,
       };
     } else {
-      dateRange = DateHelpers.getDateRangeForDateFilterOption(findAllReviewsDto.dateFilterOption);
+      dateRange = DateHelpers.getDateRangeForDateFilterOption(findAllReviewsRequestDto.dateFilterOption);
     }
     const [reviews, count]: [Review[], number] = await this.reviewRepository.findAndCount({
       where: {
-        customerId: findAllReviewsDto.customerId,
-        vendorId: findAllReviewsDto.vendorId,
-        serviceType: findAllReviewsDto.serviceType,
-        reviewedBy: findAllReviewsDto.reviewedBy,
+        customerId: findAllReviewsRequestDto.customerId,
+        vendorId: findAllReviewsRequestDto.vendorId,
+        serviceType: findAllReviewsRequestDto.serviceType,
+        reviewedBy: findAllReviewsRequestDto.reviewedBy,
         createdAt: Between(dateRange.startDate, dateRange.endDate),
       },
       relations: {
@@ -63,12 +65,12 @@ export class AdminReviewsService {
         order: true,
       },
       skip: offset,
-      take: findAllReviewsDto.limit,
+      take: findAllReviewsRequestDto.limit,
     });
     return {
-      perPage: findAllReviewsDto.limit,
-      currentPage: findAllReviewsDto.page,
-      lastPage: Math.ceil(count / findAllReviewsDto.limit),
+      perPage: findAllReviewsRequestDto.limit,
+      currentPage: findAllReviewsRequestDto.page,
+      lastPage: Math.ceil(count / findAllReviewsRequestDto.limit),
       total: count,
       data: reviews,
     };
@@ -76,9 +78,11 @@ export class AdminReviewsService {
 
   // remove.
   async remove(id: number): Promise<Review> {
-    const review: Review = await this.findOneOrFailById(<FindOneByIdDto<Review>>{
-      id,
-    });
+    const review: Review = await this.findOneOrFailById(
+      new FindOneByIdPayloadDto<Review>({
+        id,
+      }),
+    );
     return this.reviewRepository.remove(review);
   }
 }

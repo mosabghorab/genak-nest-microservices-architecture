@@ -1,16 +1,18 @@
 import { Body, Controller, Param, Patch } from '@nestjs/common';
 import { OrdersService } from '../services/orders.service';
-import { UpdateOrderStatusDto } from '../dtos/update-order-status.dto';
-import { AllowFor, AuthedUser, GetAuthedUser, Order, OrderDto, Serialize, UserType } from '@app/common';
+import { UpdateOrderStatusRequestDto } from '../dtos/update-order-status-request.dto';
+import { AdminMustCanDo, AllowFor, AuthedUser, GetAuthedUser, Order, OrderResponseDto, PermissionAction, PermissionGroup, PermissionsTarget, Serialize, UserType } from '@app/common';
 
 @AllowFor(UserType.CUSTOMER, UserType.VENDOR, UserType.ADMIN)
+@PermissionsTarget(PermissionGroup.ORDERS)
 @Controller({ path: 'orders', version: '1' })
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
-  @Serialize(OrderDto, 'Order status updated successfully.')
+  @AdminMustCanDo(PermissionAction.UPDATE)
+  @Serialize(OrderResponseDto, 'Order status updated successfully.')
   @Patch(':id/update-status')
-  updateStatus(@GetAuthedUser() authedUser: AuthedUser, @Param('id') id: number, @Body() updateOrderStatusDto: UpdateOrderStatusDto): Promise<Order> {
-    return this.ordersService.updateStatus(authedUser, id, updateOrderStatusDto);
+  updateStatus(@GetAuthedUser() authedUser: AuthedUser, @Param('id') id: number, @Body() updateOrderStatusRequestDto: UpdateOrderStatusRequestDto): Promise<Order> {
+    return this.ordersService.updateStatus(authedUser, id, updateOrderStatusRequestDto);
   }
 }

@@ -1,6 +1,6 @@
 import { Controller, Get, Query } from '@nestjs/common';
-import { FindAllOrdersDto } from '../dtos/find-all-orders.dto';
-import { AllowFor, AuthedUser, GetAuthedUser, Order, OrderDto, Serialize, UserType } from '@app/common';
+import { FindAllOrdersRequestDto } from '../dtos/find-all-orders-request.dto';
+import { AllowFor, AuthedUser, GetAuthedUser, Order, OrderResponseDto, Serialize, UserType } from '@app/common';
 import { VendorOrdersService } from '../services/vendor-orders.service';
 
 @AllowFor(UserType.VENDOR)
@@ -8,9 +8,9 @@ import { VendorOrdersService } from '../services/vendor-orders.service';
 export class VendorOrdersController {
   constructor(private readonly vendorOrdersService: VendorOrdersService) {}
 
-  @Serialize(OrderDto, 'All orders.')
+  @Serialize(OrderResponseDto, 'All orders.')
   @Get()
-  findAll(@GetAuthedUser() authedUser: AuthedUser, @Query() findAllOrdersDto: FindAllOrdersDto): Promise<Order[]> {
-    return this.vendorOrdersService.findAll(authedUser.id, findAllOrdersDto);
+  findAll(@GetAuthedUser() authedUser: AuthedUser, @Query() findAllOrdersRequestDto: FindAllOrdersRequestDto): Promise<Order[]> {
+    return this.vendorOrdersService.findAll(authedUser.id, findAllOrdersRequestDto);
   }
 }

@@ -1,5 +1,5 @@
 import { Controller } from '@nestjs/common';
-import { DateFilterDto, FindOneByIdDto, FindOneOrderByIdAndServiceTypeDto, Order, OrdersMicroserviceConstants, SearchPayloadDto, ServiceType } from '@app/common';
+import { DateFilterPayloadDto, FindOneByIdPayloadDto, FindOneOrderByIdAndServiceTypePayloadDto, Order, OrdersMicroserviceConstants, SearchPayloadDto, ServiceType } from '@app/common';
 import { OrdersService } from '../services/orders.service';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { FindOptionsRelations } from 'typeorm';
@@ -13,8 +13,8 @@ export class OrdersController {
   @MessagePattern({
     cmd: `${OrdersMicroserviceConstants.ORDERS_SERVICE_FIND_ONE_BY_ID_MESSAGE_PATTERN}/v${VERSION}`,
   })
-  findOneById(@Payload() findOneByIdDto: FindOneByIdDto<Order>): Promise<Order | null> {
-    return this.ordersService.findOneById(findOneByIdDto);
+  findOneById(@Payload('findOneByIdPayloadDto') findOneByIdPayloadDto: FindOneByIdPayloadDto<Order>): Promise<Order | null> {
+    return this.ordersService.findOneById(findOneByIdPayloadDto);
   }
 
   @MessagePattern({
@@ -27,15 +27,15 @@ export class OrdersController {
   @MessagePattern({
     cmd: `${OrdersMicroserviceConstants.ORDERS_SERVICE_FIND_ONE_BY_ID_AND_SERVICE_TYPE_MESSAGE_PATTERN}/v${VERSION}`,
   })
-  findOneByIdAndServiceType(@Payload() findOneOrderByIdAndServiceTypeDto: FindOneOrderByIdAndServiceTypeDto): Promise<Order | null> {
-    return this.ordersService.findOneByIdAndServiceType(findOneOrderByIdAndServiceTypeDto);
+  findOneByIdAndServiceType(@Payload('findOneOrderByIdAndServiceTypePayloadDto') findOneOrderByIdAndServiceTypePayloadDto: FindOneOrderByIdAndServiceTypePayloadDto): Promise<Order | null> {
+    return this.ordersService.findOneByIdAndServiceType(findOneOrderByIdAndServiceTypePayloadDto);
   }
 
   @MessagePattern({
     cmd: `${OrdersMicroserviceConstants.ORDERS_SERVICE_COUNT_MESSAGE_PATTERN}/v${VERSION}`,
   })
-  count(@Payload('serviceType') serviceType?: ServiceType, @Payload('dateFilterDto') dateFilterDto?: DateFilterDto): Promise<number> {
-    return this.ordersService.count(serviceType, dateFilterDto);
+  count(@Payload('serviceType') serviceType?: ServiceType, @Payload('dateFilterPayloadDto') dateFilterPayloadDto?: DateFilterPayloadDto): Promise<number> {
+    return this.ordersService.count(serviceType, dateFilterPayloadDto);
   }
 
   @MessagePattern({
@@ -43,11 +43,11 @@ export class OrdersController {
   })
   totalSales(
     @Payload('serviceType') serviceType: ServiceType,
-    @Payload('dateFilterDto') dateFilterDto?: DateFilterDto,
+    @Payload('dateFilterPayloadDto') dateFilterPayloadDto?: DateFilterPayloadDto,
   ): Promise<{
     totalSales: string;
   }> {
-    return this.ordersService.totalSales(serviceType, dateFilterDto);
+    return this.ordersService.totalSales(serviceType, dateFilterPayloadDto);
   }
 
   @MessagePattern({

@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Patch, UploadedFile, UseInterceptors } from '@nestjs/common';
-import { UpdateProfileDto } from '../dtos/update-profile.dto';
-import { AllowFor, AuthedUser, GetAuthedUser, Helpers, Serialize, UserType, Vendor, VendorDto } from '@app/common';
+import { UpdateProfileRequestDto } from '../dtos/update-profile-request.dto';
+import { AllowFor, AuthedUser, GetAuthedUser, Helpers, Serialize, UserType, Vendor, VendorResponseDto } from '@app/common';
 import { VendorProfileService } from '../services/vendor-profile.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 
@@ -9,19 +9,19 @@ import { FileInterceptor } from '@nestjs/platform-express';
 export class VendorProfileController {
   constructor(private readonly vendorProfileService: VendorProfileService) {}
 
-  @Serialize(VendorDto, 'Profile updated successfully.')
+  @Serialize(VendorResponseDto, 'Profile updated successfully.')
   @UseInterceptors(FileInterceptor('avatar'))
   @Patch()
   update(
     @GetAuthedUser() authedUser: AuthedUser,
-    @Body() updateProfileDto: UpdateProfileDto,
+    @Body() updateProfileRequestDto: UpdateProfileRequestDto,
     @UploadedFile(Helpers.defaultImageValidator(false))
     avatar?: Express.Multer.File,
   ): Promise<Vendor> {
-    return this.vendorProfileService.update(authedUser.id, updateProfileDto, avatar);
+    return this.vendorProfileService.update(authedUser.id, updateProfileRequestDto, avatar);
   }
 
-  @Serialize(VendorDto, 'Profile retrieved successfully.')
+  @Serialize(VendorResponseDto, 'Profile retrieved successfully.')
   @Get()
   find(@GetAuthedUser() authedUser: AuthedUser): Promise<Vendor> {
     return this.vendorProfileService.find(authedUser.id);

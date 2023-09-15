@@ -13,10 +13,8 @@ export class SearchController {
   @Serialize(SearchResponseDto, 'Search done successfully.')
   @Get()
   search(@Query() searchRequestDto: SearchRequestDto): Promise<{
-    orders: Order[];
-    customers: Customer[];
-    vendors: Vendor[];
-    admins: Admin[];
+    executionTime: string;
+    data: Promise<{ orders: Order[]; customers: Customer[]; vendors: Vendor[]; admins: Admin[] }>;
   }> {
     return this.searchService.search(searchRequestDto);
   }

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { DateFilterDto, DateFilterOption, DateHelpers, FindOneByIdDto, Product, ServiceType } from '@app/common';
+import { DateFilterOption, DateFilterPayloadDto, DateHelpers, FindOneByIdPayloadDto, Product, ServiceType } from '@app/common';
 
 @Injectable()
 export class ProductsService {
@@ -11,24 +11,24 @@ export class ProductsService {
   ) {}
 
   // find one by id.
-  findOneById(findOneByIdDto: FindOneByIdDto<Product>): Promise<Product | null> {
+  findOneById(findOneByIdPayloadDto: FindOneByIdPayloadDto<Product>): Promise<Product | null> {
     return this.productRepository.findOne({
-      where: { id: findOneByIdDto.id },
-      relations: findOneByIdDto.relations,
+      where: { id: findOneByIdPayloadDto.id },
+      relations: findOneByIdPayloadDto.relations,
     });
   }
 
   // find with total sales.
-  async findWithTotalSales(serviceType: ServiceType, dateFilterDto?: DateFilterDto): Promise<Product[]> {
+  async findWithTotalSales(serviceType: ServiceType, dateFilterPayloadDto?: DateFilterPayloadDto): Promise<Product[]> {
     let dateRange: { startDate: Date; endDate: Date };
-    if (dateFilterDto) {
-      if (dateFilterDto.dateFilterOption === DateFilterOption.CUSTOM) {
+    if (dateFilterPayloadDto) {
+      if (dateFilterPayloadDto.dateFilterOption === DateFilterOption.CUSTOM) {
         dateRange = {
-          startDate: dateFilterDto.startDate,
-          endDate: dateFilterDto.endDate,
+          startDate: dateFilterPayloadDto.startDate,
+          endDate: dateFilterPayloadDto.endDate,
         };
       } else {
-        dateRange = DateHelpers.getDateRangeForDateFilterOption(dateFilterDto.dateFilterOption);
+        dateRange = DateHelpers.getDateRangeForDateFilterOption(dateFilterPayloadDto.dateFilterOption);
       }
     }
     const {
@@ -42,8 +42,8 @@ export class ProductsService {
       .leftJoin(
         'product.orderItems',
         'orderItem',
-        dateFilterDto?.dateFilterOption ? 'orderItem.createdAt BETWEEN :startDate AND :endDate' : null,
-        dateFilterDto?.dateFilterOption
+        dateFilterPayloadDto?.dateFilterOption ? 'orderItem.createdAt BETWEEN :startDate AND :endDate' : null,
+        dateFilterPayloadDto?.dateFilterOption
           ? {
               startDate: dateRange.startDate,
               endDate: dateRange.endDate,
@@ -61,15 +61,15 @@ export class ProductsService {
   }
 
   // find with orders count.
-  async findWithOrdersCount(serviceType: ServiceType, dateFilterDto: DateFilterDto): Promise<Product[]> {
+  async findWithOrdersCount(serviceType: ServiceType, dateFilterPayloadDto: DateFilterPayloadDto): Promise<Product[]> {
     let dateRange: { startDate: Date; endDate: Date };
-    if (dateFilterDto.dateFilterOption === DateFilterOption.CUSTOM) {
+    if (dateFilterPayloadDto.dateFilterOption === DateFilterOption.CUSTOM) {
       dateRange = {
-        startDate: dateFilterDto.startDate,
-        endDate: dateFilterDto.endDate,
+        startDate: dateFilterPayloadDto.startDate,
+        endDate: dateFilterPayloadDto.endDate,
       };
     } else {
-      dateRange = DateHelpers.getDateRangeForDateFilterOption(dateFilterDto.dateFilterOption);
+      dateRange = DateHelpers.getDateRangeForDateFilterOption(dateFilterPayloadDto.dateFilterOption);
     }
     const {
       entities,

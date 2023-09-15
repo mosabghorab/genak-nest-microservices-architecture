@@ -1,16 +1,16 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, ILike, Repository } from 'typeorm';
-import { CreateReviewDto } from '../dtos/create-review.dto';
-import { FindAllReviewsDto } from '../dtos/find-all-reviews.dto';
+import { CreateReviewRequestDto } from '../dtos/create-review-request.dto';
+import { FindAllReviewsRequestDto } from '../dtos/find-all-reviews-request.dto';
 import {
   ClientUserType,
   Customer,
   CustomersMicroserviceConnection,
   CustomersMicroserviceConstants,
   DateHelpers,
-  FindOneOrderOrFailByIdAndServiceTypeDto,
-  FindOneOrFailByIdDto,
+  FindOneOrderOrFailByIdAndServiceTypePayloadDto,
+  FindOneOrFailByIdPayloadDto,
   OrdersMicroserviceConnection,
   OrdersMicroserviceConstants,
   Review,
@@ -43,47 +43,55 @@ export class VendorReviewsService {
   }
 
   // create.
-  async create(vendorId: number, createReviewDto: CreateReviewDto): Promise<Review> {
-    const vendor: Vendor = await this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Vendor>>{
-      id: vendorId,
-    });
-    await this.ordersMicroserviceConnection.ordersServiceImpl.findOneOrFailByIdAndServiceType(<FindOneOrderOrFailByIdAndServiceTypeDto>{
-      id: createReviewDto.orderId,
-      serviceType: vendor.serviceType,
-    });
-    await this.customersMicroserviceConnection.customersServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Customer>>{
-      id: createReviewDto.customerId,
-    });
+  async create(vendorId: number, createReviewRequestDto: CreateReviewRequestDto): Promise<Review> {
+    const vendor: Vendor = await this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneOrFailById(
+      new FindOneOrFailByIdPayloadDto<Vendor>({
+        id: vendorId,
+      }),
+    );
+    await this.ordersMicroserviceConnection.ordersServiceImpl.findOneOrFailByIdAndServiceType(
+      new FindOneOrderOrFailByIdAndServiceTypePayloadDto({
+        id: createReviewRequestDto.orderId,
+        serviceType: vendor.serviceType,
+      }),
+    );
+    await this.customersMicroserviceConnection.customersServiceImpl.findOneOrFailById(
+      new FindOneOrFailByIdPayloadDto<Customer>({
+        id: createReviewRequestDto.customerId,
+      }),
+    );
     return this.reviewRepository.save(
       await this.reviewRepository.create({
         vendorId,
         reviewedBy: ClientUserType.VENDOR,
         serviceType: vendor.serviceType,
-        ...createReviewDto,
+        ...createReviewRequestDto,
       }),
     );
   }
 
   // find all.
-  async findAll(vendorId: number, findAllReviewsDto: FindAllReviewsDto): Promise<Review[]> {
+  async findAll(vendorId: number, findAllReviewsRequestDto: FindAllReviewsRequestDto): Promise<Review[]> {
     const {
       today,
       tomorrow,
     }: {
       today: Date;
       tomorrow: Date;
-    } = DateHelpers.getTodayAndTomorrowForADate(findAllReviewsDto.date);
-    const vendor: Vendor = await this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Vendor>>{
-      id: vendorId,
-    });
+    } = DateHelpers.getTodayAndTomorrowForADate(findAllReviewsRequestDto.date);
+    const vendor: Vendor = await this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneOrFailById(
+      new FindOneOrFailByIdPayloadDto<Vendor>({
+        id: vendorId,
+      }),
+    );
     return this.reviewRepository.find({
       where: {
         vendorId,
         serviceType: vendor.serviceType,
         reviewedBy: ClientUserType.VENDOR,
         order: {
-          uniqueId: findAllReviewsDto.orderUniqueId ? ILike(`%${findAllReviewsDto.orderUniqueId}%`) : null,
-          createdAt: findAllReviewsDto.date ? Between(today, tomorrow) : null,
+          uniqueId: findAllReviewsRequestDto.orderUniqueId ? ILike(`%${findAllReviewsRequestDto.orderUniqueId}%`) : null,
+          createdAt: findAllReviewsRequestDto.date ? Between(today, tomorrow) : null,
         },
       },
       relations: { order: true },

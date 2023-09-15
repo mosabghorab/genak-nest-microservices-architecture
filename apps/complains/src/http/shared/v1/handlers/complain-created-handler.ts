@@ -6,9 +6,9 @@ import {
   AdminsMicroserviceConstants,
   AuthMicroserviceConnection,
   AuthMicroserviceConstants,
-  CreateDatabaseNotificationDto,
+  CreateDatabaseNotificationPayloadDto,
   FcmToken,
-  FindAllFcmTokensDto,
+  FindAllPushTokensPayloadDto,
   NotificationsMicroserviceConnection,
   NotificationsMicroserviceConstants,
   NotificationTarget,
@@ -56,23 +56,27 @@ export class ComplainCreatedHandler {
       for (const admin of admins) {
         if (admin.notificationsEnabled) {
           const fcmTokensForAdmin: string[] = (
-            await this.authMicroserviceConnection.fcmTokensServiceImpl.findAll(<FindAllFcmTokensDto>{
-              tokenableId: admin.id,
-              tokenableType: UserType.ADMIN,
-            })
+            await this.authMicroserviceConnection.fcmTokensServiceImpl.findAll(
+              new FindAllPushTokensPayloadDto({
+                tokenableId: admin.id,
+                tokenableType: UserType.ADMIN,
+              }),
+            )
           ).map((fcmToken: FcmToken) => fcmToken.token);
           fcmTokens.push(...fcmTokensForAdmin);
         }
       }
       if (fcmTokens.length > 0) {
-        this.notificationsMicroserviceConnection.notificationsServiceImpl.sendFcmNotification(<SendPushNotificationPayloadDto>{
-          type: PushNotificationType.TOKENS,
-          fcmTokens: fcmTokens,
-          title: 'New Complain',
-          body: `New complain created by ${complain.complainerUserType}`,
-          notificationTarget: NotificationTarget.COMPLAIN,
-          notificationTargetId: complain.id,
-        });
+        this.notificationsMicroserviceConnection.notificationsServiceImpl.sendFcmNotification(
+          new SendPushNotificationPayloadDto({
+            type: PushNotificationType.TOKENS,
+            fcmTokens: fcmTokens,
+            title: 'New Complain',
+            body: `New complain created by ${complain.complainerUserType}`,
+            notificationTarget: NotificationTarget.COMPLAIN,
+            notificationTargetId: complain.id,
+          }),
+        );
       }
     }
   }
@@ -83,15 +87,15 @@ export class ComplainCreatedHandler {
     const admins: Admin[] = await this.adminsMicroserviceConnection.adminsServiceImpl.findAllByPermissionGroup(PermissionGroup.COMPLAINS);
     if (admins && admins.length > 0) {
       for (const admin of admins) {
-        const createDatabaseNotificationDto: CreateDatabaseNotificationDto = <CreateDatabaseNotificationDto>{
+        const createDatabaseNotificationPayloadDto: CreateDatabaseNotificationPayloadDto = new CreateDatabaseNotificationPayloadDto({
           notifiableId: admin.id,
           notifiableType: UserType.ADMIN,
           notificationTarget: NotificationTarget.COMPLAIN,
           notificationTargetId: complain.id,
           title: 'New Complain',
           body: `New complain created by ${complain.complainerUserType}`,
-        };
-        this.notificationsMicroserviceConnection.notificationsServiceImpl.createDatabaseNotification(createDatabaseNotificationDto);
+        });
+        this.notificationsMicroserviceConnection.notificationsServiceImpl.createDatabaseNotification(createDatabaseNotificationPayloadDto);
       }
     }
   }

@@ -19,6 +19,6 @@ export class VerificationCodeCreatedHandler {
   // handle.
   @OnEvent(Constants.VERIFICATION_CODE_CREATED_EVENT)
   handle(verificationCodeCreatedEvent: VerificationCodeCreatedEvent): void {
-    this.notificationsMicroserviceConnection.notificationsServiceImpl.sendSmsNotification(verificationCodeCreatedEvent.sendSmsNotificationDto);
+    this.notificationsMicroserviceConnection.notificationsServiceImpl.sendSmsNotification(verificationCodeCreatedEvent.sendSmsNotificationPayloadDto);
   }
 }

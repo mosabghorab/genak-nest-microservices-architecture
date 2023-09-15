@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Post, Query } from '@nestjs/common';
-import { FindAllReviewsDto } from '../dtos/find-all-reviews.dto';
-import { CreateReviewDto } from '../dtos/create-review.dto';
-import { AllowFor, AuthedUser, GetAuthedUser, Review, ReviewDto, Serialize, UserType } from '@app/common';
+import { FindAllReviewsRequestDto } from '../dtos/find-all-reviews-request.dto';
+import { CreateReviewRequestDto } from '../dtos/create-review-request.dto';
+import { AllowFor, AuthedUser, GetAuthedUser, Review, ReviewResponseDto, Serialize, UserType } from '@app/common';
 import { VendorReviewsService } from '../services/vendor-reviews.service';
 
 @AllowFor(UserType.VENDOR)
@@ -9,15 +9,15 @@ import { VendorReviewsService } from '../services/vendor-reviews.service';
 export class VendorReviewsController {
   constructor(private readonly vendorReviewsService: VendorReviewsService) {}
 
-  @Serialize(ReviewDto, 'Review created successfully.')
+  @Serialize(ReviewResponseDto, 'Review created successfully.')
   @Post()
-  create(@GetAuthedUser() authedUser: AuthedUser, @Body() createReviewDto: CreateReviewDto): Promise<Review> {
-    return this.vendorReviewsService.create(authedUser.id, createReviewDto);
+  create(@GetAuthedUser() authedUser: AuthedUser, @Body() createReviewRequestDto: CreateReviewRequestDto): Promise<Review> {
+    return this.vendorReviewsService.create(authedUser.id, createReviewRequestDto);
   }
 
-  @Serialize(ReviewDto, 'All reviews.')
+  @Serialize(ReviewResponseDto, 'All reviews.')
   @Get()
-  findAll(@GetAuthedUser() authedUser: AuthedUser, @Query() findAllReviewsDto: FindAllReviewsDto): Promise<Review[]> {
-    return this.vendorReviewsService.findAll(authedUser.id, findAllReviewsDto);
+  findAll(@GetAuthedUser() authedUser: AuthedUser, @Query() findAllReviewsRequestDto: FindAllReviewsRequestDto): Promise<Review[]> {
+    return this.vendorReviewsService.findAll(authedUser.id, findAllReviewsRequestDto);
   }
 }

@@ -1,9 +1,9 @@
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { FindOneByIdDto, FindOneOrFailByIdDto, Reason } from '@app/common';
-import { CreateReasonDto } from '../dtos/create-reason.dto';
-import { UpdateReasonDto } from '../dtos/update-reason.dto';
+import { FindOneByIdPayloadDto, FindOneOrFailByIdPayloadDto, Reason } from '@app/common';
+import { CreateReasonRequestDto } from '../dtos/create-reason-request.dto';
+import { UpdateReasonRequestDto } from '../dtos/update-reason-request.dto';
 
 @Injectable()
 export class AdminReasonsService {
@@ -13,21 +13,23 @@ export class AdminReasonsService {
   ) {}
 
   // find one by id.
-  findOneById(findOneByIdDto: FindOneByIdDto<Reason>): Promise<Reason | null> {
+  findOneById(findOneByIdPayloadDto: FindOneByIdPayloadDto<Reason>): Promise<Reason | null> {
     return this.reasonRepository.findOne({
-      where: { id: findOneByIdDto.id },
-      relations: findOneByIdDto.relations,
+      where: { id: findOneByIdPayloadDto.id },
+      relations: findOneByIdPayloadDto.relations,
     });
   }
 
   // find one or fail by id.
-  async findOneOrFailById(findOneOrFailByIdDto: FindOneOrFailByIdDto<Reason>): Promise<Reason> {
-    const reason: Reason = await this.findOneById(<FindOneByIdDto<Reason>>{
-      id: findOneOrFailByIdDto.id,
-      relations: findOneOrFailByIdDto.relations,
-    });
+  async findOneOrFailById(findOneOrFailByIdPayloadDto: FindOneOrFailByIdPayloadDto<Reason>): Promise<Reason> {
+    const reason: Reason = await this.findOneById(
+      new FindOneByIdPayloadDto<Reason>({
+        id: findOneOrFailByIdPayloadDto.id,
+        relations: findOneOrFailByIdPayloadDto.relations,
+      }),
+    );
     if (!reason) {
-      throw new NotFoundException(findOneOrFailByIdDto.failureMessage || 'Reason not found.');
+      throw new NotFoundException(findOneOrFailByIdPayloadDto.failureMessage || 'Reason not found.');
     }
     return reason;
   }
@@ -38,24 +40,28 @@ export class AdminReasonsService {
   }
 
   // create.
-  async create(createReasonDto: CreateReasonDto): Promise<Reason> {
-    return this.reasonRepository.save(await this.reasonRepository.create(createReasonDto));
+  async create(createReasonRequestDto: CreateReasonRequestDto): Promise<Reason> {
+    return this.reasonRepository.save(await this.reasonRepository.create(createReasonRequestDto));
   }
 
   // update.
-  async update(id: number, updateReasonDto: UpdateReasonDto): Promise<Reason> {
-    const reason: Reason = await this.findOneOrFailById(<FindOneByIdDto<Reason>>{
-      id,
-    });
-    Object.assign(reason, updateReasonDto);
+  async update(id: number, updateReasonRequestDto: UpdateReasonRequestDto): Promise<Reason> {
+    const reason: Reason = await this.findOneOrFailById(
+      new FindOneByIdPayloadDto<Reason>({
+        id,
+      }),
+    );
+    Object.assign(reason, updateReasonRequestDto);
     return this.reasonRepository.save(reason);
   }
 
   // remove.
   async remove(id: number): Promise<Reason> {
-    const reason: Reason = await this.findOneOrFailById(<FindOneByIdDto<Reason>>{
-      id,
-    });
+    const reason: Reason = await this.findOneOrFailById(
+      new FindOneByIdPayloadDto<Reason>({
+        id,
+      }),
+    );
     return this.reasonRepository.remove(reason);
   }
 }

@@ -1,17 +1,27 @@
-import { Admin, AdminUpdatePasswordDto, AdminUpdateProfileDto, FindOneByEmailDto, FindOneByIdDto, FindOneOrFailByEmailDto, FindOneOrFailByIdDto, PermissionGroup, SearchPayloadDto } from '@app/common';
+import {
+  Admin,
+  AdminUpdatePasswordPayloadDto,
+  AdminUpdateProfilePayloadDto,
+  FindOneByEmailPayloadDto,
+  FindOneByIdPayloadDto,
+  FindOneOrFailByEmailPayloadDto,
+  FindOneOrFailByIdPayloadDto,
+  PermissionGroup,
+  SearchPayloadDto,
+} from '@app/common';
 
 export interface IAdminsService {
   // find one by id.
-  findOneById(findOneByIdDto: FindOneByIdDto<Admin>): Promise<Admin | null>;
+  findOneById(findOneByIdPayloadDto: FindOneByIdPayloadDto<Admin>): Promise<Admin | null>;
 
   // find one or fail by id.
-  findOneOrFailById(findOneOrFailByIdDto: FindOneOrFailByIdDto<Admin>): Promise<Admin>;
+  findOneOrFailById(findOneOrFailByIdPayloadDto: FindOneOrFailByIdPayloadDto<Admin>): Promise<Admin>;
 
   // find one by email.
-  findOneByEmail(findOneByEmailDto: FindOneByEmailDto<Admin>): Promise<Admin | null>;
+  findOneByEmail(findOneByEmailPayloadDto: FindOneByEmailPayloadDto<Admin>): Promise<Admin | null>;
 
   // find one or fail by email.
-  findOneOrFailByEmail(findOneOrFailByEmailDto: FindOneOrFailByEmailDto<Admin>): Promise<Admin>;
+  findOneOrFailByEmail(findOneOrFailByEmailPayloadDto: FindOneOrFailByEmailPayloadDto<Admin>): Promise<Admin>;
 
   // search by name.
   searchByName(searchPayloadDto: SearchPayloadDto<Admin>): Promise<Admin[]>;
@@ -20,10 +30,10 @@ export interface IAdminsService {
   findAllByPermissionGroup(permissionGroup: PermissionGroup): Promise<Admin[]>;
 
   // update password.
-  updatePassword(adminUpdatePasswordDto: AdminUpdatePasswordDto): Promise<Admin>;
+  updatePassword(adminUpdatePasswordPayloadDto: AdminUpdatePasswordPayloadDto): Promise<Admin>;
 
   // update profile.
-  updateProfile(adminUpdateProfileDto: AdminUpdateProfileDto): Promise<Admin>;
+  updateProfile(adminUpdateProfilePayloadDto: AdminUpdateProfilePayloadDto): Promise<Admin>;
 
   // count.
   count(): Promise<number>;

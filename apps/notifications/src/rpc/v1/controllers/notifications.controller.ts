@@ -1,8 +1,7 @@
 import { Controller } from '@nestjs/common';
 import { EventPattern, Payload } from '@nestjs/microservices';
-import { CreateDatabaseNotificationDto, NotificationsMicroserviceConstants, SendPushNotificationPayloadDto, SendSmsNotificationDto } from '@app/common';
+import { CreateDatabaseNotificationPayloadDto, NotificationsMicroserviceConstants, SendPushNotificationPayloadDto, SendSmsNotificationPayloadDto } from '@app/common';
 import { NotificationsService } from '../services/notifications.service';
-import { plainToInstance } from 'class-transformer';
 
 const VERSION = '1';
 
@@ -11,17 +10,17 @@ export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}
 
   @EventPattern(`${NotificationsMicroserviceConstants.NOTIFICATIONS_SERVICE_SEND_FCM_NOTIFICATION_EVENT_PATTERN}/v${VERSION}`)
-  async sendFcmNotification(@Payload() sendFcmNotificationDto: SendPushNotificationPayloadDto): Promise<void> {
-    await this.notificationsService.sendFcmNotification(plainToInstance(SendPushNotificationPayloadDto, sendFcmNotificationDto));
+  async sendFcmNotification(@Payload('sendPushNotificationPayloadDto') sendPushNotificationPayloadDto: SendPushNotificationPayloadDto): Promise<void> {
+    await this.notificationsService.sendFcmNotification(sendPushNotificationPayloadDto);
   }
 
   @EventPattern(`${NotificationsMicroserviceConstants.NOTIFICATIONS_SERVICE_CREATE_DATABASE_NOTIFICATION_EVENT_PATTERN}/v${VERSION}`)
-  async createDatabaseNotification(@Payload() createDatabaseNotificationDto: CreateDatabaseNotificationDto): Promise<void> {
-    await this.notificationsService.createDatabaseNotification(createDatabaseNotificationDto);
+  async createDatabaseNotification(@Payload('createDatabaseNotificationPayloadDto') createDatabaseNotificationPayloadDto: CreateDatabaseNotificationPayloadDto): Promise<void> {
+    await this.notificationsService.createDatabaseNotification(createDatabaseNotificationPayloadDto);
   }
 
   @EventPattern(`${NotificationsMicroserviceConstants.NOTIFICATIONS_SERVICE_SEND_SMS_NOTIFICATION_EVENT_PATTERN}/v${VERSION}`)
-  sendSmsNotification(@Payload() sendSmsNotificationDto: SendSmsNotificationDto): void {
-    this.notificationsService.sendSmsNotification(sendSmsNotificationDto);
+  sendSmsNotification(@Payload('sendSmsNotificationPayloadDto') sendSmsNotificationPayloadDto: SendSmsNotificationPayloadDto): void {
+    this.notificationsService.sendSmsNotification(sendSmsNotificationPayloadDto);
   }
 }

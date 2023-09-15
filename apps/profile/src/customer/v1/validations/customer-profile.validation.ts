@@ -3,15 +3,15 @@ import {
   Customer,
   CustomersMicroserviceConnection,
   CustomersMicroserviceConstants,
-  FindOneByPhoneDto,
-  FindOneOrFailByIdDto,
+  FindOneByPhonePayloadDto,
+  FindOneOrFailByIdPayloadDto,
   Location,
   LocationsMicroserviceConnection,
   LocationsMicroserviceConstants,
 } from '@app/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { Constants } from '../../../constants';
-import { UpdateProfileDto } from '../dtos/update-profile.dto';
+import { UpdateProfileRequestDto } from '../dtos/update-profile-request.dto';
 
 @Injectable()
 export class CustomerProfileValidation {
@@ -29,27 +29,35 @@ export class CustomerProfileValidation {
   }
 
   // validate update.
-  async validateUpdate(customerId: number, updateProfileDto: UpdateProfileDto): Promise<void> {
-    await this.customersMicroserviceConnection.customersServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Customer>>{
-      id: customerId,
-    });
-    if (updateProfileDto.phone) {
-      const customerByPhone: Customer = await this.customersMicroserviceConnection.customersServiceImpl.findOneByPhone(<FindOneByPhoneDto<Customer>>{
-        phone: updateProfileDto.phone,
-      });
+  async validateUpdate(customerId: number, updateProfileRequestDto: UpdateProfileRequestDto): Promise<void> {
+    await this.customersMicroserviceConnection.customersServiceImpl.findOneOrFailById(
+      new FindOneOrFailByIdPayloadDto<Customer>({
+        id: customerId,
+      }),
+    );
+    if (updateProfileRequestDto.phone) {
+      const customerByPhone: Customer = await this.customersMicroserviceConnection.customersServiceImpl.findOneByPhone(
+        new FindOneByPhonePayloadDto<Customer>({
+          phone: updateProfileRequestDto.phone,
+        }),
+      );
       if (customerByPhone) {
         throw new BadRequestException('Phone is already exists.');
       }
     }
-    if (updateProfileDto.governorateId) {
-      const governorate: Location = await this.locationsMicroserviceConnection.locationsServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Location>>{
-        id: updateProfileDto.governorateId,
-        failureMessage: 'Governorate not found.',
-      });
-      const region: Location = await this.locationsMicroserviceConnection.locationsServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Location>>{
-        id: updateProfileDto.regionId,
-        failureMessage: 'Region not found.',
-      });
+    if (updateProfileRequestDto.governorateId) {
+      const governorate: Location = await this.locationsMicroserviceConnection.locationsServiceImpl.findOneOrFailById(
+        new FindOneOrFailByIdPayloadDto<Location>({
+          id: updateProfileRequestDto.governorateId,
+          failureMessage: 'Governorate not found.',
+        }),
+      );
+      const region: Location = await this.locationsMicroserviceConnection.locationsServiceImpl.findOneOrFailById(
+        new FindOneOrFailByIdPayloadDto<Location>({
+          id: updateProfileRequestDto.regionId,
+          failureMessage: 'Region not found.',
+        }),
+      );
       if (region.parentId !== governorate.id) {
         throw new BadRequestException('The provided region is not a child for the provided governorate.');
       }

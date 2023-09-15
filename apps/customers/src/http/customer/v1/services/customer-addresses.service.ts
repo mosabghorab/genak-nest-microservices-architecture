@@ -1,9 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { CustomerAddress, FindOneByIdDto, FindOneOrFailByIdDto } from '@app/common';
-import { CreateCustomerAddressDto } from '../dtos/create-customer-address.dto';
-import { UpdateCustomerAddressDto } from '../dtos/update-customer-address.dto';
+import { CustomerAddress, FindOneByIdPayloadDto, FindOneOrFailByIdPayloadDto } from '@app/common';
+import { CreateCustomerAddressRequestDto } from '../dtos/create-customer-address-request.dto';
+import { UpdateCustomerAddressRequestDto } from '../dtos/update-customer-address-request.dto';
 
 @Injectable()
 export class CustomerAddressesService {
@@ -13,11 +13,11 @@ export class CustomerAddressesService {
   ) {}
 
   // create.
-  create(customerId: number, createCustomersAddressDto: CreateCustomerAddressDto): Promise<CustomerAddress> {
+  create(customerId: number, createCustomerAddressRequestDto: CreateCustomerAddressRequestDto): Promise<CustomerAddress> {
     return this.customerAddressRepository.save(
       this.customerAddressRepository.create({
         customerId,
-        ...createCustomersAddressDto,
+        ...createCustomerAddressRequestDto,
       }),
     );
   }
@@ -30,39 +30,45 @@ export class CustomerAddressesService {
   }
 
   // find one by id.
-  findOneById(findOneByIdDto: FindOneByIdDto<CustomerAddress>): Promise<CustomerAddress | null> {
+  findOneById(findOneByIdPayloadDto: FindOneByIdPayloadDto<CustomerAddress>): Promise<CustomerAddress | null> {
     return this.customerAddressRepository.findOne({
-      where: { id: findOneByIdDto.id },
-      relations: findOneByIdDto.relations,
+      where: { id: findOneByIdPayloadDto.id },
+      relations: findOneByIdPayloadDto.relations,
     });
   }
 
   // find one or fail by id.
-  async findOneOrFailById(findOneOrFailByIdDto: FindOneOrFailByIdDto<CustomerAddress>): Promise<CustomerAddress> {
-    const customerAddress: CustomerAddress = await this.findOneById(<FindOneByIdDto<CustomerAddress>>{
-      id: findOneOrFailByIdDto.id,
-      relations: findOneOrFailByIdDto.relations,
-    });
+  async findOneOrFailById(findOneOrFailByIdPayloadDto: FindOneOrFailByIdPayloadDto<CustomerAddress>): Promise<CustomerAddress> {
+    const customerAddress: CustomerAddress = await this.findOneById(
+      new FindOneByIdPayloadDto<CustomerAddress>({
+        id: findOneOrFailByIdPayloadDto.id,
+        relations: findOneOrFailByIdPayloadDto.relations,
+      }),
+    );
     if (!customerAddress) {
-      throw new NotFoundException(findOneOrFailByIdDto.failureMessage || 'Customer address not found.');
+      throw new NotFoundException(findOneOrFailByIdPayloadDto.failureMessage || 'Customer address not found.');
     }
     return customerAddress;
   }
 
   // update.
-  async update(id: number, updateCustomersAddressDto: UpdateCustomerAddressDto): Promise<CustomerAddress> {
-    const customerAddress: CustomerAddress = await this.findOneOrFailById(<FindOneOrFailByIdDto<CustomerAddress>>{
-      id,
-    });
-    Object.assign(customerAddress, updateCustomersAddressDto);
+  async update(id: number, updateCustomerAddressRequestDto: UpdateCustomerAddressRequestDto): Promise<CustomerAddress> {
+    const customerAddress: CustomerAddress = await this.findOneOrFailById(
+      new FindOneOrFailByIdPayloadDto<CustomerAddress>({
+        id,
+      }),
+    );
+    Object.assign(customerAddress, updateCustomerAddressRequestDto);
     return this.customerAddressRepository.save(customerAddress);
   }
 
   // remove.
   async remove(id: number): Promise<CustomerAddress> {
-    const customerAddress: CustomerAddress = await this.findOneOrFailById(<FindOneOrFailByIdDto<CustomerAddress>>{
-      id,
-    });
+    const customerAddress: CustomerAddress = await this.findOneOrFailById(
+      new FindOneOrFailByIdPayloadDto<CustomerAddress>({
+        id,
+      }),
+    );
     return this.customerAddressRepository.remove(customerAddress);
   }
 }

@@ -5,30 +5,30 @@ import {
   Attachment,
   AttachmentsMicroserviceConnection,
   AttachmentsMicroserviceConstants,
-  CreateAttachmentDto,
+  CreateAttachmentPayloadDto,
   DateFilterOption,
   DateHelpers,
-  DeleteFileDto,
-  FindAllAttachmentsByVendorIdAndDocumentIdDto,
-  FindOneByIdDto,
-  FindOneByPhoneDto,
-  FindOneOrFailByIdDto,
-  FindOneOrFailByPhoneDto,
+  DeleteFilePayloadDto,
+  FindAllAttachmentsByVendorIdAndDocumentIdPayloadDto,
+  FindOneByIdPayloadDto,
+  FindOneByPhonePayloadDto,
+  FindOneOrFailByIdPayloadDto,
+  FindOneOrFailByPhonePayloadDto,
   Location,
   LocationVendor,
   StorageMicroserviceConnection,
   StorageMicroserviceConstants,
-  UploadFileDto,
+  UploadFilePayloadDto,
   Vendor,
   VendorStatus,
 } from '@app/common';
 import { AdminVendorsValidation } from '../validations/admin-vendors.validation';
 import { ClientProxy } from '@nestjs/microservices';
 import { LocationsVendorsService } from '../../../shared/v1/services/locations-vendors.service';
-import { FindAllVendorsDto } from '../dtos/find-all-vendors.dto';
-import { CreateVendorDto } from '../dtos/create-vendor.dto';
+import { FindAllVendorsRequestDto } from '../dtos/find-all-vendors-request.dto';
+import { CreateVendorRequestDto } from '../dtos/create-vendor-request.dto';
 import { Constants } from '../../../../constants';
-import { UpdateVendorDto } from '../dtos/update-vendor.dto';
+import { UpdateVendorRequestDto } from '../dtos/update-vendor-request.dto';
 import { Workbook, Worksheet } from 'exceljs';
 import * as fsExtra from 'fs-extra';
 import { createReadStream } from 'fs';
@@ -54,60 +54,67 @@ export class AdminVendorsService {
   }
 
   // find one by id.
-  findOneById(findOneByIdDto: FindOneByIdDto<Vendor>): Promise<Vendor | null> {
-    return this.vendorRepository.findOne({ where: { id: findOneByIdDto.id }, relations: findOneByIdDto.relations });
+  findOneById(findOneByIdPayloadDto: FindOneByIdPayloadDto<Vendor>): Promise<Vendor | null> {
+    return this.vendorRepository.findOne({
+      where: { id: findOneByIdPayloadDto.id },
+      relations: findOneByIdPayloadDto.relations,
+    });
   }
 
   // find one or fail by id.
-  async findOneOrFailById(findOneOrFailByIdDto: FindOneOrFailByIdDto<Vendor>): Promise<Vendor> {
-    const vendor: Vendor = await this.findOneById(<FindOneByIdDto<Vendor>>{
-      id: findOneOrFailByIdDto.id,
-      relations: findOneOrFailByIdDto.relations,
-    });
+  async findOneOrFailById(findOneOrFailByIdPayloadDto: FindOneOrFailByIdPayloadDto<Vendor>): Promise<Vendor> {
+    const vendor: Vendor = await this.findOneById(
+      new FindOneByIdPayloadDto<Vendor>({
+        id: findOneOrFailByIdPayloadDto.id,
+        relations: findOneOrFailByIdPayloadDto.relations,
+      }),
+    );
     if (!vendor) {
-      throw new NotFoundException(findOneOrFailByIdDto.failureMessage || 'Vendor not found.');
+      throw new NotFoundException(findOneOrFailByIdPayloadDto.failureMessage || 'Vendor not found.');
     }
     return vendor;
   }
 
   // find one by phone.
-  findOneByPhone(findOneByPhoneDto: FindOneByPhoneDto<Vendor>): Promise<Vendor | null> {
+  findOneByPhone(findOneByPhonePayloadDto: FindOneByPhonePayloadDto<Vendor>): Promise<Vendor | null> {
     return this.vendorRepository.findOne({
-      where: { phone: findOneByPhoneDto.phone },
-      relations: findOneByPhoneDto.relations,
+      where: { phone: findOneByPhonePayloadDto.phone },
+      relations: findOneByPhonePayloadDto.relations,
     });
   }
 
   // find one or fail by phone.
-  async findOneOrFailByPhone(findOneOrFailByPhoneDto: FindOneOrFailByPhoneDto<Vendor>): Promise<Vendor> {
-    const vendor: Vendor = await this.findOneByPhone(<FindOneByPhoneDto<Vendor>>{
-      phone: findOneOrFailByPhoneDto.phone,
-      relations: findOneOrFailByPhoneDto.relations,
-    });
+  async findOneOrFailByPhone(findOneOrFailByPhonePayloadDto: FindOneOrFailByPhonePayloadDto<Vendor>): Promise<Vendor> {
+    const vendor: Vendor = await this.findOneByPhone(
+      new FindOneByPhonePayloadDto<Vendor>({
+        phone: findOneOrFailByPhonePayloadDto.phone,
+        relations: findOneOrFailByPhonePayloadDto.relations,
+      }),
+    );
     if (!vendor) {
-      throw new NotFoundException(findOneOrFailByPhoneDto.failureMessage || 'Vendor not found.');
+      throw new NotFoundException(findOneOrFailByPhonePayloadDto.failureMessage || 'Vendor not found.');
     }
     return vendor;
   }
 
   // find all.
-  async findAll(findAllVendorsDto: FindAllVendorsDto): Promise<
+  async findAll(findAllVendorsRequestDto: FindAllVendorsRequestDto): Promise<
     | { total: number; perPage: number; lastPage: number; data: Vendor[]; currentPage: number }
     | {
         total: number;
         data: Vendor[];
       }
   > {
-    const offset: number = (findAllVendorsDto.page - 1) * findAllVendorsDto.limit;
+    const offset: number = (findAllVendorsRequestDto.page - 1) * findAllVendorsRequestDto.limit;
     let dateRange: { startDate: Date; endDate: Date };
-    if (findAllVendorsDto.dateFilterOption) {
-      if (findAllVendorsDto.dateFilterOption === DateFilterOption.CUSTOM) {
+    if (findAllVendorsRequestDto.dateFilterOption) {
+      if (findAllVendorsRequestDto.dateFilterOption === DateFilterOption.CUSTOM) {
         dateRange = {
-          startDate: findAllVendorsDto.startDate,
-          endDate: findAllVendorsDto.endDate,
+          startDate: findAllVendorsRequestDto.startDate,
+          endDate: findAllVendorsRequestDto.endDate,
         };
       } else {
-        dateRange = DateHelpers.getDateRangeForDateFilterOption(findAllVendorsDto.dateFilterOption);
+        dateRange = DateHelpers.getDateRangeForDateFilterOption(findAllVendorsRequestDto.dateFilterOption);
       }
     }
     const queryBuilder: SelectQueryBuilder<Vendor> = this.vendorRepository
@@ -115,29 +122,29 @@ export class AdminVendorsService {
       .leftJoinAndSelect('vendor.governorate', 'governorate')
       .leftJoin('vendor.orders', 'order')
       .addSelect('COUNT(order.id)', ' ordersCount');
-    if (findAllVendorsDto.regionsIds) {
-      queryBuilder.innerJoin('vendor.locationsVendors', 'locationVendor', 'locationVendor.locationId IN (:...regionsIds)', { regionsIds: findAllVendorsDto.regionsIds });
+    if (findAllVendorsRequestDto.regionsIds) {
+      queryBuilder.innerJoin('vendor.locationsVendors', 'locationVendor', 'locationVendor.locationId IN (:...regionsIds)', { regionsIds: findAllVendorsRequestDto.regionsIds });
     }
     queryBuilder
       .where('vendor.serviceType = :serviceType', {
-        serviceType: findAllVendorsDto.serviceType,
+        serviceType: findAllVendorsRequestDto.serviceType,
       })
       .andWhere('vendor.status IN (:...statuses)', {
-        statuses: findAllVendorsDto.statuses,
+        statuses: findAllVendorsRequestDto.statuses,
       });
-    if (findAllVendorsDto.governorateId) {
+    if (findAllVendorsRequestDto.governorateId) {
       queryBuilder.andWhere('vendor.governorateId = :governorateId', {
-        governorateId: findAllVendorsDto.governorateId,
+        governorateId: findAllVendorsRequestDto.governorateId,
       });
     }
-    if (findAllVendorsDto.dateFilterOption) {
+    if (findAllVendorsRequestDto.dateFilterOption) {
       queryBuilder.andWhere('vendor.createdAt BETWEEN :startDate AND :endDate', {
         startDate: dateRange.startDate,
         endDate: dateRange.endDate,
       });
     }
-    queryBuilder.groupBy('vendor.id').orderBy('ordersCount', findAllVendorsDto.orderByType);
-    if (findAllVendorsDto.paginationEnable) queryBuilder.skip(offset).take(findAllVendorsDto.limit);
+    queryBuilder.groupBy('vendor.id').orderBy('ordersCount', findAllVendorsRequestDto.orderByType);
+    if (findAllVendorsRequestDto.paginationEnable) queryBuilder.skip(offset).take(findAllVendorsRequestDto.limit);
     const { entities, raw }: { entities: Vendor[]; raw: any[] } = await queryBuilder.getRawAndEntities();
     const count: number = await queryBuilder.getCount();
     for (let i = 0; i < entities.length; i++) {
@@ -146,11 +153,11 @@ export class AdminVendorsService {
       });
       entities[i]['ordersCount'] = parseInt(raw[i]['ordersCount']) || 0;
     }
-    return findAllVendorsDto.paginationEnable
+    return findAllVendorsRequestDto.paginationEnable
       ? {
-          perPage: findAllVendorsDto.limit,
-          currentPage: findAllVendorsDto.page,
-          lastPage: Math.ceil(count / findAllVendorsDto.limit),
+          perPage: findAllVendorsRequestDto.limit,
+          currentPage: findAllVendorsRequestDto.page,
+          lastPage: Math.ceil(count / findAllVendorsRequestDto.limit),
           total: count,
           data: entities,
         }
@@ -158,48 +165,52 @@ export class AdminVendorsService {
   }
 
   // create.
-  async create(createVendorDto: CreateVendorDto, files?: Express.Multer.File[]): Promise<Vendor> {
-    const governorate: Location = await this.adminVendorsValidation.validateCreation(createVendorDto);
+  async create(createVendorRequestDto: CreateVendorRequestDto, files?: Express.Multer.File[]): Promise<Vendor> {
+    const governorate: Location = await this.adminVendorsValidation.validateCreation(createVendorRequestDto);
     const {
-      createAttachmentDtoList,
+      createAttachmentPayloadDtoList,
       avatar,
     }: {
       avatar?: any;
-      createAttachmentDtoList: CreateAttachmentDto[];
-    } = await this.adminVendorsValidation.validateCreationUploadDocuments(createVendorDto, files);
+      createAttachmentPayloadDtoList: CreateAttachmentPayloadDto[];
+    } = await this.adminVendorsValidation.validateCreationUploadDocuments(createVendorRequestDto, files);
     let avatarUrl: string;
     if (avatar) {
-      avatarUrl = await this.storageMicroserviceConnection.storageServiceImpl.uploadFile(<UploadFileDto>{
-        prefixPath: Constants.VENDORS_IMAGES_PREFIX_PATH,
-        file: avatar,
-      });
+      avatarUrl = await this.storageMicroserviceConnection.storageServiceImpl.uploadFile(
+        new UploadFilePayloadDto({
+          prefixPath: Constants.VENDORS_IMAGES_PREFIX_PATH,
+          file: avatar,
+        }),
+      );
     }
     const savedVendor: Vendor = await this.vendorRepository.save(
       await this.vendorRepository.create({
         avatar: avatarUrl,
         status: VendorStatus.PENDING,
-        ...createVendorDto,
+        ...createVendorRequestDto,
       }),
     );
-    const locationsVendors: LocationVendor[] = createVendorDto.regionsIds.map(
+    const locationsVendors: LocationVendor[] = createVendorRequestDto.regionsIds.map(
       (value: number) =>
         <LocationVendor>{
           vendorId: savedVendor.id,
           locationId: value,
         },
     );
-    createAttachmentDtoList.forEach((value: CreateAttachmentDto) => {
+    createAttachmentPayloadDtoList.forEach((value: CreateAttachmentPayloadDto) => {
       value.vendorId = savedVendor.id;
     });
     const attachments: Attachment[] = [];
-    for (const createAttachmentDto of createAttachmentDtoList) {
-      const fileUrl: string = await this.storageMicroserviceConnection.storageServiceImpl.uploadFile(<UploadFileDto>{
-        prefixPath: Constants.VENDORS_ATTACHMENTS_PREFIX_PATH,
-        file: createAttachmentDto.file,
-      });
+    for (const createAttachmentPayloadDto of createAttachmentPayloadDtoList) {
+      const fileUrl: string = await this.storageMicroserviceConnection.storageServiceImpl.uploadFile(
+        new UploadFilePayloadDto({
+          prefixPath: Constants.VENDORS_ATTACHMENTS_PREFIX_PATH,
+          file: createAttachmentPayloadDto.file,
+        }),
+      );
       attachments.push(<Attachment>{
-        documentId: createAttachmentDto.documentId,
-        vendorId: createAttachmentDto.vendorId,
+        documentId: createAttachmentPayloadDto.documentId,
+        vendorId: createAttachmentPayloadDto.vendorId,
         file: fileUrl,
       });
     }
@@ -210,34 +221,38 @@ export class AdminVendorsService {
   }
 
   // update.
-  async update(vendorId: number, updateVendorDto: UpdateVendorDto, files?: Express.Multer.File[]): Promise<Vendor> {
-    const vendor: Vendor = await this.adminVendorsValidation.validateUpdate(vendorId, updateVendorDto);
+  async update(vendorId: number, updateVendorRequestDto: UpdateVendorRequestDto, files?: Express.Multer.File[]): Promise<Vendor> {
+    const vendor: Vendor = await this.adminVendorsValidation.validateUpdate(vendorId, updateVendorRequestDto);
     const {
-      createAttachmentDtoList,
+      createAttachmentPayloadDtoList,
       avatar,
     }: {
       avatar?: any;
-      createAttachmentDtoList: CreateAttachmentDto[];
+      createAttachmentPayloadDtoList: CreateAttachmentPayloadDto[];
     } = await this.adminVendorsValidation.validateUpdateUploadDocuments(vendor, files);
     if (avatar) {
       if (vendor.avatar)
-        await this.storageMicroserviceConnection.storageServiceImpl.deleteFile(<DeleteFileDto>{
+        await this.storageMicroserviceConnection.storageServiceImpl.deleteFile(
+          new DeleteFilePayloadDto({
+            prefixPath: Constants.VENDORS_IMAGES_PREFIX_PATH,
+            fileUrl: vendor.avatar,
+          }),
+        );
+      vendor.avatar = await this.storageMicroserviceConnection.storageServiceImpl.uploadFile(
+        new UploadFilePayloadDto({
           prefixPath: Constants.VENDORS_IMAGES_PREFIX_PATH,
-          fileUrl: vendor.avatar,
-        });
-      vendor.avatar = await this.storageMicroserviceConnection.storageServiceImpl.uploadFile(<UploadFileDto>{
-        prefixPath: Constants.VENDORS_IMAGES_PREFIX_PATH,
-        file: avatar,
-      });
+          file: avatar,
+        }),
+      );
     }
-    Object.assign(vendor, updateVendorDto);
+    Object.assign(vendor, updateVendorRequestDto);
     const savedVendor: Vendor = await this.vendorRepository.save(vendor);
-    if (updateVendorDto.regionsIds) {
+    if (updateVendorRequestDto.regionsIds) {
       for (const locationVendor of savedVendor.locationsVendors) {
         await this.locationsVendorsService.removeOneByInstance(locationVendor);
       }
       // prepare regions.
-      savedVendor.locationsVendors = updateVendorDto.regionsIds.map(
+      savedVendor.locationsVendors = updateVendorRequestDto.regionsIds.map(
         (value: number) =>
           <LocationVendor>{
             vendorId: savedVendor.id,
@@ -246,24 +261,28 @@ export class AdminVendorsService {
       );
     }
     const attachments: Attachment[] = [];
-    for (const createAttachmentDto of createAttachmentDtoList) {
-      const oldAttachments: Attachment[] = await this.attachmentsMicroserviceConnection.attachmentsServiceImpl.findAllByVendorIdAndDocumentId(<FindAllAttachmentsByVendorIdAndDocumentIdDto>{
-        vendorId: savedVendor.id,
-        documentId: createAttachmentDto.documentId,
-      });
+    for (const createAttachmentPayloadDto of createAttachmentPayloadDtoList) {
+      const oldAttachments: Attachment[] = await this.attachmentsMicroserviceConnection.attachmentsServiceImpl.findAllByVendorIdAndDocumentId(
+        new FindAllAttachmentsByVendorIdAndDocumentIdPayloadDto({
+          vendorId: savedVendor.id,
+          documentId: createAttachmentPayloadDto.documentId,
+        }),
+      );
       if (oldAttachments) {
         for (const oldAttachment of oldAttachments) {
           await this.attachmentsMicroserviceConnection.attachmentsServiceImpl.removeOneByInstance(oldAttachment);
           savedVendor.attachments = savedVendor.attachments.filter((attachment: Attachment): boolean => attachment.id !== oldAttachment.id);
         }
       }
-      const fileUrl: string = await this.storageMicroserviceConnection.storageServiceImpl.uploadFile(<UploadFileDto>{
-        prefixPath: Constants.VENDORS_IMAGES_PREFIX_PATH,
-        file: avatar,
-      });
+      const fileUrl: string = await this.storageMicroserviceConnection.storageServiceImpl.uploadFile(
+        new UploadFilePayloadDto({
+          prefixPath: Constants.VENDORS_IMAGES_PREFIX_PATH,
+          file: avatar,
+        }),
+      );
       attachments.push(<Attachment>{
-        documentId: createAttachmentDto.documentId,
-        vendorId: createAttachmentDto.vendorId,
+        documentId: createAttachmentPayloadDto.documentId,
+        vendorId: createAttachmentPayloadDto.vendorId,
         file: fileUrl,
       });
     }
@@ -273,15 +292,17 @@ export class AdminVendorsService {
 
   // remove.
   async remove(id: number): Promise<Vendor> {
-    const vendor: Vendor = await this.findOneOrFailById(<FindOneOrFailByIdDto<Vendor>>{
-      id,
-    });
+    const vendor: Vendor = await this.findOneOrFailById(
+      new FindOneOrFailByIdPayloadDto<Vendor>({
+        id,
+      }),
+    );
     return this.vendorRepository.remove(vendor);
   }
 
   // export all.
-  async exportAll(findAllVendorsDto: FindAllVendorsDto): Promise<StreamableFile> {
-    const { data }: { data: Vendor[] } = await this.findAll(findAllVendorsDto);
+  async exportAll(findAllVendorsRequestDto: FindAllVendorsRequestDto): Promise<StreamableFile> {
+    const { data }: { data: Vendor[] } = await this.findAll(findAllVendorsRequestDto);
     const workbook: Workbook = new Workbook();
     const worksheet: Worksheet = workbook.addWorksheet('الموزعين');
     // add headers.

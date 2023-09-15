@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { DeleteFileDto, Helpers, UploadFileDto } from '@app/common';
+import { DeleteFilePayloadDto, Helpers, UploadFilePayloadDto } from '@app/common';
 import { firebaseAdmin } from '../../firebase-admin-init';
 
 @Injectable()
@@ -8,16 +8,16 @@ export class FirebaseStorageService {
   private readonly bucket: any = this.storage.bucket();
 
   // upload file.
-  async uploadFile(uploadFileDto: UploadFileDto): Promise<string> {
+  async uploadFile(uploadFilePayloadDto: UploadFilePayloadDto): Promise<string> {
     try {
-      const filePath = `${uploadFileDto.prefixPath}${Helpers.generateUniqueFileName()}.${uploadFileDto.file.mimetype.split('/')[1]}`;
+      const filePath = `${uploadFilePayloadDto.prefixPath}${Helpers.generateUniqueFileName()}.${uploadFilePayloadDto.file.mimetype.split('/')[1]}`;
       const fileToUpload: any = this.bucket.file(filePath);
       const uploadStream = fileToUpload.createWriteStream({
         metadata: {
-          contentType: uploadFileDto.file.mimetype,
+          contentType: uploadFilePayloadDto.file.mimetype,
         },
       });
-      const buffer: Buffer = Buffer.from(uploadFileDto.file.buffer);
+      const buffer: Buffer = Buffer.from(uploadFilePayloadDto.file.buffer);
       uploadStream.end(buffer);
       return new Promise<string>((resolve, reject): void => {
         uploadStream
@@ -37,12 +37,12 @@ export class FirebaseStorageService {
   }
 
   // delete file.
-  async deleteFile(deleteFileDto: DeleteFileDto): Promise<boolean> {
+  async deleteFile(deleteFilePayloadDto: DeleteFilePayloadDto): Promise<boolean> {
     try {
-      const urlParts: string[] = deleteFileDto.fileUrl.split('/');
+      const urlParts: string[] = deleteFilePayloadDto.fileUrl.split('/');
       const fileNameWithParams: string = urlParts[urlParts.length - 1];
       const fileName: string = fileNameWithParams.split('?')[0];
-      const fileToDelete: any = this.bucket.file(`${deleteFileDto.prefixPath}${fileName}`);
+      const fileToDelete: any = this.bucket.file(`${deleteFilePayloadDto.prefixPath}${fileName}`);
       await fileToDelete.delete();
       return true;
     } catch (error) {

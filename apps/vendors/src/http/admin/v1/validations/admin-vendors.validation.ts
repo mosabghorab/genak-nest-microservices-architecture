@@ -3,22 +3,22 @@ import {
   Attachment,
   AttachmentStatus,
   CommonConstants,
-  CreateAttachmentDto,
+  CreateAttachmentPayloadDto,
   Document,
   DocumentsMicroserviceConnection,
   DocumentsMicroserviceConstants,
   DocumentType,
-  FindAllDocumentsDto,
-  FindOneByPhoneDto,
-  FindOneOrFailByIdDto,
+  FindAllDocumentsPayloadDto,
+  FindOneByPhonePayloadDto,
+  FindOneOrFailByIdPayloadDto,
   Location,
   LocationsMicroserviceConnection,
   LocationsMicroserviceConstants,
   Vendor,
 } from '@app/common';
 import { AdminVendorsService } from '../services/admin-vendors.service';
-import { CreateVendorDto } from '../dtos/create-vendor.dto';
-import { UpdateVendorDto } from '../dtos/update-vendor.dto';
+import { CreateVendorRequestDto } from '../dtos/create-vendor-request.dto';
+import { UpdateVendorRequestDto } from '../dtos/update-vendor-request.dto';
 import { ClientProxy } from '@nestjs/microservices';
 import { Constants } from '../../../../constants';
 
@@ -40,22 +40,28 @@ export class AdminVendorsValidation {
   }
 
   // validate creation.
-  async validateCreation(createVendorDto: CreateVendorDto): Promise<Location> {
-    const vendor: Vendor = await this.adminVendorsService.findOneByPhone(<FindOneByPhoneDto<Vendor>>{
-      phone: createVendorDto.phone,
-    });
+  async validateCreation(createVendorRequestDto: CreateVendorRequestDto): Promise<Location> {
+    const vendor: Vendor = await this.adminVendorsService.findOneByPhone(
+      new FindOneByPhonePayloadDto<Vendor>({
+        phone: createVendorRequestDto.phone,
+      }),
+    );
     if (vendor) {
       throw new BadRequestException('Phone is already exists.');
     }
-    const governorate: Location = await this.locationsMicroserviceConnection.locationsServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Location>>{
-      id: createVendorDto.governorateId,
-      failureMessage: 'Governorate not found.',
-    });
-    for (const regionId of createVendorDto.regionsIds) {
-      const region: Location = await this.locationsMicroserviceConnection.locationsServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Location>>{
-        id: regionId,
-        failureMessage: 'Region not found.',
-      });
+    const governorate: Location = await this.locationsMicroserviceConnection.locationsServiceImpl.findOneOrFailById(
+      new FindOneOrFailByIdPayloadDto<Location>({
+        id: createVendorRequestDto.governorateId,
+        failureMessage: 'Governorate not found.',
+      }),
+    );
+    for (const regionId of createVendorRequestDto.regionsIds) {
+      const region: Location = await this.locationsMicroserviceConnection.locationsServiceImpl.findOneOrFailById(
+        new FindOneOrFailByIdPayloadDto<Location>({
+          id: regionId,
+          failureMessage: 'Region not found.',
+        }),
+      );
       if (region.parentId !== governorate.id) {
         throw new BadRequestException('The provided region is not a child for the provided governorate.');
       }
@@ -65,11 +71,11 @@ export class AdminVendorsValidation {
 
   // validate creation upload documents.
   async validateCreationUploadDocuments(
-    createVendorDto: CreateVendorDto,
+    createVendorRequestDto: CreateVendorRequestDto,
     files?: Express.Multer.File[],
   ): Promise<{
     avatar?: Express.Multer.File;
-    createAttachmentDtoList: CreateAttachmentDto[];
+    createAttachmentPayloadDtoList: CreateAttachmentPayloadDto[];
   }> {
     const avatar: Express.Multer.File = files.find((file: Express.Multer.File): boolean => file.fieldname === 'avatar');
     if (avatar) {
@@ -81,14 +87,16 @@ export class AdminVendorsValidation {
     if (!files || files.length === 0) {
       throw new BadRequestException('Please upload the required documents.');
     }
-    const documents: Document[] = await this.documentsMicroserviceConnection.documentsServiceImpl.findAll(<FindAllDocumentsDto>{
-      serviceType: createVendorDto.serviceType,
-      active: true,
-    });
+    const documents: Document[] = await this.documentsMicroserviceConnection.documentsServiceImpl.findAll(
+      new FindAllDocumentsPayloadDto({
+        serviceType: createVendorRequestDto.serviceType,
+        active: true,
+      }),
+    );
     if (!documents || documents.length === 0) {
       throw new BadRequestException('There are no documents to upload.');
     }
-    const createAttachmentDtoList: CreateAttachmentDto[] = [];
+    const createAttachmentPayloadDtoList: CreateAttachmentPayloadDto[] = [];
     for (let i = 0; i < documents.length; i++) {
       const document: Document = documents[i];
       const fileIndex: number = files.findIndex((file: Express.Multer.File): boolean => file.fieldname === document.id.toString());
@@ -99,56 +107,68 @@ export class AdminVendorsValidation {
       const file: Express.Multer.File = files[fileIndex];
       if (document.type === DocumentType.IMAGE) {
         if (new RegExp(CommonConstants.IMAGE_MIMETYPE_REGX).test(file.mimetype)) {
-          createAttachmentDtoList.push(<CreateAttachmentDto>{
-            documentId: document.id,
-            vendorId: 0,
-            file: file,
-          });
+          createAttachmentPayloadDtoList.push(
+            new CreateAttachmentPayloadDto({
+              documentId: document.id,
+              vendorId: 0,
+              file: file,
+            }),
+          );
         } else {
           throw new BadRequestException(`${document.name} must be an image of [${CommonConstants.IMAGE_MIMETYPE_REGX}].`);
         }
       } else {
         if (new RegExp(CommonConstants.FILE_MIMETYPE_REGX).test(file.mimetype)) {
-          createAttachmentDtoList.push(<CreateAttachmentDto>{
-            documentId: document.id,
-            vendorId: 0,
-            file: file,
-          });
+          createAttachmentPayloadDtoList.push(
+            new CreateAttachmentPayloadDto({
+              documentId: document.id,
+              vendorId: 0,
+              file: file,
+            }),
+          );
         } else {
           throw new BadRequestException(`${document.name} must be an file of [${CommonConstants.FILE_MIMETYPE_REGX}].`);
         }
       }
     }
-    return { createAttachmentDtoList, avatar };
+    return { createAttachmentPayloadDtoList, avatar };
   }
 
   // validate update.
-  async validateUpdate(vendorId: number, updateVendorDto: UpdateVendorDto): Promise<Vendor> {
-    const vendor: Vendor = await this.adminVendorsService.findOneOrFailById(<FindOneOrFailByIdDto<Vendor>>{
-      id: vendorId,
-      relations: {
-        attachments: true,
-        locationsVendors: true,
-      },
-    });
-    if (updateVendorDto.phone) {
-      const vendor: Vendor = await this.adminVendorsService.findOneByPhone(<FindOneByPhoneDto<Vendor>>{
-        phone: updateVendorDto.phone,
-      });
+  async validateUpdate(vendorId: number, updateVendorRequestDto: UpdateVendorRequestDto): Promise<Vendor> {
+    const vendor: Vendor = await this.adminVendorsService.findOneOrFailById(
+      new FindOneOrFailByIdPayloadDto<Vendor>({
+        id: vendorId,
+        relations: {
+          attachments: true,
+          locationsVendors: true,
+        },
+      }),
+    );
+    if (updateVendorRequestDto.phone) {
+      const vendor: Vendor = await this.adminVendorsService.findOneByPhone(
+        new FindOneByPhonePayloadDto<Vendor>({
+          phone: updateVendorRequestDto.phone,
+        }),
+      );
       if (vendor) {
         throw new BadRequestException('Phone is already exists.');
       }
     }
-    if (updateVendorDto.governorateId) {
-      const governorate: Location = await this.locationsMicroserviceConnection.locationsServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Location>>{
-        id: updateVendorDto.governorateId,
-        failureMessage: 'Governorate not found.',
-      });
-      for (const regionId of updateVendorDto.regionsIds) {
-        const region: Location = await this.locationsMicroserviceConnection.locationsServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Location>>{
-          id: regionId,
-          failureMessage: 'Region not found.',
-        });
+    if (updateVendorRequestDto.governorateId) {
+      const governorate: Location = await this.locationsMicroserviceConnection.locationsServiceImpl.findOneOrFailById(
+        new FindOneOrFailByIdPayloadDto<Location>({
+          id: updateVendorRequestDto.governorateId,
+          failureMessage: 'Governorate not found.',
+        }),
+      );
+      for (const regionId of updateVendorRequestDto.regionsIds) {
+        const region: Location = await this.locationsMicroserviceConnection.locationsServiceImpl.findOneOrFailById(
+          new FindOneOrFailByIdPayloadDto<Location>({
+            id: regionId,
+            failureMessage: 'Region not found.',
+          }),
+        );
         if (region.parentId !== governorate.id) {
           throw new BadRequestException('The provided region is not a child for the provided governorate.');
         }
@@ -163,7 +183,7 @@ export class AdminVendorsValidation {
     files?: Express.Multer.File[],
   ): Promise<{
     avatar?: Express.Multer.File;
-    createAttachmentDtoList: CreateAttachmentDto[];
+    createAttachmentPayloadDtoList: CreateAttachmentPayloadDto[];
   }> {
     const avatar: Express.Multer.File = files.find((file: Express.Multer.File): boolean => file.fieldname === 'avatar');
     if (avatar) {
@@ -175,14 +195,16 @@ export class AdminVendorsValidation {
     if (!files || files.length === 0) {
       throw new BadRequestException('Please upload the required documents.');
     }
-    const documents: Document[] = await this.documentsMicroserviceConnection.documentsServiceImpl.findAll(<FindAllDocumentsDto>{
-      serviceType: vendor.serviceType,
-      active: true,
-    });
+    const documents: Document[] = await this.documentsMicroserviceConnection.documentsServiceImpl.findAll(
+      new FindAllDocumentsPayloadDto({
+        serviceType: vendor.serviceType,
+        active: true,
+      }),
+    );
     if (!documents || documents.length === 0) {
       throw new BadRequestException('There are no documents to upload.');
     }
-    const createAttachmentDtoList: CreateAttachmentDto[] = [];
+    const createAttachmentPayloadDtoList: CreateAttachmentPayloadDto[] = [];
     for (let i = 0; i < documents.length; i++) {
       const document: Document = documents[i];
       const fileIndex: number = files.findIndex((file: Express.Multer.File): boolean => file.fieldname === document.id.toString());
@@ -195,26 +217,30 @@ export class AdminVendorsValidation {
       const file: Express.Multer.File = files[fileIndex];
       if (document.type === DocumentType.IMAGE) {
         if (new RegExp(CommonConstants.IMAGE_MIMETYPE_REGX).test(file.mimetype)) {
-          createAttachmentDtoList.push(<CreateAttachmentDto>{
-            documentId: document.id,
-            vendorId: vendor.id,
-            file: file,
-          });
+          createAttachmentPayloadDtoList.push(
+            new CreateAttachmentPayloadDto({
+              documentId: document.id,
+              vendorId: vendor.id,
+              file: file,
+            }),
+          );
         } else {
           throw new BadRequestException(`${document.name} must be an image of [${CommonConstants.IMAGE_MIMETYPE_REGX}].`);
         }
       } else {
         if (new RegExp(CommonConstants.FILE_MIMETYPE_REGX).test(file.mimetype)) {
-          createAttachmentDtoList.push(<CreateAttachmentDto>{
-            documentId: document.id,
-            vendorId: vendor.id,
-            file: file,
-          });
+          createAttachmentPayloadDtoList.push(
+            new CreateAttachmentPayloadDto({
+              documentId: document.id,
+              vendorId: vendor.id,
+              file: file,
+            }),
+          );
         } else {
           throw new BadRequestException(`${document.name} must be an file of [${CommonConstants.FILE_MIMETYPE_REGX}].`);
         }
       }
     }
-    return { createAttachmentDtoList, avatar };
+    return { createAttachmentPayloadDtoList, avatar };
   }
 }

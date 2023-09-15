@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Product } from '@app/common';
-import { FindAllProductsDto } from '../dtos/find-all-products.dto';
+import { FindAllProductsRequestDto } from '../dtos/find-all-products-request.dto';
 
 @Injectable()
 export class CustomerProductsService {
@@ -12,9 +12,9 @@ export class CustomerProductsService {
   ) {}
 
   // find all.
-  findAll(finalAllProductDto: FindAllProductsDto): Promise<Product[]> {
+  findAll(findAllProductsRequestDto: FindAllProductsRequestDto): Promise<Product[]> {
     return this.productRepository.find({
-      where: { serviceType: finalAllProductDto.serviceType, active: true },
+      where: { serviceType: findAllProductsRequestDto.serviceType, active: true },
     });
   }
 }

@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsRelations, Repository } from 'typeorm';
-import { FindOneByIdDto, FindOneOrFailByIdDto, LocationVendor } from '@app/common';
+import { FindOneByIdPayloadDto, FindOneOrFailByIdPayloadDto, LocationVendor } from '@app/common';
 
 @Injectable()
 export class LocationsVendorsService {
@@ -11,21 +11,23 @@ export class LocationsVendorsService {
   ) {}
 
   // find one by id.
-  findOneById(findOneByIdDto: FindOneByIdDto<LocationVendor>): Promise<LocationVendor | null> {
+  findOneById(findOneByIdPayloadDto: FindOneByIdPayloadDto<LocationVendor>): Promise<LocationVendor | null> {
     return this.locationVendorRepository.findOne({
-      where: { id: findOneByIdDto.id },
-      relations: findOneByIdDto.relations,
+      where: { id: findOneByIdPayloadDto.id },
+      relations: findOneByIdPayloadDto.relations,
     });
   }
 
   // find one or fail by id.
-  async findOneOrFailById(findOneOrFailByIdDto: FindOneOrFailByIdDto<LocationVendor>): Promise<LocationVendor> {
-    const locationVendor: LocationVendor = await this.findOneById(<FindOneByIdDto<LocationVendor>>{
-      id: findOneOrFailByIdDto.id,
-      relations: findOneOrFailByIdDto.relations,
-    });
+  async findOneOrFailById(findOneOrFailByIdPayloadDto: FindOneOrFailByIdPayloadDto<LocationVendor>): Promise<LocationVendor> {
+    const locationVendor: LocationVendor = await this.findOneById(
+      new FindOneByIdPayloadDto<LocationVendor>({
+        id: findOneOrFailByIdPayloadDto.id,
+        relations: findOneOrFailByIdPayloadDto.relations,
+      }),
+    );
     if (!locationVendor) {
-      throw new BadRequestException(findOneOrFailByIdDto.failureMessage || 'Location vendor not found.');
+      throw new BadRequestException(findOneOrFailByIdPayloadDto.failureMessage || 'Location vendor not found.');
     }
     return locationVendor;
   }
@@ -40,7 +42,7 @@ export class LocationsVendorsService {
 
   // remove one by id.
   async removeOneById(id: number): Promise<LocationVendor> {
-    const locationVendor: LocationVendor = await this.findOneOrFailById(<FindOneOrFailByIdDto<LocationVendor>>{ id });
+    const locationVendor: LocationVendor = await this.findOneOrFailById(new FindOneOrFailByIdPayloadDto<LocationVendor>({ id }));
     return this.removeOneByInstance(locationVendor);
   }
 

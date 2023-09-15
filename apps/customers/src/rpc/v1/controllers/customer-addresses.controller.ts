@@ -1,5 +1,5 @@
 import { Controller } from '@nestjs/common';
-import { CustomerAddress, CustomersMicroserviceConstants, FindOneByIdDto } from '@app/common';
+import { CustomerAddress, CustomersMicroserviceConstants, FindOneByIdPayloadDto } from '@app/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { CustomerAddressesService } from '../services/customer-addresses.service';
 
@@ -12,7 +12,7 @@ export class CustomerAddressesController {
   @MessagePattern({
     cmd: `${CustomersMicroserviceConstants.CUSTOMER_ADDRESSES_SERVICE_FIND_ONE_BY_ID_MESSAGE_PATTERN}/v${VERSION}`,
   })
-  findOneById(@Payload() findOneByIdDto: FindOneByIdDto<CustomerAddress>): Promise<CustomerAddress | null> {
-    return this.customerAddressesService.findOneById(findOneByIdDto);
+  findOneById(@Payload('findOneByIdPayloadDto') findOneByIdPayloadDto: FindOneByIdPayloadDto<CustomerAddress>): Promise<CustomerAddress | null> {
+    return this.customerAddressesService.findOneById(findOneByIdPayloadDto);
   }
 }

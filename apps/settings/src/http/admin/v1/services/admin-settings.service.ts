@@ -2,8 +2,8 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Setting } from '@app/common';
-import { CreateSettingDto } from '../dtos/create-setting.dto';
-import { UpdateSettingDto } from '../dtos/update-setting.dto';
+import { CreateSettingRequestDto } from '../dtos/create-setting-request.dto';
+import { UpdateSettingRequestDto } from '../dtos/update-setting-request.dto';
 
 @Injectable()
 export class AdminSettingsService {
@@ -27,8 +27,8 @@ export class AdminSettingsService {
   }
 
   // create.
-  async create(createSettingDto: CreateSettingDto): Promise<Setting> {
-    return this.settingRepository.save(await this.settingRepository.create(createSettingDto));
+  async create(createSettingRequestDto: CreateSettingRequestDto): Promise<Setting> {
+    return this.settingRepository.save(await this.settingRepository.create(createSettingRequestDto));
   }
 
   // find all.
@@ -37,9 +37,9 @@ export class AdminSettingsService {
   }
 
   // update.
-  async update(id: number, updateSettingDto: UpdateSettingDto): Promise<Setting> {
+  async update(id: number, updateSettingRequestDto: UpdateSettingRequestDto): Promise<Setting> {
     const setting: Setting = await this.findOneOrFailById(id);
-    Object.assign(setting, updateSettingDto);
+    Object.assign(setting, updateSettingRequestDto);
     return this.settingRepository.save(setting);
   }
 

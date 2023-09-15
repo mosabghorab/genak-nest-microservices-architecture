@@ -1,11 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, ILike, Repository } from 'typeorm';
-import { FindAllReviewsDto } from '../dtos/find-all-reviews.dto';
+import { FindAllReviewsRequestDto } from '../dtos/find-all-reviews-request.dto';
 import {
   ClientUserType,
   DateHelpers,
-  FindOneOrFailByIdDto,
+  FindOneOrFailByIdPayloadDto,
   Order,
   OrdersMicroserviceConnection,
   OrdersMicroserviceConstants,
@@ -16,7 +16,7 @@ import {
 } from '@app/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { Constants } from '../../../../constants';
-import { CreateReviewDto } from '../dtos/create-review.dto';
+import { CreateReviewRequestDto } from '../dtos/create-review-request.dto';
 
 @Injectable()
 export class CustomerReviewsService {
@@ -36,40 +36,44 @@ export class CustomerReviewsService {
   }
 
   // create.
-  async create(customerId: number, createReviewDto: CreateReviewDto): Promise<Review> {
-    const order: Order = await this.ordersMicroserviceConnection.ordersServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Order>>{
-      id: createReviewDto.orderId,
-    });
-    await this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Vendor>>{
-      id: createReviewDto.vendorId,
-    });
+  async create(customerId: number, createReviewRequestDto: CreateReviewRequestDto): Promise<Review> {
+    const order: Order = await this.ordersMicroserviceConnection.ordersServiceImpl.findOneOrFailById(
+      new FindOneOrFailByIdPayloadDto<Order>({
+        id: createReviewRequestDto.orderId,
+      }),
+    );
+    await this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneOrFailById(
+      new FindOneOrFailByIdPayloadDto<Vendor>({
+        id: createReviewRequestDto.vendorId,
+      }),
+    );
     return this.reviewRepository.save(
       await this.reviewRepository.create({
         customerId,
         reviewedBy: ClientUserType.CUSTOMER,
         serviceType: order.serviceType,
-        ...createReviewDto,
+        ...createReviewRequestDto,
       }),
     );
   }
 
   // find all.
-  findAll(customerId: number, findAllReviewsDto: FindAllReviewsDto): Promise<Review[]> {
+  findAll(customerId: number, findAllReviewsRequestDto: FindAllReviewsRequestDto): Promise<Review[]> {
     const {
       today,
       tomorrow,
     }: {
       today: Date;
       tomorrow: Date;
-    } = DateHelpers.getTodayAndTomorrowForADate(findAllReviewsDto.date);
+    } = DateHelpers.getTodayAndTomorrowForADate(findAllReviewsRequestDto.date);
     return this.reviewRepository.find({
       where: {
         customerId,
-        serviceType: findAllReviewsDto.serviceType,
+        serviceType: findAllReviewsRequestDto.serviceType,
         reviewedBy: ClientUserType.CUSTOMER,
         order: {
-          uniqueId: findAllReviewsDto.orderUniqueId ? ILike(`%${findAllReviewsDto.orderUniqueId}%`) : null,
-          createdAt: findAllReviewsDto.date ? Between(today, tomorrow) : null,
+          uniqueId: findAllReviewsRequestDto.orderUniqueId ? ILike(`%${findAllReviewsRequestDto.orderUniqueId}%`) : null,
+          createdAt: findAllReviewsRequestDto.date ? Between(today, tomorrow) : null,
         },
       },
       relations: { order: true },

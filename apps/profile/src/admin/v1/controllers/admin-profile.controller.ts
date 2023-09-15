@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Patch } from '@nestjs/common';
-import { Admin, AdminDto, AllowFor, AuthedUser, GetAuthedUser, Serialize, SkipAdminRoles, UserType } from '@app/common';
+import { Admin, AdminResponseDto, AllowFor, AuthedUser, GetAuthedUser, Serialize, SkipAdminRoles, UserType } from '@app/common';
 import { AdminProfileService } from '../services/admin-profile.service';
-import { UpdateProfileDto } from '../dtos/update-profile.dto';
+import { UpdateProfileRequestDto } from '../dtos/update-profile-request.dto';
 
 @AllowFor(UserType.ADMIN)
 @SkipAdminRoles()
@@ -9,13 +9,13 @@ import { UpdateProfileDto } from '../dtos/update-profile.dto';
 export class AdminProfileController {
   constructor(private readonly adminProfileService: AdminProfileService) {}
 
-  @Serialize(AdminDto, 'Profile updated successfully.')
+  @Serialize(AdminResponseDto, 'Profile updated successfully.')
   @Patch()
-  update(@GetAuthedUser() authedUser: AuthedUser, @Body() updateProfileDto: UpdateProfileDto): Promise<Admin> {
-    return this.adminProfileService.update(authedUser.id, updateProfileDto);
+  update(@GetAuthedUser() authedUser: AuthedUser, @Body() updateProfileRequestDto: UpdateProfileRequestDto): Promise<Admin> {
+    return this.adminProfileService.update(authedUser.id, updateProfileRequestDto);
   }
 
-  @Serialize(AdminDto, 'Profile retrieved successfully.')
+  @Serialize(AdminResponseDto, 'Profile retrieved successfully.')
   @Get()
   find(@GetAuthedUser() authedUser: AuthedUser): Promise<Admin> {
     return this.adminProfileService.find(authedUser.id);

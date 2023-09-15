@@ -3,13 +3,13 @@ import { OnEvent } from '@nestjs/event-emitter';
 import {
   AuthMicroserviceConnection,
   AuthMicroserviceConstants,
-  CreateDatabaseNotificationDto,
+  CreateDatabaseNotificationPayloadDto,
   Customer,
   CustomersMicroserviceConnection,
   CustomersMicroserviceConstants,
   FcmToken,
-  FindAllFcmTokensDto,
-  FindOneOrFailByIdDto,
+  FindAllPushTokensPayloadDto,
+  FindOneOrFailByIdPayloadDto,
   NotificationsMicroserviceConnection,
   NotificationsMicroserviceConstants,
   NotificationTarget,
@@ -60,73 +60,91 @@ export class OrderStatusChangedHandler {
     let fcmTokens: string[] = [];
     if (authedUser.type === UserType.VENDOR) {
       const isNotificationsEnabled: boolean = (
-        await this.customersMicroserviceConnection.customersServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Customer>>{
-          id: order.customerId,
-        })
+        await this.customersMicroserviceConnection.customersServiceImpl.findOneOrFailById(
+          new FindOneOrFailByIdPayloadDto<Customer>({
+            id: order.customerId,
+          }),
+        )
       ).notificationsEnabled;
       if (isNotificationsEnabled) {
         fcmTokens = (
-          await this.authMicroserviceConnection.fcmTokensServiceImpl.findAll(<FindAllFcmTokensDto>{
-            tokenableId: order.customerId,
-            tokenableType: UserType.CUSTOMER,
-          })
+          await this.authMicroserviceConnection.fcmTokensServiceImpl.findAll(
+            new FindAllPushTokensPayloadDto({
+              tokenableId: order.customerId,
+              tokenableType: UserType.CUSTOMER,
+            }),
+          )
         ).map((fcmToken: FcmToken) => fcmToken.token);
       }
     } else if (authedUser.type === UserType.CUSTOMER) {
       const isNotificationsEnabled: boolean = (
-        await this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Vendor>>{
-          id: order.vendorId,
-        })
+        await this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneOrFailById(
+          new FindOneOrFailByIdPayloadDto<Vendor>({
+            id: order.vendorId,
+          }),
+        )
       ).notificationsEnabled;
       if (isNotificationsEnabled) {
         fcmTokens = (
-          await this.authMicroserviceConnection.fcmTokensServiceImpl.findAll(<FindAllFcmTokensDto>{
-            tokenableId: order.vendorId,
-            tokenableType: UserType.VENDOR,
-          })
+          await this.authMicroserviceConnection.fcmTokensServiceImpl.findAll(
+            new FindAllPushTokensPayloadDto({
+              tokenableId: order.vendorId,
+              tokenableType: UserType.VENDOR,
+            }),
+          )
         ).map((fcmToken: FcmToken) => fcmToken.token);
       }
     } else if (authedUser.type === UserType.ADMIN) {
       const customerIsNotificationsEnabled: boolean = (
-        await this.customersMicroserviceConnection.customersServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Customer>>{
-          id: order.customerId,
-        })
+        await this.customersMicroserviceConnection.customersServiceImpl.findOneOrFailById(
+          new FindOneOrFailByIdPayloadDto<Customer>({
+            id: order.customerId,
+          }),
+        )
       ).notificationsEnabled;
       if (customerIsNotificationsEnabled) {
         fcmTokens.push(
           ...(
-            await this.authMicroserviceConnection.fcmTokensServiceImpl.findAll(<FindAllFcmTokensDto>{
-              tokenableId: order.customerId,
-              tokenableType: UserType.CUSTOMER,
-            })
+            await this.authMicroserviceConnection.fcmTokensServiceImpl.findAll(
+              new FindAllPushTokensPayloadDto({
+                tokenableId: order.customerId,
+                tokenableType: UserType.CUSTOMER,
+              }),
+            )
           ).map((fcmToken: FcmToken) => fcmToken.token),
         );
       }
       const vendorIsNotificationsEnabled: boolean = (
-        await this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Vendor>>{
-          id: order.vendorId,
-        })
+        await this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneOrFailById(
+          new FindOneOrFailByIdPayloadDto<Vendor>({
+            id: order.vendorId,
+          }),
+        )
       ).notificationsEnabled;
       if (vendorIsNotificationsEnabled) {
         fcmTokens.push(
           ...(
-            await this.authMicroserviceConnection.fcmTokensServiceImpl.findAll(<FindAllFcmTokensDto>{
-              tokenableId: order.vendorId,
-              tokenableType: UserType.VENDOR,
-            })
+            await this.authMicroserviceConnection.fcmTokensServiceImpl.findAll(
+              new FindAllPushTokensPayloadDto({
+                tokenableId: order.vendorId,
+                tokenableType: UserType.VENDOR,
+              }),
+            )
           ).map((fcmToken: FcmToken) => fcmToken.token),
         );
       }
     }
     if (fcmTokens.length > 0) {
-      this.notificationsMicroserviceConnection.notificationsServiceImpl.sendFcmNotification(<SendPushNotificationPayloadDto>{
-        type: PushNotificationType.TOKENS,
-        fcmTokens: fcmTokens,
-        title: 'Order Status',
-        body: `Order status with id ${order.uniqueId} changed to ${order.status} by ${authedUser.type}`,
-        notificationTarget: NotificationTarget.ORDER,
-        notificationTargetId: order.id,
-      });
+      this.notificationsMicroserviceConnection.notificationsServiceImpl.sendFcmNotification(
+        new SendPushNotificationPayloadDto({
+          type: PushNotificationType.TOKENS,
+          fcmTokens: fcmTokens,
+          title: 'Order Status',
+          body: `Order status with id ${order.uniqueId} changed to ${order.status} by ${authedUser.type}`,
+          notificationTarget: NotificationTarget.ORDER,
+          notificationTargetId: order.id,
+        }),
+      );
     }
   }
 
@@ -134,24 +152,24 @@ export class OrderStatusChangedHandler {
   private async _createDatabaseNotification(orderStatusChangedEvent: OrderStatusChangedEvent): Promise<void> {
     const { authedUser, order }: OrderStatusChangedEvent = orderStatusChangedEvent;
     if (authedUser.type === UserType.ADMIN) {
-      const createDatabaseNotificationDtoForCustomer: CreateDatabaseNotificationDto = <CreateDatabaseNotificationDto>{
+      const createDatabaseNotificationPayloadDtoForCustomer: CreateDatabaseNotificationPayloadDto = new CreateDatabaseNotificationPayloadDto({
         notifiableId: order.customerId,
         notifiableType: UserType.CUSTOMER,
         notificationTarget: NotificationTarget.ORDER,
         notificationTargetId: order.id,
         title: 'Order Status',
         body: `Order status with id ${order.uniqueId} changed to ${order.status} by ${authedUser.type}`,
-      };
-      const createDatabaseNotificationDtoForVendor: CreateDatabaseNotificationDto = <CreateDatabaseNotificationDto>{
+      });
+      const createDatabaseNotificationPayloadDtoForVendor: CreateDatabaseNotificationPayloadDto = new CreateDatabaseNotificationPayloadDto({
         notifiableId: order.vendorId,
         notifiableType: UserType.VENDOR,
         notificationTarget: NotificationTarget.ORDER,
         notificationTargetId: order.id,
         title: 'Order Status',
         body: `Order status with id ${order.uniqueId} changed to ${order.status} by ${authedUser.type}`,
-      };
-      this.notificationsMicroserviceConnection.notificationsServiceImpl.createDatabaseNotification(createDatabaseNotificationDtoForCustomer);
-      this.notificationsMicroserviceConnection.notificationsServiceImpl.createDatabaseNotification(createDatabaseNotificationDtoForVendor);
+      });
+      this.notificationsMicroserviceConnection.notificationsServiceImpl.createDatabaseNotification(createDatabaseNotificationPayloadDtoForCustomer);
+      this.notificationsMicroserviceConnection.notificationsServiceImpl.createDatabaseNotification(createDatabaseNotificationPayloadDtoForVendor);
     } else {
       let notifiableType: UserType;
       let notifiableId: number;
@@ -162,15 +180,15 @@ export class OrderStatusChangedHandler {
         notifiableType = UserType.VENDOR;
         notifiableId = order.vendorId;
       }
-      const createDatabaseNotificationDto: CreateDatabaseNotificationDto = <CreateDatabaseNotificationDto>{
+      const createDatabaseNotificationPayloadDto: CreateDatabaseNotificationPayloadDto = new CreateDatabaseNotificationPayloadDto({
         notifiableId: notifiableId,
         notifiableType: notifiableType,
         notificationTarget: NotificationTarget.ORDER,
         notificationTargetId: order.id,
         title: 'Order Status',
         body: `Order status with id ${order.uniqueId} changed to ${order.status} by ${authedUser.type}`,
-      };
-      this.notificationsMicroserviceConnection.notificationsServiceImpl.createDatabaseNotification(createDatabaseNotificationDto);
+      });
+      this.notificationsMicroserviceConnection.notificationsServiceImpl.createDatabaseNotification(createDatabaseNotificationPayloadDto);
     }
   }
 }

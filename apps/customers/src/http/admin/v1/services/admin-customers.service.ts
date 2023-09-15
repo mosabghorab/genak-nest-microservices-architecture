@@ -1,11 +1,11 @@
 import { BadRequestException, forwardRef, Inject, Injectable, StreamableFile } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder } from 'typeorm';
-import { Customer, FindOneByIdDto, FindOneByPhoneDto, FindOneOrFailByIdDto, FindOneOrFailByPhoneDto } from '@app/common';
+import { Customer, FindOneByIdPayloadDto, FindOneByPhonePayloadDto, FindOneOrFailByIdPayloadDto, FindOneOrFailByPhonePayloadDto } from '@app/common';
 import { AdminCustomersValidation } from '../validations/admin-customers.validation';
-import { FindAllCustomersDto } from '../dtos/find-all-customers.dto';
-import { CreateCustomerDto } from '../dtos/create-customer.dto';
-import { UpdateCustomerDto } from '../dtos/update-customer.dto';
+import { FindAllCustomersRequestDto } from '../dtos/find-all-customers-request.dto';
+import { CreateCustomerRequestDto } from '../dtos/create-customer-request.dto';
+import { UpdateCustomerRequestDto } from '../dtos/update-customer-request.dto';
 import { Workbook, Worksheet } from 'exceljs';
 import * as fsExtra from 'fs-extra';
 import { createReadStream } from 'fs';
@@ -22,47 +22,51 @@ export class AdminCustomersService {
   ) {}
 
   // find one by id.
-  findOneById(findOneByIdDto: FindOneByIdDto<Customer>): Promise<Customer | null> {
+  findOneById(findOneByIdPayloadDto: FindOneByIdPayloadDto<Customer>): Promise<Customer | null> {
     return this.customerRepository.findOne({
-      where: { id: findOneByIdDto.id },
-      relations: findOneByIdDto.relations,
+      where: { id: findOneByIdPayloadDto.id },
+      relations: findOneByIdPayloadDto.relations,
     });
   }
 
   // find one or fail by id.
-  async findOneOrFailById(findOneOrFailByIdDto: FindOneOrFailByIdDto<Customer>): Promise<Customer> {
-    const customer: Customer = await this.findOneById(<FindOneByIdDto<Customer>>{
-      id: findOneOrFailByIdDto.id,
-      relations: findOneOrFailByIdDto.relations,
-    });
+  async findOneOrFailById(findOneOrFailByIdPayloadDto: FindOneOrFailByIdPayloadDto<Customer>): Promise<Customer> {
+    const customer: Customer = await this.findOneById(
+      new FindOneByIdPayloadDto<Customer>({
+        id: findOneOrFailByIdPayloadDto.id,
+        relations: findOneOrFailByIdPayloadDto.relations,
+      }),
+    );
     if (!customer) {
-      throw new BadRequestException(findOneOrFailByIdDto.failureMessage || 'Customer not found.');
+      throw new BadRequestException(findOneOrFailByIdPayloadDto.failureMessage || 'Customer not found.');
     }
     return customer;
   }
 
   // find one by phone.
-  findOneByPhone(findOneByPhoneDto: FindOneByPhoneDto<Customer>): Promise<Customer | null> {
+  findOneByPhone(findOneByPhonePayloadDto: FindOneByPhonePayloadDto<Customer>): Promise<Customer | null> {
     return this.customerRepository.findOne({
-      where: { phone: findOneByPhoneDto.phone },
-      relations: findOneByPhoneDto.relations,
+      where: { phone: findOneByPhonePayloadDto.phone },
+      relations: findOneByPhonePayloadDto.relations,
     });
   }
 
   // find one or fail by phone.
-  async findOneOrFailByPhone(findOneOrFailByPhoneDto: FindOneOrFailByPhoneDto<Customer>): Promise<Customer> {
-    const customer: Customer = await this.findOneByPhone(<FindOneByPhoneDto<Customer>>{
-      phone: findOneOrFailByPhoneDto.phone,
-      relations: findOneOrFailByPhoneDto.relations,
-    });
+  async findOneOrFailByPhone(findOneOrFailByPhonePayloadDto: FindOneOrFailByPhonePayloadDto<Customer>): Promise<Customer> {
+    const customer: Customer = await this.findOneByPhone(
+      new FindOneByPhonePayloadDto<Customer>({
+        phone: findOneOrFailByPhonePayloadDto.phone,
+        relations: findOneOrFailByPhonePayloadDto.relations,
+      }),
+    );
     if (!customer) {
-      throw new BadRequestException(findOneOrFailByPhoneDto.failureMessage || 'Customer not found.');
+      throw new BadRequestException(findOneOrFailByPhonePayloadDto.failureMessage || 'Customer not found.');
     }
     return customer;
   }
 
   // find all.
-  async findAll(findAllCustomersDto: FindAllCustomersDto): Promise<
+  async findAll(findAllCustomersRequestDto: FindAllCustomersRequestDto): Promise<
     | {
         total: number;
         perPage: number;
@@ -72,7 +76,7 @@ export class AdminCustomersService {
       }
     | { total: number; data: Customer[] }
   > {
-    const offset: number = (findAllCustomersDto.page - 1) * findAllCustomersDto.limit;
+    const offset: number = (findAllCustomersRequestDto.page - 1) * findAllCustomersRequestDto.limit;
     const queryBuilder: SelectQueryBuilder<Customer> = this.customerRepository
       .createQueryBuilder('customer')
       .leftJoinAndSelect('customer.governorate', 'governorate')
@@ -80,17 +84,17 @@ export class AdminCustomersService {
       .leftJoin('customer.orders', 'order')
       .addSelect('COUNT(DISTINCT order.id)', 'ordersCount')
       .groupBy('customer.id');
-    if (findAllCustomersDto.paginationEnable) queryBuilder.skip(offset).take(findAllCustomersDto.limit);
+    if (findAllCustomersRequestDto.paginationEnable) queryBuilder.skip(offset).take(findAllCustomersRequestDto.limit);
     const { entities, raw }: { entities: Customer[]; raw: any[] } = await queryBuilder.getRawAndEntities();
     const count: number = await queryBuilder.getCount();
     for (let i = 0; i < entities.length; i++) {
       entities[i]['ordersCount'] = parseInt(raw[i]['ordersCount']) || 0;
     }
-    return findAllCustomersDto.paginationEnable
+    return findAllCustomersRequestDto.paginationEnable
       ? {
-          perPage: findAllCustomersDto.limit,
-          currentPage: findAllCustomersDto.page,
-          lastPage: Math.ceil(count / findAllCustomersDto.limit),
+          perPage: findAllCustomersRequestDto.limit,
+          currentPage: findAllCustomersRequestDto.page,
+          lastPage: Math.ceil(count / findAllCustomersRequestDto.limit),
           total: count,
           data: entities,
         }
@@ -98,29 +102,31 @@ export class AdminCustomersService {
   }
 
   // create.
-  async create(createCustomerDto: CreateCustomerDto): Promise<Customer> {
-    await this.adminCustomersValidation.validateCreation(createCustomerDto);
-    return await this.customerRepository.save(await this.customerRepository.create(createCustomerDto));
+  async create(createCustomerRequestDto: CreateCustomerRequestDto): Promise<Customer> {
+    await this.adminCustomersValidation.validateCreation(createCustomerRequestDto);
+    return await this.customerRepository.save(await this.customerRepository.create(createCustomerRequestDto));
   }
 
   // update.
-  async update(customerId: number, updateCustomerDto: UpdateCustomerDto): Promise<Customer> {
-    const customer: Customer = await this.adminCustomersValidation.validateUpdate(customerId, updateCustomerDto);
-    Object.assign(customer, updateCustomerDto);
+  async update(customerId: number, updateCustomerRequestDto: UpdateCustomerRequestDto): Promise<Customer> {
+    const customer: Customer = await this.adminCustomersValidation.validateUpdate(customerId, updateCustomerRequestDto);
+    Object.assign(customer, updateCustomerRequestDto);
     return this.customerRepository.save(customer);
   }
 
   // remove.
   async remove(id: number): Promise<Customer> {
-    const customer: Customer = await this.findOneOrFailById(<FindOneOrFailByIdDto<Customer>>{
-      id,
-    });
+    const customer: Customer = await this.findOneOrFailById(
+      new FindOneOrFailByIdPayloadDto<Customer>({
+        id,
+      }),
+    );
     return this.customerRepository.remove(customer);
   }
 
   // export all.
-  async exportAll(findAllCustomersDto: FindAllCustomersDto): Promise<StreamableFile> {
-    const { data }: { data: Customer[] } = await this.findAll(findAllCustomersDto);
+  async exportAll(findAllCustomersRequestDto: FindAllCustomersRequestDto): Promise<StreamableFile> {
+    const { data }: { data: Customer[] } = await this.findAll(findAllCustomersRequestDto);
     const workbook: Workbook = new Workbook();
     const worksheet: Worksheet = workbook.addWorksheet('الزبائن');
     // add headers.

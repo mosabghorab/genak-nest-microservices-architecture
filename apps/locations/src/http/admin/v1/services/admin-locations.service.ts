@@ -1,10 +1,10 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, Repository } from 'typeorm';
-import { FindOneByIdDto, FindOneOrFailByIdDto, Location } from '@app/common';
-import { FindAllLocationsDto } from '../dtos/find-all-locations.dto';
-import { CreateLocationDto } from '../dtos/create-location.dto';
-import { UpdateLocationDto } from '../dtos/update-location.dto';
+import { FindOneByIdPayloadDto, FindOneOrFailByIdPayloadDto, Location } from '@app/common';
+import { FindAllLocationsRequestDto } from '../dtos/find-all-locations-request.dto';
+import { CreateLocationRequestDto } from '../dtos/create-location-request.dto';
+import { UpdateLocationRequestDto } from '../dtos/update-location-request.dto';
 
 @Injectable()
 export class AdminLocationsService {
@@ -14,59 +14,67 @@ export class AdminLocationsService {
   ) {}
 
   // find one by id.
-  findOneById(findOneByIdDto: FindOneByIdDto<Location>): Promise<Location | null> {
+  findOneById(findOneByIdPayloadDto: FindOneByIdPayloadDto<Location>): Promise<Location | null> {
     return this.locationRepository.findOne({
-      where: { id: findOneByIdDto.id },
-      relations: findOneByIdDto.relations,
+      where: { id: findOneByIdPayloadDto.id },
+      relations: findOneByIdPayloadDto.relations,
     });
   }
 
   // find one or fail by id.
-  async findOneOrFailById(findOneOrFailByIdDto: FindOneOrFailByIdDto<Location>): Promise<Location> {
-    const location: Location = await this.findOneById(<FindOneByIdDto<Location>>{
-      id: findOneOrFailByIdDto.id,
-      relations: findOneOrFailByIdDto.relations,
-    });
+  async findOneOrFailById(findOneOrFailByIdPayloadDto: FindOneOrFailByIdPayloadDto<Location>): Promise<Location> {
+    const location: Location = await this.findOneById(
+      new FindOneByIdPayloadDto<Location>({
+        id: findOneOrFailByIdPayloadDto.id,
+        relations: findOneOrFailByIdPayloadDto.relations,
+      }),
+    );
     if (!location) {
-      throw new BadRequestException(findOneOrFailByIdDto.failureMessage || 'Location not found.');
+      throw new BadRequestException(findOneOrFailByIdPayloadDto.failureMessage || 'Location not found.');
     }
     return location;
   }
 
   // find all.
-  async findAll(findAllLocationsDto: FindAllLocationsDto): Promise<Location[]> {
-    if (findAllLocationsDto.parentId) {
-      await this.findOneOrFailById(<FindOneOrFailByIdDto<Location>>{
-        id: findAllLocationsDto.parentId,
-        failureMessage: 'Parent not found.',
-      });
+  async findAll(findAllLocationsRequestDto: FindAllLocationsRequestDto): Promise<Location[]> {
+    if (findAllLocationsRequestDto.parentId) {
+      await this.findOneOrFailById(
+        new FindOneOrFailByIdPayloadDto<Location>({
+          id: findAllLocationsRequestDto.parentId,
+          failureMessage: 'Parent not found.',
+        }),
+      );
     }
     return this.locationRepository.find({
       where: {
-        parentId: findAllLocationsDto.parentId ? findAllLocationsDto.parentId : IsNull(),
+        parentId: findAllLocationsRequestDto.parentId ? findAllLocationsRequestDto.parentId : IsNull(),
       },
     });
   }
 
   // create.
-  async create(createLocationDto: CreateLocationDto): Promise<Location> {
-    return this.locationRepository.save(await this.locationRepository.create(createLocationDto));
+  async create(createLocationRequestDto: CreateLocationRequestDto): Promise<Location> {
+    return this.locationRepository.save(await this.locationRepository.create(createLocationRequestDto));
   }
 
   // update.
-  async update(id: number, updateLocationDto: UpdateLocationDto): Promise<Location> {
-    const location: Location = await this.findOneOrFailById(<FindOneOrFailByIdDto<Location>>{
-      id,
-    });
-    Object.assign(location, updateLocationDto);
+  async update(id: number, updateLocationRequestDto: UpdateLocationRequestDto): Promise<Location> {
+    const location: Location = await this.findOneOrFailById(
+      new FindOneOrFailByIdPayloadDto<Location>({
+        id,
+      }),
+    );
+    Object.assign(location, updateLocationRequestDto);
     return this.locationRepository.save(location);
   }
 
   // remove.
   async remove(id: number): Promise<Location> {
-    const location: Location = await this.findOneOrFailById(<FindOneOrFailByIdDto<Location>>{
-      id,
-    });
+    const location: Location = await this.findOneOrFailById(
+      new FindOneOrFailByIdPayloadDto<Location>({
+        id,
+      }),
+    );
     return this.locationRepository.remove(location);
   }
 }

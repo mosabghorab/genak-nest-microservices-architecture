@@ -3,9 +3,9 @@ import { OnEvent } from '@nestjs/event-emitter';
 import {
   AuthMicroserviceConnection,
   AuthMicroserviceConstants,
-  CreateDatabaseNotificationDto,
+  CreateDatabaseNotificationPayloadDto,
   FcmToken,
-  FindAllFcmTokensDto,
+  FindAllPushTokensPayloadDto,
   NotificationsMicroserviceConnection,
   NotificationsMicroserviceConstants,
   NotificationTarget,
@@ -43,20 +43,24 @@ export class OrderCreatedHandler {
     let fcmTokens: string[] = [];
     if (vendor.notificationsEnabled) {
       fcmTokens = (
-        await this.authMicroserviceConnection.fcmTokensServiceImpl.findAll(<FindAllFcmTokensDto>{
-          tokenableId: vendor.id,
-          tokenableType: UserType.VENDOR,
-        })
+        await this.authMicroserviceConnection.fcmTokensServiceImpl.findAll(
+          new FindAllPushTokensPayloadDto({
+            tokenableId: vendor.id,
+            tokenableType: UserType.VENDOR,
+          }),
+        )
       ).map((fcmToken: FcmToken) => fcmToken.token);
       if (fcmTokens.length > 0) {
-        this.notificationsMicroserviceConnection.notificationsServiceImpl.sendFcmNotification(<SendPushNotificationPayloadDto>{
-          type: PushNotificationType.TOKENS,
-          fcmTokens: fcmTokens,
-          title: 'New Order',
-          body: `You got a new order from: ${customer.name}`,
-          notificationTarget: NotificationTarget.ORDER,
-          notificationTargetId: order.id,
-        });
+        this.notificationsMicroserviceConnection.notificationsServiceImpl.sendFcmNotification(
+          new SendPushNotificationPayloadDto({
+            type: PushNotificationType.TOKENS,
+            fcmTokens: fcmTokens,
+            title: 'z',
+            body: `You got a new order from: ${customer.name}`,
+            notificationTarget: NotificationTarget.ORDER,
+            notificationTargetId: order.id,
+          }),
+        );
       }
     }
   }
@@ -64,14 +68,14 @@ export class OrderCreatedHandler {
   // create database notification.
   private async _createDatabaseNotification(orderStatusChangedEvent: OrderCreatedEvent): Promise<void> {
     const { order, vendor, customer }: OrderCreatedEvent = orderStatusChangedEvent;
-    const createDatabaseNotificationDto: CreateDatabaseNotificationDto = <CreateDatabaseNotificationDto>{
+    const createDatabaseNotificationPayloadDto: CreateDatabaseNotificationPayloadDto = new CreateDatabaseNotificationPayloadDto({
       notifiableId: vendor.id,
       notifiableType: UserType.VENDOR,
       notificationTarget: NotificationTarget.ORDER,
       notificationTargetId: order.id,
       title: 'New Order',
       body: `You got a new order from: ${customer.name}`,
-    };
-    this.notificationsMicroserviceConnection.notificationsServiceImpl.createDatabaseNotification(createDatabaseNotificationDto);
+    });
+    this.notificationsMicroserviceConnection.notificationsServiceImpl.createDatabaseNotification(createDatabaseNotificationPayloadDto);
   }
 }

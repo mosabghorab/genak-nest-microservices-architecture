@@ -1,4 +1,4 @@
-import { DateFilterDto, IOrderItemsService, OrdersMicroserviceConstants } from '@app/common';
+import { DateFilterPayloadDto, IOrderItemsService, OrdersMicroserviceConstants } from '@app/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 
@@ -6,7 +6,7 @@ export class OrderItemsServiceImpl implements IOrderItemsService {
   constructor(private readonly ordersMicroservice: ClientProxy, private readonly version: string) {}
 
   // find custom order items total sales and quantities.
-  findCustomOrderItemsTotalSalesAndQuantities(dateFilterDto?: DateFilterDto): Promise<{
+  findCustomOrderItemsTotalSalesAndQuantities(dateFilterPayloadDto?: DateFilterPayloadDto): Promise<{
     totalSales: string;
     totalQuantities: string;
   }> {
@@ -20,13 +20,13 @@ export class OrderItemsServiceImpl implements IOrderItemsService {
           totalQuantities: string;
         },
         {
-          dateFilterDto?: DateFilterDto;
+          dateFilterPayloadDto?: DateFilterPayloadDto;
         }
       >(
         {
           cmd: `${OrdersMicroserviceConstants.ORDER_ITEMS_SERVICE_FIND_CUSTOM_ORDER_ITEMS_TOTAL_SALES_AND_QUANTITIES_MESSAGE_PATTERN}/v${this.version}`,
         },
-        { dateFilterDto },
+        { dateFilterPayloadDto },
       ),
     );
   }

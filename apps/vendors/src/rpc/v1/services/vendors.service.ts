@@ -5,24 +5,24 @@ import {
   Attachment,
   AttachmentsMicroserviceConnection,
   AttachmentsMicroserviceConstants,
-  DateFilterDto,
   DateFilterOption,
+  DateFilterPayloadDto,
   DateHelpers,
-  DeleteFileDto,
-  FindAllAttachmentsByVendorIdAndDocumentIdDto,
-  FindOneByIdDto,
-  FindOneByPhoneDto,
+  DeleteFilePayloadDto,
+  FindAllAttachmentsByVendorIdAndDocumentIdPayloadDto,
+  FindOneByIdPayloadDto,
+  FindOneByPhonePayloadDto,
   OrderByType,
   SearchPayloadDto,
   ServiceType,
   StorageMicroserviceConnection,
   StorageMicroserviceConstants,
-  UploadFileDto,
+  UploadFilePayloadDto,
   Vendor,
-  VendorSignUpDto,
+  VendorSignUpPayloadDto,
   VendorStatus,
-  VendorUpdateProfileDto,
-  VendorUploadDocumentsDto,
+  VendorUpdateProfilePayloadDto,
+  VendorUploadDocumentsPayloadDto,
 } from '@app/common';
 import { Constants } from '../../../constants';
 import { ClientProxy } from '@nestjs/microservices';
@@ -45,18 +45,18 @@ export class VendorsService {
   }
 
   // find one by id.
-  findOneById(findOneByIdDto: FindOneByIdDto<Vendor>): Promise<Vendor | null> {
+  findOneById(findOneByIdPayloadDto: FindOneByIdPayloadDto<Vendor>): Promise<Vendor | null> {
     return this.vendorRepository.findOne({
-      where: { id: findOneByIdDto.id },
-      relations: findOneByIdDto.relations,
+      where: { id: findOneByIdPayloadDto.id },
+      relations: findOneByIdPayloadDto.relations,
     });
   }
 
   // find one by phone.
-  findOneByPhone(findOneByPhoneDto: FindOneByPhoneDto<Vendor>): Promise<Vendor | null> {
+  findOneByPhone(findOneByPhonePayloadDto: FindOneByPhonePayloadDto<Vendor>): Promise<Vendor | null> {
     return this.vendorRepository.findOne({
-      where: { phone: findOneByPhoneDto.phone },
-      relations: findOneByPhoneDto.relations,
+      where: { phone: findOneByPhonePayloadDto.phone },
+      relations: findOneByPhonePayloadDto.relations,
     });
   }
 
@@ -68,46 +68,54 @@ export class VendorsService {
   }
 
   // create.
-  async create(vendorSignUpDto: VendorSignUpDto, avatar?: Express.Multer.File): Promise<Vendor> {
+  async create(vendorSignUpPayloadDto: VendorSignUpPayloadDto, avatar?: Express.Multer.File): Promise<Vendor> {
     let avatarUrl: string;
     if (avatar) {
-      avatarUrl = await this.storageMicroserviceConnection.storageServiceImpl.uploadFile(<UploadFileDto>{
-        prefixPath: Constants.VENDORS_IMAGES_PREFIX_PATH,
-        file: avatar,
-      });
+      avatarUrl = await this.storageMicroserviceConnection.storageServiceImpl.uploadFile(
+        new UploadFilePayloadDto({
+          prefixPath: Constants.VENDORS_IMAGES_PREFIX_PATH,
+          file: avatar,
+        }),
+      );
     }
     return await this.vendorRepository.save(
       await this.vendorRepository.create({
         avatar: avatarUrl,
-        ...vendorSignUpDto,
+        ...vendorSignUpPayloadDto,
       }),
     );
   }
 
   // upload documents.
-  async uploadDocuments(vendorUploadDocumentsDto: VendorUploadDocumentsDto): Promise<Vendor> {
-    const vendor: Vendor = await this.findOneById(<FindOneByIdDto<Vendor>>{
-      id: vendorUploadDocumentsDto.vendorId,
-      relations: {
-        attachments: true,
-      },
-    });
+  async uploadDocuments(vendorUploadDocumentsPayloadDto: VendorUploadDocumentsPayloadDto): Promise<Vendor> {
+    const vendor: Vendor = await this.findOneById(
+      new FindOneByIdPayloadDto<Vendor>({
+        id: vendorUploadDocumentsPayloadDto.vendorId,
+        relations: {
+          attachments: true,
+        },
+      }),
+    );
     const attachments: Attachment[] = [];
-    for (const createAttachmentDto of vendorUploadDocumentsDto.createAttachmentDtoList) {
-      const oldAttachments: Attachment[] = await this.attachmentsMicroserviceConnection.attachmentsServiceImpl.findAllByVendorIdAndDocumentId(<FindAllAttachmentsByVendorIdAndDocumentIdDto>{
-        vendorId: vendorUploadDocumentsDto.vendorId,
-        documentId: createAttachmentDto.documentId,
-      });
+    for (const createAttachmentDto of vendorUploadDocumentsPayloadDto.createAttachmentPayloadDtoList) {
+      const oldAttachments: Attachment[] = await this.attachmentsMicroserviceConnection.attachmentsServiceImpl.findAllByVendorIdAndDocumentId(
+        new FindAllAttachmentsByVendorIdAndDocumentIdPayloadDto({
+          vendorId: vendorUploadDocumentsPayloadDto.vendorId,
+          documentId: createAttachmentDto.documentId,
+        }),
+      );
       if (oldAttachments) {
         for (const oldAttachment of oldAttachments) {
           await this.attachmentsMicroserviceConnection.attachmentsServiceImpl.removeOneByInstance(oldAttachment);
           vendor.attachments = vendor.attachments.filter((attachment: Attachment): boolean => attachment.id !== oldAttachment.id);
         }
       }
-      const fileUrl: string = await this.storageMicroserviceConnection.storageServiceImpl.uploadFile(<UploadFileDto>{
-        prefixPath: Constants.VENDORS_ATTACHMENTS_PREFIX_PATH,
-        file: createAttachmentDto.file,
-      });
+      const fileUrl: string = await this.storageMicroserviceConnection.storageServiceImpl.uploadFile(
+        new UploadFilePayloadDto({
+          prefixPath: Constants.VENDORS_ATTACHMENTS_PREFIX_PATH,
+          file: createAttachmentDto.file,
+        }),
+      );
       attachments.push(<Attachment>{
         documentId: createAttachmentDto.documentId,
         vendorId: createAttachmentDto.vendorId,
@@ -119,23 +127,29 @@ export class VendorsService {
   }
 
   // update profile.
-  async updateProfile(vendorUpdateProfileDto: VendorUpdateProfileDto): Promise<Vendor> {
-    const vendor: Vendor = await this.findOneById(<FindOneByIdDto<Vendor>>{
-      id: vendorUpdateProfileDto.vendorId,
-    });
-    if (vendorUpdateProfileDto.avatar) {
+  async updateProfile(vendorUpdateProfilePayloadDto: VendorUpdateProfilePayloadDto): Promise<Vendor> {
+    const vendor: Vendor = await this.findOneById(
+      new FindOneByIdPayloadDto<Vendor>({
+        id: vendorUpdateProfilePayloadDto.vendorId,
+      }),
+    );
+    if (vendorUpdateProfilePayloadDto.avatar) {
       if (vendor.avatar)
-        await this.storageMicroserviceConnection.storageServiceImpl.deleteFile(<DeleteFileDto>{
+        await this.storageMicroserviceConnection.storageServiceImpl.deleteFile(
+          new DeleteFilePayloadDto({
+            prefixPath: Constants.VENDORS_IMAGES_PREFIX_PATH,
+            fileUrl: vendor.avatar,
+          }),
+        );
+      vendor.avatar = await this.storageMicroserviceConnection.storageServiceImpl.uploadFile(
+        new UploadFilePayloadDto({
           prefixPath: Constants.VENDORS_IMAGES_PREFIX_PATH,
-          fileUrl: vendor.avatar,
-        });
-      vendor.avatar = await this.storageMicroserviceConnection.storageServiceImpl.uploadFile(<UploadFileDto>{
-        prefixPath: Constants.VENDORS_IMAGES_PREFIX_PATH,
-        file: vendorUpdateProfileDto.avatar,
-      });
-      delete vendorUpdateProfileDto.avatar;
+          file: vendorUpdateProfilePayloadDto.avatar,
+        }),
+      );
+      delete vendorUpdateProfilePayloadDto.avatar;
     }
-    Object.assign(vendor, vendorUpdateProfileDto);
+    Object.assign(vendor, vendorUpdateProfilePayloadDto);
     return this.vendorRepository.save(vendor);
   }
 
@@ -161,15 +175,15 @@ export class VendorsService {
   }
 
   // find best sellers with orders count.
-  async findBestSellersWithOrdersCount(serviceType: ServiceType, dateFilterDto: DateFilterDto): Promise<Vendor[]> {
+  async findBestSellersWithOrdersCount(serviceType: ServiceType, dateFilterPayloadDto: DateFilterPayloadDto): Promise<Vendor[]> {
     let dateRange: { startDate: Date; endDate: Date };
-    if (dateFilterDto.dateFilterOption === DateFilterOption.CUSTOM) {
+    if (dateFilterPayloadDto.dateFilterOption === DateFilterOption.CUSTOM) {
       dateRange = {
-        startDate: dateFilterDto.startDate,
-        endDate: dateFilterDto.endDate,
+        startDate: dateFilterPayloadDto.startDate,
+        endDate: dateFilterPayloadDto.endDate,
       };
     } else {
-      dateRange = DateHelpers.getDateRangeForDateFilterOption(dateFilterDto.dateFilterOption);
+      dateRange = DateHelpers.getDateRangeForDateFilterOption(dateFilterPayloadDto.dateFilterOption);
     }
     const {
       entities,

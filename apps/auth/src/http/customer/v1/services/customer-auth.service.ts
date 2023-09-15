@@ -4,25 +4,26 @@ import {
   AuthedUser,
   ClientUserType,
   Customer,
-  CustomerSignUpDto,
+  CustomerSignUpPayloadDto,
   CustomersMicroserviceConnection,
   CustomersMicroserviceConstants,
   DateHelpers,
   FcmToken,
-  FindOneOrFailByIdDto,
-  FindOneOrFailByPhoneDto,
+  FindOneOrFailByIdPayloadDto,
+  FindOneOrFailByPhonePayloadDto,
   UserType,
   VerificationCode,
 } from '@app/common';
-import { FcmTokensService } from '../../../shared/v1/services/fcm-tokens.service';
+import { PushTokensService } from '../../../shared/v1/services/push-tokens.service';
 import { VerificationCodesService } from '../../../shared/v1/services/verification-codes.service';
 import { ClientProxy } from '@nestjs/microservices';
 import { Constants } from '../../../../constants';
-import { SendVerificationCodeDto } from '../../../shared/v1/dtos/send-verification-code.dto';
-import { SignInWithPhoneDto } from '../../../shared/v1/dtos/sign-in-with-phone.dto';
+import { SendVerificationCodeRequestDto } from '../../../shared/v1/dtos/send-verification-code-request.dto';
+import { SignInWithPhoneRequestDto } from '../../../shared/v1/dtos/sign-in-with-phone-request.dto';
 import { CustomerAuthValidation } from '../validations/customer-auth.validation';
-import { CreateFcmTokenDto } from '../../../shared/v1/dtos/create-fcm-token.dto';
-import { FindOneFcmTokenDto } from '../../../shared/v1/dtos/find-one-fcm-token.dto';
+import { CreatePushTokenPayloadDto } from '../../../shared/v1/dtos/create-push-token-payload.dto';
+import { FindOnePushTokenPayloadDto } from '../../../shared/v1/dtos/find-one-push-token-payload.dto';
+import { SignUpDto } from '../dtos/sign-up.dto';
 
 @Injectable()
 export class CustomerAuthService {
@@ -30,7 +31,7 @@ export class CustomerAuthService {
 
   constructor(
     private readonly jwtService: JwtService,
-    private readonly fcmTokensService: FcmTokensService,
+    private readonly fcmTokensService: PushTokensService,
     private readonly verificationCodesService: VerificationCodesService,
     private readonly customerAuthValidation: CustomerAuthValidation,
     @Inject(CustomersMicroserviceConstants.NAME)
@@ -40,35 +41,39 @@ export class CustomerAuthService {
   }
 
   // send verification code.
-  async sendVerificationCode(sendVerificationCodeDto: SendVerificationCodeDto): Promise<void> {
-    await this.customersMicroserviceConnection.customersServiceImpl.findOneOrFailByPhone(<FindOneOrFailByPhoneDto<Customer>>{
-      phone: sendVerificationCodeDto.phone,
-    });
-    await this.verificationCodesService.create(sendVerificationCodeDto.phone, ClientUserType.CUSTOMER);
+  async sendVerificationCode(sendVerificationCodeRequestDto: SendVerificationCodeRequestDto): Promise<void> {
+    await this.customersMicroserviceConnection.customersServiceImpl.findOneOrFailByPhone(
+      new FindOneOrFailByPhonePayloadDto<Customer>({
+        phone: sendVerificationCodeRequestDto.phone,
+      }),
+    );
+    await this.verificationCodesService.create(sendVerificationCodeRequestDto.phone, ClientUserType.CUSTOMER);
   }
 
   // sign in with phone.
-  async signInWithPhone(signInWithPhoneDto: SignInWithPhoneDto): Promise<any> {
-    const customer: Customer = await this.customersMicroserviceConnection.customersServiceImpl.findOneOrFailByPhone(<FindOneOrFailByPhoneDto<Customer>>{
-      phone: signInWithPhoneDto.phone,
-    });
-    const verificationCode: VerificationCode = await this.verificationCodesService.findLastOneOrFailByPhone(signInWithPhoneDto.phone, ClientUserType.CUSTOMER);
-    if (signInWithPhoneDto.code !== verificationCode.code) {
+  async signInWithPhone(signInWithPhoneRequestDto: SignInWithPhoneRequestDto): Promise<any> {
+    const customer: Customer = await this.customersMicroserviceConnection.customersServiceImpl.findOneOrFailByPhone(
+      new FindOneOrFailByPhonePayloadDto<Customer>({
+        phone: signInWithPhoneRequestDto.phone,
+      }),
+    );
+    const verificationCode: VerificationCode = await this.verificationCodesService.findLastOneOrFailByPhone(signInWithPhoneRequestDto.phone, ClientUserType.CUSTOMER);
+    if (signInWithPhoneRequestDto.code !== verificationCode.code) {
       throw new BadRequestException('Invalid verification code.');
     }
     if (DateHelpers.calculateTimeDifferenceInMinutes(verificationCode.createdAt, new Date()) > 3) {
       throw new BadRequestException('Expired verification code.');
     }
-    const fcmToken: FcmToken = await this.fcmTokensService.findOne(<FindOneFcmTokenDto>{
+    const fcmToken: FcmToken = await this.fcmTokensService.findOne(<FindOnePushTokenPayloadDto>{
       tokenableId: customer.id,
       tokenableType: UserType.CUSTOMER,
-      token: signInWithPhoneDto.fcmToken,
+      token: signInWithPhoneRequestDto.fcmToken,
     });
     if (!fcmToken) {
-      await this.fcmTokensService.create(<CreateFcmTokenDto>{
+      await this.fcmTokensService.create(<CreatePushTokenPayloadDto>{
         tokenableId: customer.id,
         tokenableType: UserType.CUSTOMER,
-        token: signInWithPhoneDto.fcmToken,
+        token: signInWithPhoneRequestDto.fcmToken,
       });
     }
     const accessToken: string = await this.jwtService.signAsync(<AuthedUser>{
@@ -79,16 +84,18 @@ export class CustomerAuthService {
   }
 
   // sign up.
-  async signUp(customerSignUpDto: CustomerSignUpDto): Promise<Customer> {
-    await this.customerAuthValidation.validateSignUp(customerSignUpDto);
-    return await this.customersMicroserviceConnection.customersServiceImpl.create(customerSignUpDto);
+  async signUp(signUpDto: SignUpDto): Promise<Customer> {
+    await this.customerAuthValidation.validateSignUp(signUpDto);
+    return await this.customersMicroserviceConnection.customersServiceImpl.create(new CustomerSignUpPayloadDto({ ...signUpDto }));
   }
 
   // delete account.
   async deleteAccount(customerId: number): Promise<Customer> {
-    const customer: Customer = await this.customersMicroserviceConnection.customersServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Customer>>{
-      id: customerId,
-    });
+    const customer: Customer = await this.customersMicroserviceConnection.customersServiceImpl.findOneOrFailById(
+      new FindOneOrFailByIdPayloadDto<Customer>({
+        id: customerId,
+      }),
+    );
     return this.customersMicroserviceConnection.customersServiceImpl.removeOneByInstance(customer);
   }
 }

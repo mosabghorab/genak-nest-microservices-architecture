@@ -1,29 +1,9 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  Patch,
-  Post,
-  Query,
-} from '@nestjs/common';
-import {
-  AdminMustCanDo,
-  AllowFor,
-  Document,
-  DocumentDto,
-  FindAllDocumentsDto,
-  FindOneOrFailByIdDto,
-  PermissionAction,
-  PermissionGroup,
-  PermissionsTarget,
-  Serialize,
-  UserType,
-} from '@app/common';
-import { CreateDocumentDto } from '../dtos/create-document.dto';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
+import { AdminMustCanDo, AllowFor, Document, DocumentResponseDto, FindOneOrFailByIdPayloadDto, PermissionAction, PermissionGroup, PermissionsTarget, Serialize, UserType } from '@app/common';
+import { CreateDocumentRequestDto } from '../dtos/create-document-request.dto';
 import { AdminDocumentsService } from '../services/admin-documents.service';
-import { UpdateDocumentDto } from '../dtos/update-document.dto';
+import { UpdateDocumentRequestDto } from '../dtos/update-document-request.dto';
+import { FindAllDocumentsDto } from '../dtos/find-all-documents.dto';
 
 @AllowFor(UserType.ADMIN)
 @PermissionsTarget(PermissionGroup.DOCUMENTS)
@@ -32,44 +12,39 @@ export class AdminDocumentsController {
   constructor(private readonly adminDocumentsService: AdminDocumentsService) {}
 
   @AdminMustCanDo(PermissionAction.CREATE)
-  @Serialize(DocumentDto, 'Document created successfully.')
+  @Serialize(DocumentResponseDto, 'Document created successfully.')
   @Post()
-  create(@Body() createDocumentDto: CreateDocumentDto): Promise<Document> {
-    return this.adminDocumentsService.create(createDocumentDto);
+  create(@Body() createDocumentRequestDto: CreateDocumentRequestDto): Promise<Document> {
+    return this.adminDocumentsService.create(createDocumentRequestDto);
   }
 
   @AdminMustCanDo(PermissionAction.VIEW)
-  @Serialize(DocumentDto, 'All documents.')
+  @Serialize(DocumentResponseDto, 'All documents.')
   @Get()
-  findAll(
-    @Query() findAllDocumentsDto: FindAllDocumentsDto,
-  ): Promise<Document[]> {
+  findAll(@Query() findAllDocumentsDto: FindAllDocumentsDto): Promise<Document[]> {
     return this.adminDocumentsService.findAll(findAllDocumentsDto);
   }
 
   @AdminMustCanDo(PermissionAction.VIEW)
-  @Serialize(DocumentDto, 'One document.')
+  @Serialize(DocumentResponseDto, 'One document.')
   @Get(':id')
   findOne(@Param('id') id: number): Promise<Document> {
-    return this.adminDocumentsService.findOneOrFailById(<
-      FindOneOrFailByIdDto<Document>
-    >{
-      id,
-    });
+    return this.adminDocumentsService.findOneOrFailById(
+      new FindOneOrFailByIdPayloadDto<Document>({
+        id,
+      }),
+    );
   }
 
   @AdminMustCanDo(PermissionAction.UPDATE)
-  @Serialize(DocumentDto, 'Document updated successfully.')
+  @Serialize(DocumentResponseDto, 'Document updated successfully.')
   @Patch(':id')
-  update(
-    @Param('id') id: number,
-    @Body() updateDocumentDto: UpdateDocumentDto,
-  ): Promise<Document> {
-    return this.adminDocumentsService.update(id, updateDocumentDto);
+  update(@Param('id') id: number, @Body() updateDocumentRequestDto: UpdateDocumentRequestDto): Promise<Document> {
+    return this.adminDocumentsService.update(id, updateDocumentRequestDto);
   }
 
   @AdminMustCanDo(PermissionAction.DELETE)
-  @Serialize(DocumentDto, 'Document deleted successfully.')
+  @Serialize(DocumentResponseDto, 'Document deleted successfully.')
   @Delete(':id')
   remove(@Param('id') id: number): Promise<Document> {
     return this.adminDocumentsService.remove(id);

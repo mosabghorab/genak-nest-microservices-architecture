@@ -1,12 +1,12 @@
 import { Controller, Delete, Get, Header, Param, Query, StreamableFile } from '@nestjs/common';
-import { AdminMustCanDo, AllowFor, FindOneOrFailByIdDto, Order, OrderDto, PermissionAction, PermissionGroup, PermissionsTarget, Serialize, UserType } from '@app/common';
+import { AdminMustCanDo, AllowFor, FindOneOrFailByIdPayloadDto, Order, OrderResponseDto, PermissionAction, PermissionGroup, PermissionsTarget, Serialize, UserType } from '@app/common';
 import { AdminOrdersService } from '../services/admin-orders.service';
-import { AllOrdersDto } from '../dtos/all-orders.dto';
-import { FindAllOrdersDto } from '../dtos/find-all-orders.dto';
-import { CustomerOrdersPaginationDto } from '../dtos/customer-orders-pagination.dto';
-import { FindCustomerOrdersDto } from '../dtos/find-customer-orders.dto';
-import { VendorOrdersPaginationDto } from '../dtos/vendor-orders-pagination.dto';
-import { FindVendorOrdersDto } from '../dtos/find-vendor-orders.dto';
+import { AllOrdersResponseDto } from '../dtos/all-orders-response.dto';
+import { FindAllOrdersRequestDto } from '../dtos/find-all-orders-request.dto';
+import { AllCustomerOrdersResponseDto } from '../dtos/all-customer-orders-response.dto';
+import { FindCustomerOrdersRequestDto } from '../dtos/find-customer-orders-request.dto';
+import { AllVendorOrdersResponseDto } from '../dtos/all-vendor-orders-response.dto';
+import { FindVendorOrdersRequestDto } from '../dtos/find-vendor-orders-request.dto';
 
 @AllowFor(UserType.ADMIN)
 @PermissionsTarget(PermissionGroup.ORDERS)
@@ -15,9 +15,9 @@ export class AdminOrdersController {
   constructor(private readonly adminOrdersService: AdminOrdersService) {}
 
   @AdminMustCanDo(PermissionAction.VIEW)
-  @Serialize(AllOrdersDto, 'All orders.')
+  @Serialize(AllOrdersResponseDto, 'All orders.')
   @Get()
-  findAll(@Query() findAllOrdersDto: FindAllOrdersDto): Promise<
+  findAll(@Query() findAllOrdersRequestDto: FindAllOrdersRequestDto): Promise<
     | {
         total: number;
         perPage: number;
@@ -27,29 +27,29 @@ export class AdminOrdersController {
       }
     | { total: number; data: Order[] }
   > {
-    return this.adminOrdersService.findAll(findAllOrdersDto);
+    return this.adminOrdersService.findAll(findAllOrdersRequestDto);
   }
 
   @AdminMustCanDo(PermissionAction.EXPORT)
   @Get('export')
   @Header('Content-Disposition', 'attachment; filename="exported-file.xlsx"')
-  exportAll(@Query() findAllOrdersDto: FindAllOrdersDto): Promise<StreamableFile> {
-    return this.adminOrdersService.exportAll(findAllOrdersDto);
+  exportAll(@Query() findAllOrdersRequestDto: FindAllOrdersRequestDto): Promise<StreamableFile> {
+    return this.adminOrdersService.exportAll(findAllOrdersRequestDto);
   }
 
   @AdminMustCanDo(PermissionAction.EXPORT)
   @Get('by-customer/:id/export')
   @Header('Content-Disposition', 'attachment; filename="exported-file.xlsx"')
-  exportAllByCustomerId(@Param('id') id: number, @Query() findCustomerOrdersDto: FindCustomerOrdersDto): Promise<StreamableFile> {
-    return this.adminOrdersService.exportAllByCustomerId(id, findCustomerOrdersDto);
+  exportAllByCustomerId(@Param('id') id: number, @Query() findCustomerOrdersRequestDto: FindCustomerOrdersRequestDto): Promise<StreamableFile> {
+    return this.adminOrdersService.exportAllByCustomerId(id, findCustomerOrdersRequestDto);
   }
 
   @AdminMustCanDo(PermissionAction.VIEW)
-  @Serialize(CustomerOrdersPaginationDto, 'All customer orders.')
+  @Serialize(AllCustomerOrdersResponseDto, 'All customer orders.')
   @Get('by-customer/:id')
   findAllByCustomerId(
     @Param('id') id: number,
-    @Query() findCustomerOrdersDto: FindCustomerOrdersDto,
+    @Query() findCustomerOrdersRequestDto: FindCustomerOrdersRequestDto,
   ): Promise<
     | {
         total: number;
@@ -61,22 +61,22 @@ export class AdminOrdersController {
       }
     | { total: number; data: Order[]; ordersTotalPrice: any }
   > {
-    return this.adminOrdersService.findAllByCustomerId(id, findCustomerOrdersDto);
+    return this.adminOrdersService.findAllByCustomerId(id, findCustomerOrdersRequestDto);
   }
 
   @AdminMustCanDo(PermissionAction.EXPORT)
   @Get('by-vendor/:id/export')
   @Header('Content-Disposition', 'attachment; filename="exported-file.xlsx"')
-  exportAllByVendorId(@Param('id') id: number, @Query() findVendorOrdersDto: FindVendorOrdersDto): Promise<StreamableFile> {
-    return this.adminOrdersService.exportAllByVendorId(id, findVendorOrdersDto);
+  exportAllByVendorId(@Param('id') id: number, @Query() findVendorOrdersRequestDto: FindVendorOrdersRequestDto): Promise<StreamableFile> {
+    return this.adminOrdersService.exportAllByVendorId(id, findVendorOrdersRequestDto);
   }
 
   @AdminMustCanDo(PermissionAction.VIEW)
-  @Serialize(VendorOrdersPaginationDto, 'All vendor orders.')
+  @Serialize(AllVendorOrdersResponseDto, 'All vendor orders.')
   @Get('by-vendor/:id')
   findAllByVendorId(
     @Param('id') id: number,
-    @Query() findVendorOrdersDto: FindVendorOrdersDto,
+    @Query() findVendorOrdersRequestDto: FindVendorOrdersRequestDto,
   ): Promise<
     | {
         total: number;
@@ -89,27 +89,29 @@ export class AdminOrdersController {
       }
     | { total: number; ordersAverageTimeMinutes: number; data: Order[]; ordersTotalPrice: any }
   > {
-    return this.adminOrdersService.findAllByVendorId(id, findVendorOrdersDto);
+    return this.adminOrdersService.findAllByVendorId(id, findVendorOrdersRequestDto);
   }
 
   @AdminMustCanDo(PermissionAction.VIEW)
-  @Serialize(OrderDto, 'One order.')
+  @Serialize(OrderResponseDto, 'One order.')
   @Get(':id')
   findOne(@Param('id') id: number): Promise<Order> {
-    return this.adminOrdersService.findOneOrFailById(<FindOneOrFailByIdDto<Order>>{
-      id,
-      relations: {
-        customer: true,
-        vendor: true,
-        customerAddress: true,
-        orderItems: true,
-        orderStatusHistories: true,
-      },
-    });
+    return this.adminOrdersService.findOneOrFailById(
+      new FindOneOrFailByIdPayloadDto<Order>({
+        id,
+        relations: {
+          customer: true,
+          vendor: true,
+          customerAddress: true,
+          orderItems: true,
+          orderStatusHistories: true,
+        },
+      }),
+    );
   }
 
   @AdminMustCanDo(PermissionAction.DELETE)
-  @Serialize(OrderDto, 'Order deleted successfully.')
+  @Serialize(OrderResponseDto, 'Order deleted successfully.')
   @Delete(':id')
   remove(@Param('id') id: number): Promise<Order> {
     return this.adminOrdersService.remove(id);

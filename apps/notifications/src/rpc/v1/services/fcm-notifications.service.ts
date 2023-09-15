@@ -8,13 +8,14 @@ export class FcmNotificationsService {
   private readonly fcm: Messaging = firebaseAdmin.messaging();
 
   // send notification.
-  async sendNotification(sendFcmNotificationDto: SendPushNotificationPayloadDto): Promise<void> {
+  async sendNotification(sendPushNotificationPayloadDto: SendPushNotificationPayloadDto): Promise<void> {
     try {
-      if (sendFcmNotificationDto.type === PushNotificationType.TOKENS) {
-        await this.fcm.sendEachForMulticast(sendFcmNotificationDto.toPushableJson());
+      if (sendPushNotificationPayloadDto.type === PushNotificationType.TOKENS) {
+        await this.fcm.sendEachForMulticast(sendPushNotificationPayloadDto.toPushableJson());
       } else {
-        await this.fcm.sendToTopic(sendFcmNotificationDto.topic, sendFcmNotificationDto.toPushableJson());
+        await this.fcm.sendToTopic(sendPushNotificationPayloadDto.topic, sendPushNotificationPayloadDto.toPushableJson());
       }
+      console.log(sendPushNotificationPayloadDto.toPushableJson());
     } catch (error) {
       console.log(error);
       throw new InternalServerErrorException(error);

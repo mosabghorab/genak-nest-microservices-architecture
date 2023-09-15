@@ -1,15 +1,15 @@
-import { DateFilterDto, FindOneByIdDto, FindOneOrFailByIdDto, Product, ServiceType } from '@app/common';
+import { DateFilterPayloadDto, FindOneByIdPayloadDto, FindOneOrFailByIdPayloadDto, Product, ServiceType } from '@app/common';
 
 export interface IProductsService {
   // find one by id.
-  findOneById(findOneByIdDto: FindOneByIdDto<Product>): Promise<Product | null>;
+  findOneById(findOneByIdPayloadDto: FindOneByIdPayloadDto<Product>): Promise<Product | null>;
 
   // find one or fail by id.
-  findOneOrFailById(findOneOrFailByIdDto: FindOneOrFailByIdDto<Product>): Promise<Product>;
+  findOneOrFailById(findOneOrFailByIdPayloadDto: FindOneOrFailByIdPayloadDto<Product>): Promise<Product>;
 
   // find with total sales.
-  findWithTotalSales(serviceType: ServiceType, dateFilterDto?: DateFilterDto): Promise<Product[]>;
+  findWithTotalSales(serviceType: ServiceType, dateFilterPayloadDto?: DateFilterPayloadDto): Promise<Product[]>;
 
   // find with orders count.
-  findWithOrdersCount(serviceType: ServiceType, dateFilterDto: DateFilterDto): Promise<Product[]>;
+  findWithOrdersCount(serviceType: ServiceType, dateFilterPayloadDto: DateFilterPayloadDto): Promise<Product[]>;
 }

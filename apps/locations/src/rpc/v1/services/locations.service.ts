@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { DateFilterDto, DateFilterOption, DateHelpers, FindOneByIdDto, Location, ServiceType, VendorStatus } from '@app/common';
+import { DateFilterOption, DateFilterPayloadDto, DateHelpers, FindOneByIdPayloadDto, Location, ServiceType, VendorStatus } from '@app/common';
 
 @Injectable()
 export class LocationsService {
@@ -11,10 +11,10 @@ export class LocationsService {
   ) {}
 
   // find one by id.
-  findOneById(findOneByIdDto: FindOneByIdDto<Location>): Promise<Location | null> {
+  findOneById(findOneByIdPayloadDto: FindOneByIdPayloadDto<Location>): Promise<Location | null> {
     return this.locationRepository.findOne({
-      where: { id: findOneByIdDto.id },
-      relations: findOneByIdDto.relations,
+      where: { id: findOneByIdPayloadDto.id },
+      relations: findOneByIdPayloadDto.relations,
     });
   }
 
@@ -38,16 +38,16 @@ export class LocationsService {
   }
 
   // find governorates with orders count.
-  async findGovernoratesWithOrdersCount(serviceType: ServiceType, dateFilterDto?: DateFilterDto): Promise<Location[]> {
+  async findGovernoratesWithOrdersCount(serviceType: ServiceType, dateFilterPayloadDto?: DateFilterPayloadDto): Promise<Location[]> {
     let dateRange: { startDate: Date; endDate: Date };
-    if (dateFilterDto) {
-      if (dateFilterDto.dateFilterOption === DateFilterOption.CUSTOM) {
+    if (dateFilterPayloadDto) {
+      if (dateFilterPayloadDto.dateFilterOption === DateFilterOption.CUSTOM) {
         dateRange = {
-          startDate: dateFilterDto.startDate,
-          endDate: dateFilterDto.endDate,
+          startDate: dateFilterPayloadDto.startDate,
+          endDate: dateFilterPayloadDto.endDate,
         };
       } else {
-        dateRange = DateHelpers.getDateRangeForDateFilterOption(dateFilterDto.dateFilterOption);
+        dateRange = DateHelpers.getDateRangeForDateFilterOption(dateFilterPayloadDto.dateFilterOption);
       }
     }
     const {
@@ -59,10 +59,10 @@ export class LocationsService {
     } = await this.locationRepository
       .createQueryBuilder('location')
       .leftJoin('location.customersByGovernorate', 'customer')
-      .leftJoin('customer.orders', 'order', `order.serviceType = :serviceType${dateFilterDto?.dateFilterOption ? ' AND order.createdAt BETWEEN :startDate AND :endDate' : ''}`, {
+      .leftJoin('customer.orders', 'order', `order.serviceType = :serviceType${dateFilterPayloadDto?.dateFilterOption ? ' AND order.createdAt BETWEEN :startDate AND :endDate' : ''}`, {
         serviceType,
-        startDate: dateFilterDto?.dateFilterOption ? dateRange.startDate : null,
-        endDate: dateFilterDto?.dateFilterOption ? dateRange.endDate : null,
+        startDate: dateFilterPayloadDto?.dateFilterOption ? dateRange.startDate : null,
+        endDate: dateFilterPayloadDto?.dateFilterOption ? dateRange.endDate : null,
       })
       .addSelect('COUNT(DISTINCT order.id)', 'ordersCount')
       .where('location.parentId is NULL')
@@ -75,15 +75,15 @@ export class LocationsService {
   }
 
   // find regions with orders count.
-  async findRegionsWithOrdersCount(serviceType: ServiceType, dateFilterDto: DateFilterDto): Promise<Location[]> {
+  async findRegionsWithOrdersCount(serviceType: ServiceType, dateFilterPayloadDto: DateFilterPayloadDto): Promise<Location[]> {
     let dateRange: { startDate: Date; endDate: Date };
-    if (dateFilterDto.dateFilterOption === DateFilterOption.CUSTOM) {
+    if (dateFilterPayloadDto.dateFilterOption === DateFilterOption.CUSTOM) {
       dateRange = {
-        startDate: dateFilterDto.startDate,
-        endDate: dateFilterDto.endDate,
+        startDate: dateFilterPayloadDto.startDate,
+        endDate: dateFilterPayloadDto.endDate,
       };
     } else {
-      dateRange = DateHelpers.getDateRangeForDateFilterOption(dateFilterDto.dateFilterOption);
+      dateRange = DateHelpers.getDateRangeForDateFilterOption(dateFilterPayloadDto.dateFilterOption);
     }
     const {
       entities,

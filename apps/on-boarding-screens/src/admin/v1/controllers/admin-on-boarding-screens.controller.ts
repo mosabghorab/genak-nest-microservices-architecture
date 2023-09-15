@@ -1,9 +1,21 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UploadedFile, UseInterceptors } from '@nestjs/common';
-import { AdminMustCanDo, AllowFor, FindOneOrFailByIdDto, Helpers, OnBoardingScreen, OnBoardingScreenDto, PermissionAction, PermissionGroup, PermissionsTarget, Serialize, UserType } from '@app/common';
+import {
+  AdminMustCanDo,
+  AllowFor,
+  FindOneOrFailByIdPayloadDto,
+  Helpers,
+  OnBoardingScreen,
+  OnBoardingScreenResponseDto,
+  PermissionAction,
+  PermissionGroup,
+  PermissionsTarget,
+  Serialize,
+  UserType,
+} from '@app/common';
 import { AdminOnBoardingScreensService } from '../services/admin-on-boarding-screens.service';
-import { CreateOnBoardingScreenDto } from '../dtos/create-on-boarding-screen.dto';
-import { FindAllOnBoardingScreensDto } from '../dtos/find-all-on-boarding-screens.dto';
-import { UpdateOnBoardingScreenDto } from '../dtos/update-on-boarding-screen.dto';
+import { CreateOnBoardingScreenRequestDto } from '../dtos/create-on-boarding-screen-request.dto';
+import { FindAllOnBoardingScreensRequestDto } from '../dtos/find-all-on-boarding-screens-request.dto';
+import { UpdateOnBoardingScreenRequestDto } from '../dtos/update-on-boarding-screen-request.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 
 @AllowFor(UserType.ADMIN)
@@ -13,43 +25,45 @@ export class AdminOnBoardingScreensController {
   constructor(private readonly adminOnBoardingScreensService: AdminOnBoardingScreensService) {}
 
   @AdminMustCanDo(PermissionAction.CREATE)
-  @Serialize(OnBoardingScreenDto, 'On boarding screen created successfully.')
+  @Serialize(OnBoardingScreenResponseDto, 'On boarding screen created successfully.')
   @UseInterceptors(FileInterceptor('image'))
   @Post()
-  create(@Body() createOnBoardingScreenDto: CreateOnBoardingScreenDto, @UploadedFile(Helpers.defaultImageValidator()) image: Express.Multer.File): Promise<OnBoardingScreen> {
-    return this.adminOnBoardingScreensService.create(createOnBoardingScreenDto, image);
+  create(@Body() createOnBoardingScreenRequestDto: CreateOnBoardingScreenRequestDto, @UploadedFile(Helpers.defaultImageValidator()) image: Express.Multer.File): Promise<OnBoardingScreen> {
+    return this.adminOnBoardingScreensService.create(createOnBoardingScreenRequestDto, image);
   }
 
   @AdminMustCanDo(PermissionAction.VIEW)
-  @Serialize(OnBoardingScreenDto, 'All on boarding screens.')
+  @Serialize(OnBoardingScreenResponseDto, 'All on boarding screens.')
   @Get()
-  findAll(@Query() findAllOnBoardingScreensDto: FindAllOnBoardingScreensDto): Promise<OnBoardingScreen[]> {
-    return this.adminOnBoardingScreensService.findAll(findAllOnBoardingScreensDto);
+  findAll(@Query() findAllOnBoardingScreensRequestDto: FindAllOnBoardingScreensRequestDto): Promise<OnBoardingScreen[]> {
+    return this.adminOnBoardingScreensService.findAll(findAllOnBoardingScreensRequestDto);
   }
 
   @AdminMustCanDo(PermissionAction.VIEW)
-  @Serialize(OnBoardingScreenDto, 'One on boarding screen.')
+  @Serialize(OnBoardingScreenResponseDto, 'One on boarding screen.')
   @Get(':id')
   findOne(@Param('id') id: number): Promise<OnBoardingScreen> {
-    return this.adminOnBoardingScreensService.findOneOrFailById(<FindOneOrFailByIdDto<OnBoardingScreen>>{
-      id,
-    });
+    return this.adminOnBoardingScreensService.findOneOrFailById(
+      new FindOneOrFailByIdPayloadDto<OnBoardingScreen>({
+        id,
+      }),
+    );
   }
 
   @AdminMustCanDo(PermissionAction.UPDATE)
-  @Serialize(OnBoardingScreenDto, 'On boarding screen updated successfully.')
+  @Serialize(OnBoardingScreenResponseDto, 'On boarding screen updated successfully.')
   @UseInterceptors(FileInterceptor('image'))
   @Patch(':id')
   update(
     @Param('id') id: number,
-    @Body() updateOnBoardingScreenDto: UpdateOnBoardingScreenDto,
+    @Body() updateOnBoardingScreenRequestDto: UpdateOnBoardingScreenRequestDto,
     @UploadedFile(Helpers.defaultImageValidator(false)) image?: Express.Multer.File,
   ): Promise<OnBoardingScreen> {
-    return this.adminOnBoardingScreensService.update(id, updateOnBoardingScreenDto, image);
+    return this.adminOnBoardingScreensService.update(id, updateOnBoardingScreenRequestDto, image);
   }
 
   @AdminMustCanDo(PermissionAction.DELETE)
-  @Serialize(OnBoardingScreenDto, 'On boarding screen deleted successfully.')
+  @Serialize(OnBoardingScreenResponseDto, 'On boarding screen deleted successfully.')
   @Delete(':id')
   remove(@Param('id') id: number): Promise<OnBoardingScreen> {
     return this.adminOnBoardingScreensService.remove(id);

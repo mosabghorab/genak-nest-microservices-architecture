@@ -1,8 +1,8 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
-import { AdminMustCanDo, AllowFor, PermissionAction, PermissionGroup, PermissionsTarget, Serialize, Setting, SettingDto, UserType } from '@app/common';
+import { AdminMustCanDo, AllowFor, PermissionAction, PermissionGroup, PermissionsTarget, Serialize, Setting, SettingResponseDto, UserType } from '@app/common';
 import { AdminSettingsService } from '../services/admin-settings.service';
-import { CreateSettingDto } from '../dtos/create-setting.dto';
-import { UpdateSettingDto } from '../dtos/update-setting.dto';
+import { CreateSettingRequestDto } from '../dtos/create-setting-request.dto';
+import { UpdateSettingRequestDto } from '../dtos/update-setting-request.dto';
 
 @AllowFor(UserType.ADMIN)
 @PermissionsTarget(PermissionGroup.SETTINGS)
@@ -11,35 +11,35 @@ export class AdminSettingsController {
   constructor(private readonly adminSettingsService: AdminSettingsService) {}
 
   @AdminMustCanDo(PermissionAction.CREATE)
-  @Serialize(SettingDto, 'Setting created successfully.')
+  @Serialize(SettingResponseDto, 'Setting created successfully.')
   @Post()
-  create(@Body() createSettingDto: CreateSettingDto): Promise<Setting> {
-    return this.adminSettingsService.create(createSettingDto);
+  create(@Body() createSettingRequestDto: CreateSettingRequestDto): Promise<Setting> {
+    return this.adminSettingsService.create(createSettingRequestDto);
   }
 
   @AdminMustCanDo(PermissionAction.VIEW)
-  @Serialize(SettingDto, 'All settings.')
+  @Serialize(SettingResponseDto, 'All settings.')
   @Get()
   findAll(): Promise<Setting[]> {
     return this.adminSettingsService.findAll();
   }
 
   @AdminMustCanDo(PermissionAction.VIEW)
-  @Serialize(SettingDto, 'One setting.')
+  @Serialize(SettingResponseDto, 'One setting.')
   @Get(':id')
   findOne(@Param('id') id: number): Promise<Setting> {
     return this.adminSettingsService.findOneOrFailById(id);
   }
 
   @AdminMustCanDo(PermissionAction.UPDATE)
-  @Serialize(SettingDto, 'Setting updated successfully.')
+  @Serialize(SettingResponseDto, 'Setting updated successfully.')
   @Patch(':id')
-  update(@Param('id') id: number, @Body() updateSettingDto: UpdateSettingDto): Promise<Setting> {
-    return this.adminSettingsService.update(id, updateSettingDto);
+  update(@Param('id') id: number, @Body() updateSettingRequestDto: UpdateSettingRequestDto): Promise<Setting> {
+    return this.adminSettingsService.update(id, updateSettingRequestDto);
   }
 
   @AdminMustCanDo(PermissionAction.DELETE)
-  @Serialize(SettingDto, 'Setting deleted successfully.')
+  @Serialize(SettingResponseDto, 'Setting deleted successfully.')
   @Delete(':id')
   remove(@Param('id') id: number): Promise<Setting> {
     return this.adminSettingsService.remove(id);

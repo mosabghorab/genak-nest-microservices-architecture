@@ -6,8 +6,8 @@ import {
   CustomerAddress,
   CustomersMicroserviceConnection,
   CustomersMicroserviceConstants,
-  FindOneByIdDto,
-  FindOneOrFailByIdDto,
+  FindOneByIdPayloadDto,
+  FindOneOrFailByIdPayloadDto,
   Order,
   OrderItem,
   OrderStatus,
@@ -18,9 +18,9 @@ import {
   VendorsMicroserviceConstants,
 } from '@app/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { FindAllOrdersDto } from '../dtos/find-all-orders.dto';
-import { CreateOrderDto } from '../dtos/create-order.dto';
-import { CreateOrderItemDto } from '../dtos/create-order-item.dto';
+import { FindAllOrdersRequestDto } from '../dtos/find-all-orders-request.dto';
+import { CreateOrderRequestDto } from '../dtos/create-order-request.dto';
+import { CreateOrderItemRequestDto } from '../dtos/create-order-item-request.dto';
 import { ClientProxy } from '@nestjs/microservices';
 import { Constants } from '../../../../constants';
 import { OrderCreatedEvent } from '../events/order-created.event';
@@ -42,29 +42,34 @@ export class CustomerOrdersService {
   }
 
   // find one by id.
-  findOneById(findOneByIdDto: FindOneByIdDto<Order>): Promise<Order | null> {
-    return this.orderRepository.findOne({ where: { id: findOneByIdDto.id }, relations: findOneByIdDto.relations });
+  findOneById(findOneByIdPayloadDto: FindOneByIdPayloadDto<Order>): Promise<Order | null> {
+    return this.orderRepository.findOne({
+      where: { id: findOneByIdPayloadDto.id },
+      relations: findOneByIdPayloadDto.relations,
+    });
   }
 
   // find one or fail by id.
-  async findOneOrFailById(findOneOrFailByIdDto: FindOneOrFailByIdDto<Order>): Promise<Order> {
-    const order: Order = await this.findOneById(<FindOneByIdDto<Order>>{
-      id: findOneOrFailByIdDto.id,
-      relations: findOneOrFailByIdDto.relations,
-    });
+  async findOneOrFailById(findOneOrFailByIdPayloadDto: FindOneOrFailByIdPayloadDto<Order>): Promise<Order> {
+    const order: Order = await this.findOneById(
+      new FindOneByIdPayloadDto<Order>({
+        id: findOneOrFailByIdPayloadDto.id,
+        relations: findOneOrFailByIdPayloadDto.relations,
+      }),
+    );
     if (!order) {
-      throw new BadRequestException(findOneOrFailByIdDto.failureMessage || 'Order not found.');
+      throw new BadRequestException(findOneOrFailByIdPayloadDto.failureMessage || 'Order not found.');
     }
     return order;
   }
 
   // find all.
-  findAll(customerId: number, findAllOrdersDto: FindAllOrdersDto): Promise<Order[]> {
+  findAll(customerId: number, findAllOrdersRequestDto: FindAllOrdersRequestDto): Promise<Order[]> {
     return this.orderRepository.find({
       where: {
         customerId,
-        serviceType: findAllOrdersDto.serviceType,
-        status: findAllOrdersDto.status,
+        serviceType: findAllOrdersRequestDto.serviceType,
+        status: findAllOrdersRequestDto.status,
       },
       relations: {
         vendor: true,
@@ -76,28 +81,32 @@ export class CustomerOrdersService {
   }
 
   // create.
-  async create(customerId: number, createOrderDto: CreateOrderDto): Promise<Order> {
-    const customer: Customer = await this.customersMicroserviceConnection.customersServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Customer>>{
-      id: customerId,
-    });
-    const vendor: Vendor = await this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Vendor>>{
-      id: createOrderDto.vendorId,
-    });
-    const customerAddress: CustomerAddress = await this.customersMicroserviceConnection.customerAddressesServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<CustomerAddress>>{
-      id: createOrderDto.customerAddressId,
-    });
+  async create(customerId: number, createOrderRequestDto: CreateOrderRequestDto): Promise<Order> {
+    const customer: Customer = await this.customersMicroserviceConnection.customersServiceImpl.findOneOrFailById(
+      new FindOneOrFailByIdPayloadDto<Customer>({
+        id: customerId,
+      }),
+    );
+    const vendor: Vendor = await this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneOrFailById(
+      new FindOneOrFailByIdPayloadDto<Vendor>({
+        id: createOrderRequestDto.vendorId,
+      }),
+    );
+    await this.customersMicroserviceConnection.customerAddressesServiceImpl.findOneOrFailById(
+      new FindOneOrFailByIdPayloadDto<CustomerAddress>({
+        id: createOrderRequestDto.customerAddressId,
+      }),
+    );
     const order: Order = await this.orderRepository.create({
       customerId,
-      vendorId: createOrderDto.vendorId,
-      customerAddressId: createOrderDto.customerAddressId,
-      serviceType: createOrderDto.serviceType,
-      note: createOrderDto.note,
-      total: createOrderDto.total,
+      vendorId: createOrderRequestDto.vendorId,
+      customerAddressId: createOrderRequestDto.customerAddressId,
+      serviceType: createOrderRequestDto.serviceType,
+      note: createOrderRequestDto.note,
+      total: createOrderRequestDto.total,
     });
-    order.vendor = vendor;
-    order.customerAddress = customerAddress;
     const savedOrder: Order = await this.orderRepository.save(order);
-    savedOrder.orderItems = createOrderDto.orderItems.map((createOrderItemDto: CreateOrderItemDto) => <OrderItem>{ orderId: savedOrder.id, ...createOrderItemDto });
+    savedOrder.orderItems = createOrderRequestDto.orderItems.map((createOrderItemDto: CreateOrderItemRequestDto) => <OrderItem>{ orderId: savedOrder.id, ...createOrderItemDto });
     savedOrder.uniqueId = `${savedOrder.serviceType === ServiceType.WATER ? 'W-' : 'G-'}${new Date().getFullYear()}${savedOrder.id}`;
     savedOrder.orderStatusHistories = [
       <OrderStatusHistory>{
@@ -114,13 +123,17 @@ export class CustomerOrdersService {
 
   // re order.
   async reOrder(id: number): Promise<Order> {
-    const order: Order = await this.findOneOrFailById(<FindOneOrFailByIdDto<Order>>{
-      id,
-      relations: {
-        orderItems: true,
-        orderStatusHistories: true,
-      },
-    });
+    const order: Order = await this.findOneOrFailById(
+      new FindOneOrFailByIdPayloadDto<Order>({
+        id,
+        relations: {
+          orderItems: true,
+          orderStatusHistories: true,
+          customer: true,
+          vendor: true,
+        },
+      }),
+    );
     const newOrder: Order = await this.orderRepository.create({
       customerId: order.customerId,
       vendorId: order.vendorId,
@@ -141,6 +154,10 @@ export class CustomerOrdersService {
         orderStatus: OrderStatus.PENDING,
       },
     ];
-    return this.orderRepository.save(savedOrder);
+    const newSavedOrder: Order = await this.orderRepository.save(savedOrder);
+    if (newSavedOrder) {
+      this.eventEmitter.emit(Constants.ORDER_CREATED_EVENT, new OrderCreatedEvent(newSavedOrder, order.vendor, order.customer));
+    }
+    return newSavedOrder;
   }
 }

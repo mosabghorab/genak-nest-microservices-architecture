@@ -1,5 +1,14 @@
 import { Controller } from '@nestjs/common';
-import { Admin, AdminsMicroserviceConstants, AdminUpdatePasswordDto, AdminUpdateProfileDto, FindOneByEmailDto, FindOneByIdDto, PermissionGroup, SearchPayloadDto } from '@app/common';
+import {
+  Admin,
+  AdminsMicroserviceConstants,
+  AdminUpdatePasswordPayloadDto,
+  AdminUpdateProfilePayloadDto,
+  FindOneByEmailPayloadDto,
+  FindOneByIdPayloadDto,
+  PermissionGroup,
+  SearchPayloadDto,
+} from '@app/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { AdminsService } from '../services/admins.service';
 
@@ -12,15 +21,15 @@ export class AdminsController {
   @MessagePattern({
     cmd: `${AdminsMicroserviceConstants.ADMINS_SERVICE_FIND_ONE_BY_ID_MESSAGE_PATTERN}/v${VERSION}`,
   })
-  findOneById(@Payload() findOneByIdDto: FindOneByIdDto<Admin>): Promise<Admin | null> {
-    return this.adminsService.findOneById(findOneByIdDto);
+  findOneById(@Payload('findOneByIdPayloadDto') findOneByIdPayloadDto: FindOneByIdPayloadDto<Admin>): Promise<Admin | null> {
+    return this.adminsService.findOneById(findOneByIdPayloadDto);
   }
 
   @MessagePattern({
     cmd: `${AdminsMicroserviceConstants.ADMINS_SERVICE_FIND_ONE_BY_EMAIL_MESSAGE_PATTERN}/v${VERSION}`,
   })
-  findOneByEmail(@Payload() findOneByEmailDto: FindOneByEmailDto<Admin>): Promise<Admin | null> {
-    return this.adminsService.findOneByEmail(findOneByEmailDto);
+  findOneByEmail(@Payload('findOneByEmailPayloadDto') findOneByEmailPayloadDto: FindOneByEmailPayloadDto<Admin>): Promise<Admin | null> {
+    return this.adminsService.findOneByEmail(findOneByEmailPayloadDto);
   }
 
   @MessagePattern({
@@ -40,15 +49,15 @@ export class AdminsController {
   @MessagePattern({
     cmd: `${AdminsMicroserviceConstants.ADMINS_SERVICE_UPDATE_PASSWORD_MESSAGE_PATTERN}/v${VERSION}`,
   })
-  updatePassword(@Payload() adminUpdatePasswordDto: AdminUpdatePasswordDto): Promise<Admin> {
-    return this.adminsService.updatePassword(adminUpdatePasswordDto);
+  updatePassword(@Payload('adminUpdatePasswordPayloadDto') adminUpdatePasswordPayloadDto: AdminUpdatePasswordPayloadDto): Promise<Admin> {
+    return this.adminsService.updatePassword(adminUpdatePasswordPayloadDto);
   }
 
   @MessagePattern({
     cmd: `${AdminsMicroserviceConstants.ADMINS_SERVICE_UPDATE_PROFILE_MESSAGE_PATTERN}/v${VERSION}`,
   })
-  updateProfile(@Payload() adminUpdateProfileDto: AdminUpdateProfileDto): Promise<Admin> {
-    return this.adminsService.updateProfile(adminUpdateProfileDto);
+  updateProfile(@Payload('adminUpdateProfilePayloadDto') adminUpdateProfilePayloadDto: AdminUpdateProfilePayloadDto): Promise<Admin> {
+    return this.adminsService.updateProfile(adminUpdateProfilePayloadDto);
   }
 
   @MessagePattern({

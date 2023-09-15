@@ -1,8 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { Admin, AdminsMicroserviceConnection, AdminsMicroserviceConstants, AdminUpdateProfileDto, FindOneOrFailByIdDto } from '@app/common';
+import { Admin, AdminsMicroserviceConnection, AdminsMicroserviceConstants, AdminUpdateProfilePayloadDto, FindOneOrFailByIdPayloadDto } from '@app/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { Constants } from '../../../../../auth/src/constants';
-import { UpdateProfileDto } from '../dtos/update-profile.dto';
+import { UpdateProfileRequestDto } from '../dtos/update-profile-request.dto';
 import { AdminProfileValidation } from '../validations/admin-profile.validation';
 
 @Injectable()
@@ -14,19 +14,23 @@ export class AdminProfileService {
   }
 
   // update.
-  async update(adminId: number, updateProfileDto: UpdateProfileDto): Promise<Admin> {
-    await this.adminProfileValidation.validateUpdate(adminId, updateProfileDto);
-    return this.adminsMicroserviceConnection.adminsServiceImpl.updateProfile(<AdminUpdateProfileDto>{
-      adminId,
-      ...updateProfileDto,
-    });
+  async update(adminId: number, updateProfileRequestDto: UpdateProfileRequestDto): Promise<Admin> {
+    await this.adminProfileValidation.validateUpdate(adminId, updateProfileRequestDto);
+    return this.adminsMicroserviceConnection.adminsServiceImpl.updateProfile(
+      new AdminUpdateProfilePayloadDto({
+        adminId,
+        ...updateProfileRequestDto,
+      }),
+    );
   }
 
   // find.
   find(adminId: number): Promise<Admin> {
-    return this.adminsMicroserviceConnection.adminsServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Admin>>{
-      id: adminId,
-      relations: { adminsRoles: { role: { rolesPermissions: { permission: true } } } },
-    });
+    return this.adminsMicroserviceConnection.adminsServiceImpl.findOneOrFailById(
+      new FindOneOrFailByIdPayloadDto<Admin>({
+        id: adminId,
+        relations: { adminsRoles: { role: { rolesPermissions: { permission: true } } } },
+      }),
+    );
   }
 }

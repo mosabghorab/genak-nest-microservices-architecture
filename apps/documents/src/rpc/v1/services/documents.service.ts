@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Document, FindAllDocumentsDto } from '@app/common';
+import { Document, FindAllDocumentsPayloadDto } from '@app/common';
 
 @Injectable()
 export class DocumentsService {
@@ -11,9 +11,9 @@ export class DocumentsService {
   ) {}
 
   // find all by service type.
-  findAll(findAllDocumentsDto: FindAllDocumentsDto): Promise<Document[]> {
+  findAll(findAllDocumentsPayloadDto: FindAllDocumentsPayloadDto): Promise<Document[]> {
     return this.documentRepository.find({
-      where: { serviceType: findAllDocumentsDto.serviceType, active: true },
+      where: { serviceType: findAllDocumentsPayloadDto.serviceType, active: true },
     });
   }
 }

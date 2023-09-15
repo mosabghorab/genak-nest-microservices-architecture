@@ -1,8 +1,8 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
-import { FindOneByPhoneDto, FindOneOrFailByIdDto, Vendor, VendorsMicroserviceConnection, VendorsMicroserviceConstants } from '@app/common';
+import { FindOneByPhonePayloadDto, FindOneOrFailByIdPayloadDto, Vendor, VendorsMicroserviceConnection, VendorsMicroserviceConstants } from '@app/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { Constants } from '../../../constants';
-import { UpdateProfileDto } from '../dtos/update-profile.dto';
+import { UpdateProfileRequestDto } from '../dtos/update-profile-request.dto';
 
 @Injectable()
 export class VendorProfileValidation {
@@ -16,14 +16,18 @@ export class VendorProfileValidation {
   }
 
   // validate update.
-  async validateUpdate(vendorId: number, updateProfileDto: UpdateProfileDto): Promise<void> {
-    await this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Vendor>>{
-      id: vendorId,
-    });
-    if (updateProfileDto.phone) {
-      const vendorByPhone: Vendor = await this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneByPhone(<FindOneByPhoneDto<Vendor>>{
-        phone: updateProfileDto.phone,
-      });
+  async validateUpdate(vendorId: number, updateProfileRequestDto: UpdateProfileRequestDto): Promise<void> {
+    await this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneOrFailById(
+      new FindOneOrFailByIdPayloadDto<Vendor>({
+        id: vendorId,
+      }),
+    );
+    if (updateProfileRequestDto.phone) {
+      const vendorByPhone: Vendor = await this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneByPhone(
+        new FindOneByPhonePayloadDto<Vendor>({
+          phone: updateProfileRequestDto.phone,
+        }),
+      );
       if (vendorByPhone) {
         throw new BadRequestException('Phone is already exists.');
       }

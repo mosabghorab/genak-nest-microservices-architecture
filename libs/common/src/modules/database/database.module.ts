@@ -68,7 +68,7 @@ export class DatabaseModule {
                 VerificationCode,
                 Notification,
               ],
-              synchronize: false,
+              synchronize: true,
             };
           },
         }),

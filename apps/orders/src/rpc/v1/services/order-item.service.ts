@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder } from 'typeorm';
-import { DateFilterDto, DateFilterOption, DateHelpers, OrderItem } from '@app/common';
+import { DateFilterOption, DateFilterPayloadDto, DateHelpers, OrderItem } from '@app/common';
 
 @Injectable()
 export class OrderItemService {
@@ -11,26 +11,26 @@ export class OrderItemService {
   ) {}
 
   // find custom order items total sales and quantities.
-  async findCustomOrderItemsTotalSalesAndQuantities(dateFilterDto?: DateFilterDto): Promise<{
+  async findCustomOrderItemsTotalSalesAndQuantities(dateFilterPayloadDto?: DateFilterPayloadDto): Promise<{
     totalSales: string;
     totalQuantities: string;
   }> {
     let dateRange: { startDate: Date; endDate: Date };
-    if (dateFilterDto) {
-      if (dateFilterDto.dateFilterOption === DateFilterOption.CUSTOM) {
+    if (dateFilterPayloadDto) {
+      if (dateFilterPayloadDto.dateFilterOption === DateFilterOption.CUSTOM) {
         dateRange = {
-          startDate: dateFilterDto.startDate,
-          endDate: dateFilterDto.endDate,
+          startDate: dateFilterPayloadDto.startDate,
+          endDate: dateFilterPayloadDto.endDate,
         };
       } else {
-        dateRange = DateHelpers.getDateRangeForDateFilterOption(dateFilterDto.dateFilterOption);
+        dateRange = DateHelpers.getDateRangeForDateFilterOption(dateFilterPayloadDto.dateFilterOption);
       }
     }
     const queryBuilder: SelectQueryBuilder<OrderItem> = this.orderItemRepository
       .createQueryBuilder('orderItem')
       .select(['SUM(orderItem.price) AS totalSales', 'SUM(orderItem.quantity) AS totalQuantities'])
       .where('orderItem.productId IS NULL');
-    if (dateFilterDto) {
+    if (dateFilterPayloadDto) {
       queryBuilder.andWhere('orderItem.createdAt BETWEEN :startDate AND :endDate', {
         startDate: dateRange.startDate,
         endDate: dateRange.endDate,

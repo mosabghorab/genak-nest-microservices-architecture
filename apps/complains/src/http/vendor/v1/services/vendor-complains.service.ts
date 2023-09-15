@@ -4,13 +4,13 @@ import { Repository } from 'typeorm';
 import {
   ClientUserType,
   Complain,
-  FindOneOrderOrFailByIdAndServiceTypeDto,
-  FindOneOrFailByIdDto,
+  FindOneOrderOrFailByIdAndServiceTypePayloadDto,
+  FindOneOrFailByIdPayloadDto,
   OrdersMicroserviceConnection,
   OrdersMicroserviceConstants,
   StorageMicroserviceConnection,
   StorageMicroserviceConstants,
-  UploadFileDto,
+  UploadFilePayloadDto,
   Vendor,
   VendorsMicroserviceConnection,
   VendorsMicroserviceConstants,
@@ -19,7 +19,7 @@ import { Constants } from '../../../../constants';
 import { ClientProxy } from '@nestjs/microservices';
 import { ComplainCreatedEvent } from '../../../shared/v1/events/complain-created.event';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { CreateComplainDto } from '../../../shared/v1/dtos/create-complain.dto';
+import { CreateComplainRequestDto } from '../../../shared/v1/dtos/create-complain-request.dto';
 
 @Injectable()
 export class VendorComplainsService {
@@ -44,20 +44,26 @@ export class VendorComplainsService {
   }
 
   // create.
-  async create(vendorId: number, createComplainDto: CreateComplainDto, image?: Express.Multer.File): Promise<Complain> {
-    const vendor: Vendor = await this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Vendor>>{
-      id: vendorId,
-    });
-    await this.ordersMicroserviceConnection.ordersServiceImpl.findOneOrFailByIdAndServiceType(<FindOneOrderOrFailByIdAndServiceTypeDto>{
-      id: createComplainDto.orderId,
-      serviceType: vendor.serviceType,
-    });
+  async create(vendorId: number, createComplainRequestDto: CreateComplainRequestDto, image?: Express.Multer.File): Promise<Complain> {
+    const vendor: Vendor = await this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneOrFailById(
+      new FindOneOrFailByIdPayloadDto<Vendor>({
+        id: vendorId,
+      }),
+    );
+    await this.ordersMicroserviceConnection.ordersServiceImpl.findOneOrFailByIdAndServiceType(
+      new FindOneOrderOrFailByIdAndServiceTypePayloadDto({
+        id: createComplainRequestDto.orderId,
+        serviceType: vendor.serviceType,
+      }),
+    );
     let imageUrl: string;
     if (image) {
-      imageUrl = await this.storageMicroserviceConnection.storageServiceImpl.uploadFile(<UploadFileDto>{
-        prefixPath: Constants.COMPLAINS_IMAGES_PREFIX_PATH,
-        file: image,
-      });
+      imageUrl = await this.storageMicroserviceConnection.storageServiceImpl.uploadFile(
+        new UploadFilePayloadDto({
+          prefixPath: Constants.COMPLAINS_IMAGES_PREFIX_PATH,
+          file: image,
+        }),
+      );
     }
     const savedComplain: Complain = await this.complainRepository.save(
       await this.complainRepository.create({
@@ -65,7 +71,7 @@ export class VendorComplainsService {
         complainerUserType: ClientUserType.VENDOR,
         serviceType: vendor.serviceType,
         image: imageUrl,
-        ...createComplainDto,
+        ...createComplainRequestDto,
       }),
     );
     if (savedComplain) {

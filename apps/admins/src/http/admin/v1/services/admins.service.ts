@@ -1,11 +1,11 @@
 import { BadRequestException, Injectable, StreamableFile } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Admin, AdminsRoles, FindOneByEmailDto, FindOneByIdDto, FindOneOrFailByEmailDto, FindOneOrFailByIdDto } from '@app/common';
+import { Admin, AdminsRoles, FindOneByEmailPayloadDto, FindOneByIdPayloadDto, FindOneOrFailByEmailPayloadDto, FindOneOrFailByIdPayloadDto } from '@app/common';
 import { AdminsRolesService } from './admins-roles.service';
-import { FindAllAdminsDto } from '../dtos/find-all-admins.dto';
-import { CreateAdminDto } from '../dtos/create-admin.dto';
-import { UpdateAdminDto } from '../dtos/update-admin.dto';
+import { FindAllAdminsRequestDto } from '../dtos/find-all-admins-request.dto';
+import { CreateAdminRequestDto } from '../dtos/create-admin-request.dto';
+import { UpdateAdminRequestDto } from '../dtos/update-admin-request.dto';
 import { Workbook, Worksheet } from 'exceljs';
 import * as fsExtra from 'fs-extra';
 import { createReadStream } from 'fs';
@@ -19,47 +19,51 @@ export class AdminsService {
   ) {}
 
   // find one by id.
-  findOneById(findOneByIdDto: FindOneByIdDto<Admin>): Promise<Admin | null> {
+  findOneById(findOneByIdPayloadDto: FindOneByIdPayloadDto<Admin>): Promise<Admin | null> {
     return this.adminRepository.findOne({
-      where: { id: findOneByIdDto.id },
-      relations: findOneByIdDto.relations,
+      where: { id: findOneByIdPayloadDto.id },
+      relations: findOneByIdPayloadDto.relations,
     });
   }
 
   // find one or fail by id.
-  async findOneOrFailById(findOneOrFailByIdDto: FindOneOrFailByIdDto<Admin>): Promise<Admin> {
-    const admin: Admin = await this.findOneById(<FindOneByIdDto<Admin>>{
-      id: findOneOrFailByIdDto.id,
-      relations: findOneOrFailByIdDto.relations,
-    });
+  async findOneOrFailById(findOneOrFailByIdPayloadDto: FindOneOrFailByIdPayloadDto<Admin>): Promise<Admin> {
+    const admin: Admin = await this.findOneById(
+      new FindOneByIdPayloadDto<Admin>({
+        id: findOneOrFailByIdPayloadDto.id,
+        relations: findOneOrFailByIdPayloadDto.relations,
+      }),
+    );
     if (!admin) {
-      throw new BadRequestException(findOneOrFailByIdDto.failureMessage || 'Admin not found.');
+      throw new BadRequestException(findOneOrFailByIdPayloadDto.failureMessage || 'Admin not found.');
     }
     return admin;
   }
 
   // find one by email.
-  findOneByEmail(findOneByEmailDto: FindOneByEmailDto<Admin>): Promise<Admin | null> {
+  findOneByEmail(findOneByEmailPayloadDto: FindOneByEmailPayloadDto<Admin>): Promise<Admin | null> {
     return this.adminRepository.findOne({
-      where: { email: findOneByEmailDto.email },
-      relations: findOneByEmailDto.relations,
+      where: { email: findOneByEmailPayloadDto.email },
+      relations: findOneByEmailPayloadDto.relations,
     });
   }
 
   // find one or fail by email.
-  async findOneOrFailByEmail(findOneOrFailByEmailDto: FindOneOrFailByEmailDto<Admin>): Promise<Admin> {
-    const admin: Admin = await this.findOneByEmail(<FindOneOrFailByEmailDto<Admin>>{
-      email: findOneOrFailByEmailDto.email,
-      relations: findOneOrFailByEmailDto.relations,
-    });
+  async findOneOrFailByEmail(findOneOrFailByEmailPayloadDto: FindOneOrFailByEmailPayloadDto<Admin>): Promise<Admin> {
+    const admin: Admin = await this.findOneByEmail(
+      new FindOneOrFailByEmailPayloadDto<Admin>({
+        email: findOneOrFailByEmailPayloadDto.email,
+        relations: findOneOrFailByEmailPayloadDto.relations,
+      }),
+    );
     if (!admin) {
-      throw new BadRequestException(findOneOrFailByEmailDto.failureMessage || 'Admin not found.');
+      throw new BadRequestException(findOneOrFailByEmailPayloadDto.failureMessage || 'Admin not found.');
     }
     return admin;
   }
 
   // find all.
-  async findAll(findAllAdminsDto: FindAllAdminsDto): Promise<
+  async findAll(findAllAdminsRequestDto: FindAllAdminsRequestDto): Promise<
     | {
         total: number;
         perPage: number;
@@ -69,19 +73,19 @@ export class AdminsService {
       }
     | { total: number; data: Admin[] }
   > {
-    const offset: number = (findAllAdminsDto.page - 1) * findAllAdminsDto.limit;
+    const offset: number = (findAllAdminsRequestDto.page - 1) * findAllAdminsRequestDto.limit;
     const [admins, count]: [Admin[], number] = await this.adminRepository.findAndCount({
       relations: {
         adminsRoles: { role: true },
       },
-      skip: findAllAdminsDto.paginationEnable ? offset : null,
-      take: findAllAdminsDto.paginationEnable ? findAllAdminsDto.limit : null,
+      skip: findAllAdminsRequestDto.paginationEnable ? offset : null,
+      take: findAllAdminsRequestDto.paginationEnable ? findAllAdminsRequestDto.limit : null,
     });
-    return findAllAdminsDto.paginationEnable
+    return findAllAdminsRequestDto.paginationEnable
       ? {
-          perPage: findAllAdminsDto.limit,
-          currentPage: findAllAdminsDto.page,
-          lastPage: Math.ceil(count / findAllAdminsDto.limit),
+          perPage: findAllAdminsRequestDto.limit,
+          currentPage: findAllAdminsRequestDto.page,
+          lastPage: Math.ceil(count / findAllAdminsRequestDto.limit),
           total: count,
           data: admins,
         }
@@ -92,15 +96,17 @@ export class AdminsService {
   }
 
   // create.
-  async create(createAdminDto: CreateAdminDto): Promise<Admin> {
-    const adminByEmail = await this.findOneByEmail(<FindOneByEmailDto<Admin>>{
-      email: createAdminDto.email,
-    });
+  async create(createAdminRequestDto: CreateAdminRequestDto): Promise<Admin> {
+    const adminByEmail: Admin = await this.findOneByEmail(
+      new FindOneByEmailPayloadDto<Admin>({
+        email: createAdminRequestDto.email,
+      }),
+    );
     if (adminByEmail) {
       throw new BadRequestException('Email is already exists.');
     }
-    const savedAdmin = await this.adminRepository.save(await this.adminRepository.create(createAdminDto));
-    savedAdmin.adminsRoles = createAdminDto.rolesIds.map(
+    const savedAdmin = await this.adminRepository.save(await this.adminRepository.create(createAdminRequestDto));
+    savedAdmin.adminsRoles = createAdminRequestDto.rolesIds.map(
       (e: number) =>
         <AdminsRoles>{
           adminId: savedAdmin.id,
@@ -111,22 +117,26 @@ export class AdminsService {
   }
 
   // update.
-  async update(adminId: number, updateAdminDto: UpdateAdminDto): Promise<Admin> {
-    const admin: Admin = await this.findOneOrFailById(<FindOneOrFailByIdDto<Admin>>{
-      id: adminId,
-      relations: { adminsRoles: true },
-    });
-    if (updateAdminDto.email) {
-      const adminByEmail: Admin = await this.findOneByEmail(<FindOneByEmailDto<Admin>>{
-        email: updateAdminDto.email,
-      });
+  async update(adminId: number, updateAdminRequestDto: UpdateAdminRequestDto): Promise<Admin> {
+    const admin: Admin = await this.findOneOrFailById(
+      new FindOneOrFailByIdPayloadDto<Admin>({
+        id: adminId,
+        relations: { adminsRoles: true },
+      }),
+    );
+    if (updateAdminRequestDto.email) {
+      const adminByEmail: Admin = await this.findOneByEmail(
+        new FindOneByEmailPayloadDto<Admin>({
+          email: updateAdminRequestDto.email,
+        }),
+      );
       if (adminByEmail) {
         throw new BadRequestException('Email is already exists.');
       }
     }
-    if (updateAdminDto.rolesIds) {
+    if (updateAdminRequestDto.rolesIds) {
       await this.adminsRolesService.removeAllByAdminId(adminId);
-      admin.adminsRoles = updateAdminDto.rolesIds.map(
+      admin.adminsRoles = updateAdminRequestDto.rolesIds.map(
         (e: number) =>
           <AdminsRoles>{
             adminId: admin.id,
@@ -134,21 +144,23 @@ export class AdminsService {
           },
       );
     }
-    Object.assign(admin, updateAdminDto);
+    Object.assign(admin, updateAdminRequestDto);
     return this.adminRepository.save(admin);
   }
 
   // remove.
   async remove(id: number): Promise<Admin> {
-    const admin: Admin = await this.findOneOrFailById(<FindOneOrFailByIdDto<Admin>>{
-      id,
-    });
+    const admin: Admin = await this.findOneOrFailById(
+      new FindOneOrFailByIdPayloadDto<Admin>({
+        id,
+      }),
+    );
     return this.adminRepository.remove(admin);
   }
 
   // export all.
-  async exportAll(findAllAdminsDto: FindAllAdminsDto): Promise<StreamableFile> {
-    const { data }: { data: Admin[] } = await this.findAll(findAllAdminsDto);
+  async exportAll(findAllAdminsRequestDto: FindAllAdminsRequestDto): Promise<StreamableFile> {
+    const { data }: { data: Admin[] } = await this.findAll(findAllAdminsRequestDto);
     const workbook: Workbook = new Workbook();
     const worksheet: Worksheet = workbook.addWorksheet('مسؤولين النظام');
     // add headers.

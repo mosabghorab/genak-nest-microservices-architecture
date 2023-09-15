@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, FindOptionsRelations, ILike, Repository, SelectQueryBuilder } from 'typeorm';
-import { DateFilterDto, DateFilterOption, DateHelpers, FindOneByIdDto, FindOneOrderByIdAndServiceTypeDto, Order, SearchPayloadDto, ServiceType } from '@app/common';
+import { DateFilterOption, DateFilterPayloadDto, DateHelpers, FindOneByIdPayloadDto, FindOneOrderByIdAndServiceTypePayloadDto, Order, SearchPayloadDto, ServiceType } from '@app/common';
 
 @Injectable()
 export class OrdersService {
@@ -11,10 +11,10 @@ export class OrdersService {
   ) {}
 
   // find one by id.
-  findOneById(findOneByIdDto: FindOneByIdDto<Order>): Promise<Order | null> {
+  findOneById(findOneByIdPayloadDto: FindOneByIdPayloadDto<Order>): Promise<Order | null> {
     return this.orderRepository.findOne({
-      where: { id: findOneByIdDto.id },
-      relations: findOneByIdDto.relations,
+      where: { id: findOneByIdPayloadDto.id },
+      relations: findOneByIdPayloadDto.relations,
     });
   }
 
@@ -22,37 +22,38 @@ export class OrdersService {
   searchByUniqueId(searchPayloadDto: SearchPayloadDto<Order>): Promise<Order[]> {
     return this.orderRepository.find({
       where: { uniqueId: ILike(`%${searchPayloadDto.searchQuery}%`) },
+      relations: searchPayloadDto.relations,
     });
   }
 
   // find one by id and service type.
-  findOneByIdAndServiceType(findOneOrderByIdAndServiceTypeDto: FindOneOrderByIdAndServiceTypeDto): Promise<Order | null> {
+  findOneByIdAndServiceType(findOneOrderByIdAndServiceTypePayloadDto: FindOneOrderByIdAndServiceTypePayloadDto): Promise<Order | null> {
     return this.orderRepository.findOne({
       where: {
-        id: findOneOrderByIdAndServiceTypeDto.id,
-        serviceType: findOneOrderByIdAndServiceTypeDto.serviceType,
+        id: findOneOrderByIdAndServiceTypePayloadDto.id,
+        serviceType: findOneOrderByIdAndServiceTypePayloadDto.serviceType,
       },
-      relations: findOneOrderByIdAndServiceTypeDto.relations,
+      relations: findOneOrderByIdAndServiceTypePayloadDto.relations,
     });
   }
 
   // count.
-  count(serviceType?: ServiceType, dateFilterDto?: DateFilterDto): Promise<number> {
+  count(serviceType?: ServiceType, dateFilterPayloadDto?: DateFilterPayloadDto): Promise<number> {
     let dateRange: { startDate: Date; endDate: Date };
-    if (dateFilterDto) {
-      if (dateFilterDto.dateFilterOption === DateFilterOption.CUSTOM) {
+    if (dateFilterPayloadDto) {
+      if (dateFilterPayloadDto.dateFilterOption === DateFilterOption.CUSTOM) {
         dateRange = {
-          startDate: dateFilterDto.startDate,
-          endDate: dateFilterDto.endDate,
+          startDate: dateFilterPayloadDto.startDate,
+          endDate: dateFilterPayloadDto.endDate,
         };
       } else {
-        dateRange = DateHelpers.getDateRangeForDateFilterOption(dateFilterDto.dateFilterOption);
+        dateRange = DateHelpers.getDateRangeForDateFilterOption(dateFilterPayloadDto.dateFilterOption);
       }
     }
     return this.orderRepository.count({
       where: {
         serviceType,
-        createdAt: dateFilterDto?.dateFilterOption ? Between(dateRange.startDate, dateRange.endDate) : null,
+        createdAt: dateFilterPayloadDto?.dateFilterOption ? Between(dateRange.startDate, dateRange.endDate) : null,
       },
     });
   }
@@ -60,26 +61,26 @@ export class OrdersService {
   // total sales.
   async totalSales(
     serviceType: ServiceType,
-    dateFilterDto?: DateFilterDto,
+    dateFilterPayloadDto?: DateFilterPayloadDto,
   ): Promise<{
     totalSales: string;
   }> {
     let dateRange: { startDate: Date; endDate: Date };
-    if (dateFilterDto) {
-      if (dateFilterDto.dateFilterOption === DateFilterOption.CUSTOM) {
+    if (dateFilterPayloadDto) {
+      if (dateFilterPayloadDto.dateFilterOption === DateFilterOption.CUSTOM) {
         dateRange = {
-          startDate: dateFilterDto.startDate,
-          endDate: dateFilterDto.endDate,
+          startDate: dateFilterPayloadDto.startDate,
+          endDate: dateFilterPayloadDto.endDate,
         };
       } else {
-        dateRange = DateHelpers.getDateRangeForDateFilterOption(dateFilterDto.dateFilterOption);
+        dateRange = DateHelpers.getDateRangeForDateFilterOption(dateFilterPayloadDto.dateFilterOption);
       }
     }
     const queryBuilder: SelectQueryBuilder<Order> = this.orderRepository
       .createQueryBuilder('order')
       .select('SUM(order.total)', 'totalSales')
       .where('order.serviceType = :serviceType', { serviceType });
-    if (dateFilterDto?.dateFilterOption) {
+    if (dateFilterPayloadDto?.dateFilterOption) {
       queryBuilder.andWhere('order.createdAt BETWEEN :startDate AND :endDate', {
         startDate: dateRange.startDate,
         endDate: dateRange.endDate,

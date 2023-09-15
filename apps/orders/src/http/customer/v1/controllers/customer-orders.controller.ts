@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
-import { CreateOrderDto } from '../dtos/create-order.dto';
-import { FindAllOrdersDto } from '../dtos/find-all-orders.dto';
-import { AllowFor, AuthedUser, GetAuthedUser, Order, OrderDto, Serialize, UserType } from '@app/common';
+import { CreateOrderRequestDto } from '../dtos/create-order-request.dto';
+import { FindAllOrdersRequestDto } from '../dtos/find-all-orders-request.dto';
+import { AllowFor, AuthedUser, GetAuthedUser, Order, OrderResponseDto, Serialize, UserType } from '@app/common';
 import { CustomerOrdersService } from '../services/customer-orders.service';
 
 @AllowFor(UserType.CUSTOMER)
@@ -9,19 +9,19 @@ import { CustomerOrdersService } from '../services/customer-orders.service';
 export class CustomerOrdersController {
   constructor(private readonly customerOrdersService: CustomerOrdersService) {}
 
-  @Serialize(OrderDto, 'Order created successfully.')
+  @Serialize(OrderResponseDto, 'Order created successfully.')
   @Post()
-  create(@GetAuthedUser() authedUser: AuthedUser, @Body() createOrderDto: CreateOrderDto): Promise<Order> {
-    return this.customerOrdersService.create(authedUser.id, createOrderDto);
+  create(@GetAuthedUser() authedUser: AuthedUser, @Body() createOrderRequestDto: CreateOrderRequestDto): Promise<Order> {
+    return this.customerOrdersService.create(authedUser.id, createOrderRequestDto);
   }
 
-  @Serialize(OrderDto, 'All orders.')
+  @Serialize(OrderResponseDto, 'All orders.')
   @Get()
-  findAll(@GetAuthedUser() authedUser: AuthedUser, @Query() findAllOrdersDto: FindAllOrdersDto): Promise<Order[]> {
-    return this.customerOrdersService.findAll(authedUser.id, findAllOrdersDto);
+  findAll(@GetAuthedUser() authedUser: AuthedUser, @Query() findAllOrdersRequestDto: FindAllOrdersRequestDto): Promise<Order[]> {
+    return this.customerOrdersService.findAll(authedUser.id, findAllOrdersRequestDto);
   }
 
-  @Serialize(OrderDto, 'Order re ordered successfully.')
+  @Serialize(OrderResponseDto, 'Order re ordered successfully.')
   @Post(':id/re-order')
   reOrder(@Param('id') id: number): Promise<Order> {
     return this.customerOrdersService.reOrder(id);

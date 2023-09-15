@@ -1,5 +1,5 @@
-import { SendSmsNotificationDto } from '@app/common';
+import { SendSmsNotificationPayloadDto } from '@app/common';
 
 export class VerificationCodeCreatedEvent {
-  constructor(public readonly sendSmsNotificationDto: SendSmsNotificationDto) {}
+  constructor(public readonly sendSmsNotificationPayloadDto: SendSmsNotificationPayloadDto) {}
 }

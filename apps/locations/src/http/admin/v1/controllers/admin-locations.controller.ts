@@ -1,28 +1,8 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  Patch,
-  Post,
-  Query,
-} from '@nestjs/common';
-import {
-  AdminMustCanDo,
-  AllowFor,
-  FindOneOrFailByIdDto,
-  Location,
-  LocationDto,
-  PermissionAction,
-  PermissionGroup,
-  PermissionsTarget,
-  Serialize,
-  UserType,
-} from '@app/common';
-import { CreateLocationDto } from '../dtos/create-location.dto';
-import { FindAllLocationsDto } from '../dtos/find-all-locations.dto';
-import { UpdateLocationDto } from '../dtos/update-location.dto';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
+import { AdminMustCanDo, AllowFor, FindOneOrFailByIdPayloadDto, Location, LocationResponseDto, PermissionAction, PermissionGroup, PermissionsTarget, Serialize, UserType } from '@app/common';
+import { CreateLocationRequestDto } from '../dtos/create-location-request.dto';
+import { FindAllLocationsRequestDto } from '../dtos/find-all-locations-request.dto';
+import { UpdateLocationRequestDto } from '../dtos/update-location-request.dto';
 import { AdminLocationsService } from '../services/admin-locations.service';
 
 @AllowFor(UserType.ADMIN)
@@ -32,44 +12,39 @@ export class AdminLocationsController {
   constructor(private readonly adminLocationsService: AdminLocationsService) {}
 
   @AdminMustCanDo(PermissionAction.CREATE)
-  @Serialize(LocationDto, 'Location created successfully.')
+  @Serialize(LocationResponseDto, 'Location created successfully.')
   @Post()
-  create(@Body() createLocationDto: CreateLocationDto): Promise<Location> {
-    return this.adminLocationsService.create(createLocationDto);
+  create(@Body() createLocationRequestDto: CreateLocationRequestDto): Promise<Location> {
+    return this.adminLocationsService.create(createLocationRequestDto);
   }
 
   @AdminMustCanDo(PermissionAction.VIEW)
-  @Serialize(LocationDto, 'All locations.')
+  @Serialize(LocationResponseDto, 'All locations.')
   @Get()
-  findAll(
-    @Query() findAllLocationsDto: FindAllLocationsDto,
-  ): Promise<Location[]> {
-    return this.adminLocationsService.findAll(findAllLocationsDto);
+  findAll(@Query() findAllLocationsRequestDto: FindAllLocationsRequestDto): Promise<Location[]> {
+    return this.adminLocationsService.findAll(findAllLocationsRequestDto);
   }
 
   @AdminMustCanDo(PermissionAction.VIEW)
-  @Serialize(LocationDto, 'One location.')
+  @Serialize(LocationResponseDto, 'One location.')
   @Get(':id')
   findOne(@Param('id') id: number): Promise<Location> {
-    return this.adminLocationsService.findOneOrFailById(<
-      FindOneOrFailByIdDto<Location>
-    >{
-      id,
-    });
+    return this.adminLocationsService.findOneOrFailById(
+      new FindOneOrFailByIdPayloadDto<Location>({
+        id,
+      }),
+    );
   }
 
   @AdminMustCanDo(PermissionAction.UPDATE)
-  @Serialize(LocationDto, 'Location updated successfully.')
+  @Serialize(LocationResponseDto, 'Location updated successfully.')
   @Patch(':id')
-  update(
-    @Param('id') id: number,
-    @Body() updateLocationDto: UpdateLocationDto,
-  ): Promise<Location> {
-    return this.adminLocationsService.update(id, updateLocationDto);
+  update(@Param('id') id: number, @Body() updateLocationRequestDto: UpdateLocationRequestDto): Promise<Location> {
+    return this.adminLocationsService.update(id, updateLocationRequestDto);
   }
 
   @AdminMustCanDo(PermissionAction.DELETE)
-  @Serialize(LocationDto, 'Location deleted successfully.')
+  @Serialize(LocationResponseDto, 'Location deleted successfully.')
   @Delete(':id')
   remove(@Param('id') id: number): Promise<Location> {
     return this.adminLocationsService.remove(id);

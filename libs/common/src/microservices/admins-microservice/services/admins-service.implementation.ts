@@ -1,12 +1,12 @@
 import {
   Admin,
   AdminsMicroserviceConstants,
-  AdminUpdatePasswordDto,
-  AdminUpdateProfileDto,
-  FindOneByEmailDto,
-  FindOneByIdDto,
-  FindOneOrFailByEmailDto,
-  FindOneOrFailByIdDto,
+  AdminUpdatePasswordPayloadDto,
+  AdminUpdateProfilePayloadDto,
+  FindOneByEmailPayloadDto,
+  FindOneByIdPayloadDto,
+  FindOneOrFailByEmailPayloadDto,
+  FindOneOrFailByIdPayloadDto,
   IAdminsService,
   PermissionGroup,
   SearchPayloadDto,
@@ -20,49 +20,53 @@ export class AdminsServiceImpl implements IAdminsService {
   constructor(private readonly adminsMicroservice: ClientProxy, private readonly version: string) {}
 
   // find one by id.
-  findOneById(findOneByIdDto: FindOneByIdDto<Admin>): Promise<Admin | null> {
+  findOneById(findOneByIdPayloadDto: FindOneByIdPayloadDto<Admin>): Promise<Admin | null> {
     return firstValueFrom<Admin>(
-      this.adminsMicroservice.send<Admin, FindOneByIdDto<Admin>>(
+      this.adminsMicroservice.send<Admin, { findOneByIdPayloadDto: FindOneByIdPayloadDto<Admin> }>(
         {
           cmd: `${AdminsMicroserviceConstants.ADMINS_SERVICE_FIND_ONE_BY_ID_MESSAGE_PATTERN}/v${this.version}`,
         },
-        findOneByIdDto,
+        { findOneByIdPayloadDto },
       ),
     );
   }
 
   // find one or fail by id.
-  async findOneOrFailById(findOneOrFailByIdDto: FindOneOrFailByIdDto<Admin>): Promise<Admin> {
-    const admin: Admin = await this.findOneById(<FindOneByIdDto<Admin>>{
-      id: findOneOrFailByIdDto.id,
-      relations: findOneOrFailByIdDto.relations,
-    });
+  async findOneOrFailById(findOneOrFailByIdPayloadDto: FindOneOrFailByIdPayloadDto<Admin>): Promise<Admin> {
+    const admin: Admin = await this.findOneById(
+      new FindOneByIdPayloadDto<Admin>({
+        id: findOneOrFailByIdPayloadDto.id,
+        relations: findOneOrFailByIdPayloadDto.relations,
+      }),
+    );
     if (!admin) {
-      throw new NotFoundException(findOneOrFailByIdDto.failureMessage || 'Admin not found.');
+      throw new NotFoundException(findOneOrFailByIdPayloadDto.failureMessage || 'Admin not found.');
     }
     return plainToInstance(Admin, admin);
   }
 
   // find one by email.
-  findOneByEmail(findOneByEmailDto: FindOneByEmailDto<Admin>): Promise<Admin | null> {
+  findOneByEmail(findOneByEmailPayloadDto: FindOneByEmailPayloadDto<Admin>): Promise<Admin | null> {
     return firstValueFrom<Admin>(
-      this.adminsMicroservice.send<Admin, FindOneByEmailDto<Admin>>(
+      this.adminsMicroservice.send<Admin, { findOneByEmailPayloadDto: FindOneByEmailPayloadDto<Admin> }>(
         {
           cmd: `${AdminsMicroserviceConstants.ADMINS_SERVICE_FIND_ONE_BY_EMAIL_MESSAGE_PATTERN}/v${this.version}`,
         },
-        findOneByEmailDto,
+        { findOneByEmailPayloadDto },
       ),
     );
   }
 
   // find one or fail by email.
-  async findOneOrFailByEmail(findOneOrFailByEmailDto: FindOneOrFailByEmailDto<Admin>): Promise<Admin> {
-    const admin: Admin = await this.findOneByEmail(<FindOneByEmailDto<Admin>>{
-      email: findOneOrFailByEmailDto.email,
-      relations: findOneOrFailByEmailDto.relations,
-    });
+  async findOneOrFailByEmail(findOneOrFailByEmailPayloadDto: FindOneOrFailByEmailPayloadDto<Admin>): Promise<Admin> {
+    const admin: Admin = await this.findOneByEmail(
+      new FindOneByEmailPayloadDto<Admin>({
+        email: findOneOrFailByEmailPayloadDto.email,
+        relations: findOneOrFailByEmailPayloadDto.relations,
+      }),
+    );
     if (!admin) {
-      throw new NotFoundException(findOneOrFailByEmailDto.failureMessage || 'Admin not found.');
+      throw new NotFoundException(findOneOrFailByEmailPayloadDto.failureMessage || 'Admin not found.');
     }
     return plainToInstance(Admin, admin);
   }
@@ -94,25 +98,25 @@ export class AdminsServiceImpl implements IAdminsService {
   }
 
   // update password.
-  updatePassword(adminUpdatePasswordDto: AdminUpdatePasswordDto): Promise<Admin> {
+  updatePassword(adminUpdatePasswordPayloadDto: AdminUpdatePasswordPayloadDto): Promise<Admin> {
     return firstValueFrom<Admin>(
-      this.adminsMicroservice.send<Admin, AdminUpdatePasswordDto>(
+      this.adminsMicroservice.send<Admin, { adminUpdatePasswordPayloadDto: AdminUpdatePasswordPayloadDto }>(
         {
           cmd: `${AdminsMicroserviceConstants.ADMINS_SERVICE_UPDATE_PASSWORD_MESSAGE_PATTERN}/v${this.version}`,
         },
-        adminUpdatePasswordDto,
+        { adminUpdatePasswordPayloadDto },
       ),
     );
   }
 
   // update profile.
-  updateProfile(adminUpdateProfileDto: AdminUpdateProfileDto): Promise<Admin> {
+  updateProfile(adminUpdateProfilePayloadDto: AdminUpdateProfilePayloadDto): Promise<Admin> {
     return firstValueFrom<Admin>(
-      this.adminsMicroservice.send<Admin, AdminUpdateProfileDto>(
+      this.adminsMicroservice.send<Admin, { adminUpdateProfilePayloadDto: AdminUpdateProfilePayloadDto }>(
         {
           cmd: `${AdminsMicroserviceConstants.ADMINS_SERVICE_UPDATE_PROFILE_MESSAGE_PATTERN}/v${this.version}`,
         },
-        adminUpdateProfileDto,
+        { adminUpdateProfilePayloadDto },
       ),
     );
   }

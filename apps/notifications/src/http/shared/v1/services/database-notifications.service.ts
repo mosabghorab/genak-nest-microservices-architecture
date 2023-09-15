@@ -4,7 +4,7 @@ import {
   Complain,
   ComplainsMicroserviceConnection,
   ComplainsMicroserviceConstants,
-  FindOneByIdDto,
+  FindOneByIdPayloadDto,
   Notification,
   NotificationTarget,
   Order,
@@ -42,13 +42,17 @@ export class DatabaseNotificationsService {
     });
     for (const notification of notifications) {
       if (notification.notificationTarget === NotificationTarget.ORDER) {
-        notification['order'] = await this.ordersMicroserviceConnection.ordersServiceImpl.findOneById(<FindOneByIdDto<Order>>{
-          id: notification.notificationTargetId,
-        });
+        notification['order'] = await this.ordersMicroserviceConnection.ordersServiceImpl.findOneById(
+          new FindOneByIdPayloadDto<Order>({
+            id: notification.notificationTargetId,
+          }),
+        );
       } else if (notification.notificationTarget === NotificationTarget.COMPLAIN) {
-        notification['complain'] = await this.complainsMicroserviceConnection.complainsServiceImpl.findOneById(<FindOneByIdDto<Complain>>{
-          id: notification.notificationTargetId,
-        });
+        notification['complain'] = await this.complainsMicroserviceConnection.complainsServiceImpl.findOneById(
+          new FindOneByIdPayloadDto<Complain>({
+            id: notification.notificationTargetId,
+          }),
+        );
       }
     }
     return notifications;

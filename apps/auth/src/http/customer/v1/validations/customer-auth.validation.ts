@@ -1,17 +1,17 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import {
   Customer,
-  CustomerSignUpDto,
   CustomersMicroserviceConnection,
   CustomersMicroserviceConstants,
-  FindOneByPhoneDto,
-  FindOneOrFailByIdDto,
+  FindOneByPhonePayloadDto,
+  FindOneOrFailByIdPayloadDto,
   Location,
   LocationsMicroserviceConnection,
   LocationsMicroserviceConstants,
 } from '@app/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { Constants } from '../../../../constants';
+import { SignUpDto } from '../dtos/sign-up.dto';
 
 @Injectable()
 export class CustomerAuthValidation {
@@ -29,21 +29,27 @@ export class CustomerAuthValidation {
   }
 
   // validate sign up.
-  async validateSignUp(customerSignUpDto: CustomerSignUpDto): Promise<void> {
-    const customerByPhone: Customer = await this.customersMicroserviceConnection.customersServiceImpl.findOneByPhone(<FindOneByPhoneDto<Customer>>{
-      phone: customerSignUpDto.phone,
-    });
+  async validateSignUp(signUpDto: SignUpDto): Promise<void> {
+    const customerByPhone: Customer = await this.customersMicroserviceConnection.customersServiceImpl.findOneByPhone(
+      new FindOneByPhonePayloadDto<Customer>({
+        phone: signUpDto.phone,
+      }),
+    );
     if (customerByPhone) {
       throw new BadRequestException('Phone is already exists.');
     }
-    const governorate: Location = await this.locationsMicroserviceConnection.locationsServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Location>>{
-      id: customerSignUpDto.governorateId,
-      failureMessage: 'Governorate not found.',
-    });
-    const region: Location = await this.locationsMicroserviceConnection.locationsServiceImpl.findOneOrFailById(<FindOneOrFailByIdDto<Location>>{
-      id: customerSignUpDto.regionId,
-      failureMessage: 'Region not found.',
-    });
+    const governorate: Location = await this.locationsMicroserviceConnection.locationsServiceImpl.findOneOrFailById(
+      new FindOneOrFailByIdPayloadDto<Location>({
+        id: signUpDto.governorateId,
+        failureMessage: 'Governorate not found.',
+      }),
+    );
+    const region: Location = await this.locationsMicroserviceConnection.locationsServiceImpl.findOneOrFailById(
+      new FindOneOrFailByIdPayloadDto<Location>({
+        id: signUpDto.regionId,
+        failureMessage: 'Region not found.',
+      }),
+    );
     if (region.parentId !== governorate.id) {
       throw new BadRequestException('The provided region is not a child for the provided governorate.');
     }

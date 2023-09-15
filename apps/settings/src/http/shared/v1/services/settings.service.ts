@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Setting } from '@app/common';
-import { FindAllSettingsDto } from '../dtos/find-all-settings.dto';
+import { FindAllSettingsRequestDto } from '../dtos/find-all-settings-request.dto';
 
 @Injectable()
 export class SettingsService {
@@ -12,9 +12,9 @@ export class SettingsService {
   ) {}
 
   // find all.
-  findAll(findAllSettingsDto: FindAllSettingsDto): Promise<Setting[]> {
+  findAll(findAllSettingsRequestDto: FindAllSettingsRequestDto): Promise<Setting[]> {
     return this.settingRepository.find({
-      where: { key: findAllSettingsDto.key },
+      where: { key: findAllSettingsRequestDto.key },
     });
   }
 }

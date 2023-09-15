@@ -1,16 +1,16 @@
 import { Controller } from '@nestjs/common';
 import {
-  DateFilterDto,
-  FindOneByIdDto,
-  FindOneByPhoneDto,
+  DateFilterPayloadDto,
+  FindOneByIdPayloadDto,
+  FindOneByPhonePayloadDto,
   SearchPayloadDto,
   ServiceType,
   Vendor,
-  VendorSignUpDto,
+  VendorSignUpPayloadDto,
   VendorsMicroserviceConstants,
   VendorStatus,
-  VendorUpdateProfileDto,
-  VendorUploadDocumentsDto,
+  VendorUpdateProfilePayloadDto,
+  VendorUploadDocumentsPayloadDto,
 } from '@app/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { VendorsService } from '../services/vendors.service';
@@ -25,15 +25,15 @@ export class VendorsController {
   @MessagePattern({
     cmd: `${VendorsMicroserviceConstants.VENDORS_SERVICE_FIND_ONE_BY_ID_MESSAGE_PATTERN}/v${VERSION}`,
   })
-  findOneById(@Payload() findOneByIdDto: FindOneByIdDto<Vendor>): Promise<Vendor | null> {
-    return this.vendorsService.findOneById(findOneByIdDto);
+  findOneById(@Payload('findOneByIdPayloadDto') findOneByIdPayloadDto: FindOneByIdPayloadDto<Vendor>): Promise<Vendor | null> {
+    return this.vendorsService.findOneById(findOneByIdPayloadDto);
   }
 
   @MessagePattern({
     cmd: `${VendorsMicroserviceConstants.VENDORS_SERVICE_FIND_ONE_BY_PHONE_MESSAGE_PATTERN}/v${VERSION}`,
   })
-  findOneByPhone(@Payload() findOneByPhoneDto: FindOneByPhoneDto<Vendor>): Promise<Vendor | null> {
-    return this.vendorsService.findOneByPhone(findOneByPhoneDto);
+  findOneByPhone(@Payload('findOneByPhonePayloadDto') findOneByPhonePayloadDto: FindOneByPhonePayloadDto<Vendor>): Promise<Vendor | null> {
+    return this.vendorsService.findOneByPhone(findOneByPhonePayloadDto);
   }
 
   @MessagePattern({
@@ -46,8 +46,8 @@ export class VendorsController {
   @MessagePattern({
     cmd: `${VendorsMicroserviceConstants.VENDORS_SERVICE_CREATE_MESSAGE_PATTERN}/v${VERSION}`,
   })
-  create(@Payload('vendorSignUpDto') vendorSignUpDto: VendorSignUpDto, @Payload('avatar') avatar?: Express.Multer.File): Promise<Vendor> {
-    return this.vendorsService.create(vendorSignUpDto, avatar);
+  create(@Payload('vendorSignUpPayloadDto') vendorSignUpPayloadDto: VendorSignUpPayloadDto, @Payload('avatar') avatar?: Express.Multer.File): Promise<Vendor> {
+    return this.vendorsService.create(vendorSignUpPayloadDto, avatar);
   }
 
   @MessagePattern({
@@ -60,15 +60,15 @@ export class VendorsController {
   @MessagePattern({
     cmd: `${VendorsMicroserviceConstants.VENDORS_SERVICE_UPLOAD_DOCUMENTS_MESSAGE_PATTERN}/v${VERSION}`,
   })
-  uploadDocuments(@Payload() vendorUploadDocumentsDto: VendorUploadDocumentsDto): Promise<Vendor> {
-    return this.vendorsService.uploadDocuments(vendorUploadDocumentsDto);
+  uploadDocuments(@Payload('vendorUploadDocumentsPayloadDto') vendorUploadDocumentsPayloadDto: VendorUploadDocumentsPayloadDto): Promise<Vendor> {
+    return this.vendorsService.uploadDocuments(vendorUploadDocumentsPayloadDto);
   }
 
   @MessagePattern({
     cmd: `${VendorsMicroserviceConstants.VENDORS_SERVICE_UPDATE_PROFILE_MESSAGE_PATTERN}/v${VERSION}`,
   })
-  updateProfile(@Payload() vendorUpdateProfileDto: VendorUpdateProfileDto): Promise<Vendor> {
-    return this.vendorsService.updateProfile(vendorUpdateProfileDto);
+  updateProfile(@Payload('vendorUpdateProfilePayloadDto') vendorUpdateProfilePayloadDto: VendorUpdateProfilePayloadDto): Promise<Vendor> {
+    return this.vendorsService.updateProfile(vendorUpdateProfilePayloadDto);
   }
 
   @MessagePattern({
@@ -88,7 +88,7 @@ export class VendorsController {
   @MessagePattern({
     cmd: `${VendorsMicroserviceConstants.VENDORS_SERVICE_FIND_BEST_SELLERS_WITH_ORDERS_COUNT_MESSAGE_PATTERN}/v${VERSION}`,
   })
-  findBestSellersWithOrdersCount(@Payload('serviceType') serviceType: ServiceType, @Payload('dateFilterDto') dateFilterDto: DateFilterDto): Promise<Vendor[]> {
-    return this.vendorsService.findBestSellersWithOrdersCount(serviceType, dateFilterDto);
+  findBestSellersWithOrdersCount(@Payload('serviceType') serviceType: ServiceType, @Payload('dateFilterPayloadDto') dateFilterPayloadDto: DateFilterPayloadDto): Promise<Vendor[]> {
+    return this.vendorsService.findBestSellersWithOrdersCount(serviceType, dateFilterPayloadDto);
   }
 }
