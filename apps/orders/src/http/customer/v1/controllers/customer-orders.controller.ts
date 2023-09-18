@@ -12,7 +12,7 @@ export class CustomerOrdersController {
   @Serialize(OrderResponseDto, 'Order created successfully.')
   @Post()
   create(@GetAuthedUser() authedUser: AuthedUser, @Body() createOrderRequestDto: CreateOrderRequestDto): Promise<Order> {
-    return this.customerOrdersService.create(authedUser.id, createOrderRequestDto);
+    return this.customerOrdersService.create(authedUser, createOrderRequestDto);
   }
 
   @Serialize(OrderResponseDto, 'All orders.')
@@ -23,7 +23,7 @@ export class CustomerOrdersController {
 
   @Serialize(OrderResponseDto, 'Order re ordered successfully.')
   @Post(':id/re-order')
-  reOrder(@Param('id') id: number): Promise<Order> {
-    return this.customerOrdersService.reOrder(id);
+  reOrder(@GetAuthedUser() authedUser: AuthedUser, @Param('id') id: number): Promise<Order> {
+    return this.customerOrdersService.reOrder(authedUser, id);
   }
 }

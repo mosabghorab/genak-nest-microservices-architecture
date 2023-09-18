@@ -2,7 +2,9 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UploadedFile,
 import {
   AdminMustCanDo,
   AllowFor,
+  AuthedUser,
   FindOneOrFailByIdPayloadDto,
+  GetAuthedUser,
   Helpers,
   OnBoardingScreen,
   OnBoardingScreenResponseDto,
@@ -28,8 +30,12 @@ export class AdminOnBoardingScreensController {
   @Serialize(OnBoardingScreenResponseDto, 'On boarding screen created successfully.')
   @UseInterceptors(FileInterceptor('image'))
   @Post()
-  create(@Body() createOnBoardingScreenRequestDto: CreateOnBoardingScreenRequestDto, @UploadedFile(Helpers.defaultImageValidator()) image: Express.Multer.File): Promise<OnBoardingScreen> {
-    return this.adminOnBoardingScreensService.create(createOnBoardingScreenRequestDto, image);
+  create(
+    @GetAuthedUser() authedUser: AuthedUser,
+    @Body() createOnBoardingScreenRequestDto: CreateOnBoardingScreenRequestDto,
+    @UploadedFile(Helpers.defaultImageValidator()) image: Express.Multer.File,
+  ): Promise<OnBoardingScreen> {
+    return this.adminOnBoardingScreensService.create(authedUser, createOnBoardingScreenRequestDto, image);
   }
 
   @AdminMustCanDo(PermissionAction.VIEW)
@@ -55,11 +61,12 @@ export class AdminOnBoardingScreensController {
   @UseInterceptors(FileInterceptor('image'))
   @Patch(':id')
   update(
+    @GetAuthedUser() authedUser: AuthedUser,
     @Param('id') id: number,
     @Body() updateOnBoardingScreenRequestDto: UpdateOnBoardingScreenRequestDto,
     @UploadedFile(Helpers.defaultImageValidator(false)) image?: Express.Multer.File,
   ): Promise<OnBoardingScreen> {
-    return this.adminOnBoardingScreensService.update(id, updateOnBoardingScreenRequestDto, image);
+    return this.adminOnBoardingScreensService.update(authedUser, id, updateOnBoardingScreenRequestDto, image);
   }
 
   @AdminMustCanDo(PermissionAction.DELETE)

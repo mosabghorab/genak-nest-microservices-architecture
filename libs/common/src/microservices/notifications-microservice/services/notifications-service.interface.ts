@@ -1,11 +1,11 @@
-import { CreateDatabaseNotificationPayloadDto, SendPushNotificationPayloadDto, SendSmsNotificationPayloadDto } from '@app/common/dtos';
+import { CreateDatabaseNotificationPayloadDto, RpcAuthenticationPayloadDto, SendPushNotificationPayloadDto, SendSmsNotificationPayloadDto } from '@app/common/dtos';
 
 export interface INotificationsService {
   // send fcm notification.
-  sendFcmNotification(sendPushNotificationPayloadDto: SendPushNotificationPayloadDto): void;
+  sendFcmNotification(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto, sendPushNotificationPayloadDto: SendPushNotificationPayloadDto): void;
 
   // create database notification.
-  createDatabaseNotification(createDatabaseNotificationPayloadDto: CreateDatabaseNotificationPayloadDto): void;
+  createDatabaseNotification(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto, createDatabaseNotificationPayloadDto: CreateDatabaseNotificationPayloadDto): void;
 
   // send sms notification.
   sendSmsNotification(sendSmsNotificationPayloadDto: SendSmsNotificationPayloadDto): void;

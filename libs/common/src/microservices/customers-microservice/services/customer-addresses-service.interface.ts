@@ -1,9 +1,9 @@
-import { CustomerAddress, FindOneByIdPayloadDto, FindOneOrFailByIdPayloadDto } from '@app/common';
+import { CustomerAddress, FindOneByIdPayloadDto, FindOneOrFailByIdPayloadDto, RpcAuthenticationPayloadDto } from '@app/common';
 
 export interface ICustomerAddressesService {
   // find one by id.
-  findOneById(findOneByIdPayloadDto: FindOneByIdPayloadDto<CustomerAddress>): Promise<CustomerAddress | null>;
+  findOneById(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto, findOneByIdPayloadDto: FindOneByIdPayloadDto<CustomerAddress>): Promise<CustomerAddress | null>;
 
   // find one or fail by id.
-  findOneOrFailById(findOneOrFailByIdPayloadDto: FindOneOrFailByIdPayloadDto<CustomerAddress>): Promise<CustomerAddress | null>;
+  findOneOrFailById(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto, findOneOrFailByIdPayloadDto: FindOneOrFailByIdPayloadDto<CustomerAddress>): Promise<CustomerAddress | null>;
 }

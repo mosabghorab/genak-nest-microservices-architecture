@@ -1,7 +1,17 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { FindOneByIdPayloadDto, FindOneOrFailByIdPayloadDto, Order, OrderStatus, Vendor, VendorsMicroserviceConnection, VendorsMicroserviceConstants } from '@app/common';
+import {
+  AuthedUser,
+  FindOneByIdPayloadDto,
+  FindOneOrFailByIdPayloadDto,
+  Order,
+  OrderStatus,
+  RpcAuthenticationPayloadDto,
+  Vendor,
+  VendorsMicroserviceConnection,
+  VendorsMicroserviceConstants,
+} from '@app/common';
 import { FindAllOrdersRequestDto } from '../dtos/find-all-orders-request.dto';
 import { ClientProxy } from '@nestjs/microservices';
 import { Constants } from '../../../../constants';
@@ -42,10 +52,11 @@ export class VendorOrdersService {
   }
 
   // find all.
-  async findAll(vendorId: number, findAllOrdersRequestDto: FindAllOrdersRequestDto): Promise<Order[]> {
+  async findAll(authedUser: AuthedUser, findAllOrdersRequestDto: FindAllOrdersRequestDto): Promise<Order[]> {
     const vendor: Vendor = await this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneOrFailById(
+      new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
       new FindOneOrFailByIdPayloadDto<Vendor>({
-        id: vendorId,
+        id: authedUser.id,
       }),
     );
     return this.orderRepository
@@ -54,7 +65,7 @@ export class VendorOrdersService {
       .leftJoinAndSelect('order.customerAddress', 'customerAddress')
       .leftJoinAndSelect('order.orderItems', 'orderItem')
       .leftJoinAndSelect('order.orderStatusHistories', 'orderStatusHistory')
-      .where('order.vendorId = :vendorId', { vendorId })
+      .where('order.vendorId = :vendorId', { vendorId: authedUser.id })
       .andWhere('order.serviceType = :serviceType', {
         serviceType: vendor.serviceType,
       })

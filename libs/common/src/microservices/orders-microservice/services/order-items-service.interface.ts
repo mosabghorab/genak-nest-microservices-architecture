@@ -1,8 +1,11 @@
-import { DateFilterPayloadDto } from '@app/common';
+import { DateFilterPayloadDto, RpcAuthenticationPayloadDto } from '@app/common';
 
 export interface IOrderItemsService {
   // find custom order items total sales and quantities.
-  findCustomOrderItemsTotalSalesAndQuantities(dateFilterPayloadDto?: DateFilterPayloadDto): Promise<{
+  findCustomOrderItemsTotalSalesAndQuantities(
+    rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto,
+    dateFilterPayloadDto?: DateFilterPayloadDto,
+  ): Promise<{
     totalSales: string;
     totalQuantities: string;
   }>;

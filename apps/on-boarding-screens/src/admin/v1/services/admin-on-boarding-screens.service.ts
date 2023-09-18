@@ -2,11 +2,13 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import {
+  AuthedUser,
   DeleteFilePayloadDto,
   FindOneByIdPayloadDto,
   FindOneOrFailByIdPayloadDto,
   OnBoardingScreen,
   OrderByType,
+  RpcAuthenticationPayloadDto,
   StorageMicroserviceConnection,
   StorageMicroserviceConstants,
   UploadFilePayloadDto,
@@ -63,8 +65,9 @@ export class AdminOnBoardingScreensService {
   }
 
   // create.
-  async create(createOnBoardingScreenRequestDto: CreateOnBoardingScreenRequestDto, image: Express.Multer.File): Promise<OnBoardingScreen> {
+  async create(authedUser: AuthedUser, createOnBoardingScreenRequestDto: CreateOnBoardingScreenRequestDto, image: Express.Multer.File): Promise<OnBoardingScreen> {
     const imageUrl: string = await this.storageMicroserviceConnection.storageServiceImpl.uploadFile(
+      new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
       new UploadFilePayloadDto({
         prefixPath: Constants.ON_BOARDING_SCREENS_IMAGES_PREFIX_PATH,
         file: image,
@@ -79,7 +82,7 @@ export class AdminOnBoardingScreensService {
   }
 
   // update.
-  async update(id: number, updateOnBoardingScreenRequestDto: UpdateOnBoardingScreenRequestDto, image?: Express.Multer.File): Promise<OnBoardingScreen> {
+  async update(authedUser: AuthedUser, id: number, updateOnBoardingScreenRequestDto: UpdateOnBoardingScreenRequestDto, image?: Express.Multer.File): Promise<OnBoardingScreen> {
     const onBoardingScreen: OnBoardingScreen = await this.findOneOrFailById(
       new FindOneOrFailByIdPayloadDto<OnBoardingScreen>({
         id,
@@ -87,12 +90,14 @@ export class AdminOnBoardingScreensService {
     );
     if (image) {
       await this.storageMicroserviceConnection.storageServiceImpl.deleteFile(
+        new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
         new DeleteFilePayloadDto({
           prefixPath: Constants.ON_BOARDING_SCREENS_IMAGES_PREFIX_PATH,
           fileUrl: onBoardingScreen.image,
         }),
       );
       onBoardingScreen.image = await this.storageMicroserviceConnection.storageServiceImpl.uploadFile(
+        new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
         new UploadFilePayloadDto({
           prefixPath: Constants.ON_BOARDING_SCREENS_IMAGES_PREFIX_PATH,
           file: image,

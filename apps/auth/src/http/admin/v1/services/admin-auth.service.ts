@@ -8,9 +8,10 @@ import {
   AdminStatus,
   AdminUpdatePasswordPayloadDto,
   AuthedUser,
-  FcmToken,
   FindOneOrFailByEmailPayloadDto,
   FindOneOrFailByIdPayloadDto,
+  PushToken,
+  RpcAuthenticationPayloadDto,
   UserType,
 } from '@app/common';
 import { SignInWithEmailAndPasswordRequestDto } from '../dtos/sign-in-with-email-and-password-request.dto';
@@ -47,7 +48,7 @@ export class AdminAuthService {
     if (admin.status !== AdminStatus.ACTIVE) {
       throw new UnauthorizedException(`Can't sign in with this account , account is ${admin.status}`);
     }
-    const fcmToken: FcmToken = await this.fcmTokensService.findOne(<FindOnePushTokenPayloadDto>{
+    const fcmToken: PushToken = await this.fcmTokensService.findOne(<FindOnePushTokenPayloadDto>{
       tokenableId: admin.id,
       tokenableType: UserType.ADMIN,
       token: signInWithEmailAndPasswordRequestDto.fcmToken,
@@ -76,18 +77,20 @@ export class AdminAuthService {
   }
 
   // change password.
-  async changePassword(adminId: number, changePasswordRequestDto: ChangePasswordRequestDto): Promise<Admin> {
+  async changePassword(authedUser: AuthedUser, changePasswordRequestDto: ChangePasswordRequestDto): Promise<Admin> {
     const admin: Admin = await this.adminsMicroserviceConnection.adminsServiceImpl.findOneOrFailById(
+      new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
       new FindOneOrFailByIdPayloadDto<Admin>({
-        id: adminId,
+        id: authedUser.id,
       }),
     );
     if (!(await admin.comparePassword(changePasswordRequestDto.oldPassword))) {
       throw new BadRequestException('Wrong old password.');
     }
     return this.adminsMicroserviceConnection.adminsServiceImpl.updatePassword(
+      new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
       new AdminUpdatePasswordPayloadDto({
-        adminId: adminId,
+        adminId: authedUser.id,
         newPassword: changePasswordRequestDto.newPassword,
       }),
     );

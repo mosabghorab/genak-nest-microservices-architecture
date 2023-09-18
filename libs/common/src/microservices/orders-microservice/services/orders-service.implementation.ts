@@ -7,6 +7,7 @@ import {
   IOrdersService,
   Order,
   OrdersMicroserviceConstants,
+  RpcAuthenticationPayloadDto,
   SearchPayloadDto,
   ServiceType,
 } from '@app/common';
@@ -19,20 +20,27 @@ export class OrdersServiceImpl implements IOrdersService {
   constructor(private readonly ordersMicroservice: ClientProxy, private readonly version: string) {}
 
   // find one by id.
-  findOneById(findOneByIdPayloadDto: FindOneByIdPayloadDto<Order>): Promise<Order | null> {
+  findOneById(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto, findOneByIdPayloadDto: FindOneByIdPayloadDto<Order>): Promise<Order | null> {
     return firstValueFrom<Order>(
-      this.ordersMicroservice.send<Order, { findOneByIdPayloadDto: FindOneByIdPayloadDto<Order> }>(
+      this.ordersMicroservice.send<
+        Order,
+        {
+          rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto;
+          findOneByIdPayloadDto: FindOneByIdPayloadDto<Order>;
+        }
+      >(
         {
           cmd: `${OrdersMicroserviceConstants.ORDERS_SERVICE_FIND_ONE_BY_ID_MESSAGE_PATTERN}/v${this.version}`,
         },
-        { findOneByIdPayloadDto },
+        { rpcAuthenticationPayloadDto, findOneByIdPayloadDto },
       ),
     );
   }
 
   // find one or fail by id.
-  async findOneOrFailById(findOneOrFailByIdPayloadDto: FindOneOrFailByIdPayloadDto<Order>): Promise<Order> {
+  async findOneOrFailById(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto, findOneOrFailByIdPayloadDto: FindOneOrFailByIdPayloadDto<Order>): Promise<Order> {
     const order: Order = await this.findOneById(
+      rpcAuthenticationPayloadDto,
       new FindOneByIdPayloadDto<Order>({
         id: findOneOrFailByIdPayloadDto.id,
         relations: findOneOrFailByIdPayloadDto.relations,
@@ -45,13 +53,20 @@ export class OrdersServiceImpl implements IOrdersService {
   }
 
   // search by name.
-  searchByUniqueId(searchPayloadDto: SearchPayloadDto<Order>): Promise<Order[]> {
+  searchByUniqueId(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto, searchPayloadDto: SearchPayloadDto<Order>): Promise<Order[]> {
     return firstValueFrom<Order[]>(
-      this.ordersMicroservice.send<Order[], { searchPayloadDto: SearchPayloadDto<Order> }>(
+      this.ordersMicroservice.send<
+        Order[],
+        {
+          rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto;
+          searchPayloadDto: SearchPayloadDto<Order>;
+        }
+      >(
         {
           cmd: `${OrdersMicroserviceConstants.ORDERS_SERVICE_SEARCH_BY_UNIQUE_ID_MESSAGE_PATTERN}/v${this.version}`,
         },
         {
+          rpcAuthenticationPayloadDto,
           searchPayloadDto,
         },
       ),
@@ -59,25 +74,30 @@ export class OrdersServiceImpl implements IOrdersService {
   }
 
   // find one by id and service type.
-  findOneByIdAndServiceType(findOneOrderByIdAndServiceTypePayloadDto: FindOneOrderByIdAndServiceTypePayloadDto): Promise<Order | null> {
+  findOneByIdAndServiceType(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto, findOneOrderByIdAndServiceTypePayloadDto: FindOneOrderByIdAndServiceTypePayloadDto): Promise<Order | null> {
     return firstValueFrom<Order>(
       this.ordersMicroservice.send<
         Order,
         {
+          rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto;
           findOneOrderByIdAndServiceTypePayloadDto: FindOneOrderByIdAndServiceTypePayloadDto;
         }
       >(
         {
           cmd: `${OrdersMicroserviceConstants.ORDERS_SERVICE_FIND_ONE_BY_ID_AND_SERVICE_TYPE_MESSAGE_PATTERN}/v${this.version}`,
         },
-        { findOneOrderByIdAndServiceTypePayloadDto },
+        { rpcAuthenticationPayloadDto, findOneOrderByIdAndServiceTypePayloadDto },
       ),
     );
   }
 
   // find one or fail by id and service type.
-  async findOneOrFailByIdAndServiceType(findOneOrderOrFailByIdAndServiceTypePayloadDto: FindOneOrderOrFailByIdAndServiceTypePayloadDto): Promise<Order> {
+  async findOneOrFailByIdAndServiceType(
+    rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto,
+    findOneOrderOrFailByIdAndServiceTypePayloadDto: FindOneOrderOrFailByIdAndServiceTypePayloadDto,
+  ): Promise<Order> {
     const order: Order = await this.findOneByIdAndServiceType(
+      rpcAuthenticationPayloadDto,
       new FindOneOrderByIdAndServiceTypePayloadDto({
         id: findOneOrderOrFailByIdAndServiceTypePayloadDto.id,
         relations: findOneOrderOrFailByIdAndServiceTypePayloadDto.relations,
@@ -91,13 +111,21 @@ export class OrdersServiceImpl implements IOrdersService {
   }
 
   // count.
-  count(serviceType?: ServiceType, dateFilterPayloadDto?: DateFilterPayloadDto): Promise<number> {
+  count(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto, serviceType?: ServiceType, dateFilterPayloadDto?: DateFilterPayloadDto): Promise<number> {
     return firstValueFrom<number>(
-      this.ordersMicroservice.send<number, { serviceType?: ServiceType; dateFilterPayloadDto?: DateFilterPayloadDto }>(
+      this.ordersMicroservice.send<
+        number,
+        {
+          rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto;
+          serviceType?: ServiceType;
+          dateFilterPayloadDto?: DateFilterPayloadDto;
+        }
+      >(
         {
           cmd: `${OrdersMicroserviceConstants.ORDERS_SERVICE_COUNT_MESSAGE_PATTERN}/v${this.version}`,
         },
         {
+          rpcAuthenticationPayloadDto,
           serviceType,
           dateFilterPayloadDto,
         },
@@ -106,11 +134,12 @@ export class OrdersServiceImpl implements IOrdersService {
   }
 
   // find latest.
-  findLatest(count: number, serviceType: ServiceType, relations?: FindOptionsRelations<Order>): Promise<Order[]> {
+  findLatest(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto, count: number, serviceType: ServiceType, relations?: FindOptionsRelations<Order>): Promise<Order[]> {
     return firstValueFrom<Order[]>(
       this.ordersMicroservice.send<
         Order[],
         {
+          rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto;
           count: number;
           serviceType: ServiceType;
           relations?: FindOptionsRelations<Order>;
@@ -120,6 +149,7 @@ export class OrdersServiceImpl implements IOrdersService {
           cmd: `${OrdersMicroserviceConstants.ORDERS_SERVICE_FIND_LATEST_MESSAGE_PATTERN}/v${this.version}`,
         },
         {
+          rpcAuthenticationPayloadDto,
           count,
           serviceType,
           relations,
@@ -129,11 +159,18 @@ export class OrdersServiceImpl implements IOrdersService {
   }
 
   // total sales.
-  totalSales(serviceType: ServiceType, dateFilterPayloadDto?: DateFilterPayloadDto): Promise<{ totalSales: string }> {
+  totalSales(
+    rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto,
+    serviceType: ServiceType,
+    dateFilterPayloadDto?: DateFilterPayloadDto,
+  ): Promise<{
+    totalSales: string;
+  }> {
     return firstValueFrom<{ totalSales: string }>(
       this.ordersMicroservice.send<
         { totalSales: string },
         {
+          rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto;
           serviceType: ServiceType;
           dateFilterPayloadDto?: DateFilterPayloadDto;
         }
@@ -142,6 +179,7 @@ export class OrdersServiceImpl implements IOrdersService {
           cmd: `${OrdersMicroserviceConstants.ORDERS_SERVICE_TOTAL_SALES_MESSAGE_PATTERN}/v${this.version}`,
         },
         {
+          rpcAuthenticationPayloadDto,
           serviceType,
           dateFilterPayloadDto,
         },

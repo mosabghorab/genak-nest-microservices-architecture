@@ -2,6 +2,7 @@ import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import {
+  AuthedUser,
   Customer,
   CustomerAddress,
   CustomersMicroserviceConnection,
@@ -12,6 +13,7 @@ import {
   OrderItem,
   OrderStatus,
   OrderStatusHistory,
+  RpcAuthenticationPayloadDto,
   ServiceType,
   Vendor,
   VendorsMicroserviceConnection,
@@ -81,24 +83,27 @@ export class CustomerOrdersService {
   }
 
   // create.
-  async create(customerId: number, createOrderRequestDto: CreateOrderRequestDto): Promise<Order> {
+  async create(authedUser: AuthedUser, createOrderRequestDto: CreateOrderRequestDto): Promise<Order> {
     const customer: Customer = await this.customersMicroserviceConnection.customersServiceImpl.findOneOrFailById(
+      new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
       new FindOneOrFailByIdPayloadDto<Customer>({
-        id: customerId,
+        id: authedUser.id,
       }),
     );
     const vendor: Vendor = await this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneOrFailById(
+      new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
       new FindOneOrFailByIdPayloadDto<Vendor>({
         id: createOrderRequestDto.vendorId,
       }),
     );
     await this.customersMicroserviceConnection.customerAddressesServiceImpl.findOneOrFailById(
+      new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
       new FindOneOrFailByIdPayloadDto<CustomerAddress>({
         id: createOrderRequestDto.customerAddressId,
       }),
     );
     const order: Order = await this.orderRepository.create({
-      customerId,
+      customerId: authedUser.id,
       vendorId: createOrderRequestDto.vendorId,
       customerAddressId: createOrderRequestDto.customerAddressId,
       serviceType: createOrderRequestDto.serviceType,
@@ -116,13 +121,13 @@ export class CustomerOrdersService {
     ];
     const newOrder: Order = await this.orderRepository.save(savedOrder);
     if (newOrder) {
-      this.eventEmitter.emit(Constants.ORDER_CREATED_EVENT, new OrderCreatedEvent(newOrder, vendor, customer));
+      this.eventEmitter.emit(Constants.ORDER_CREATED_EVENT, new OrderCreatedEvent(authedUser, newOrder, vendor, customer));
     }
     return newOrder;
   }
 
   // re order.
-  async reOrder(id: number): Promise<Order> {
+  async reOrder(authedUser: AuthedUser, id: number): Promise<Order> {
     const order: Order = await this.findOneOrFailById(
       new FindOneOrFailByIdPayloadDto<Order>({
         id,
@@ -156,7 +161,7 @@ export class CustomerOrdersService {
     ];
     const newSavedOrder: Order = await this.orderRepository.save(savedOrder);
     if (newSavedOrder) {
-      this.eventEmitter.emit(Constants.ORDER_CREATED_EVENT, new OrderCreatedEvent(newSavedOrder, order.vendor, order.customer));
+      this.eventEmitter.emit(Constants.ORDER_CREATED_EVENT, new OrderCreatedEvent(authedUser, newSavedOrder, order.vendor, order.customer));
     }
     return newSavedOrder;
   }

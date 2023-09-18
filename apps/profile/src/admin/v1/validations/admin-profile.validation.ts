@@ -1,5 +1,5 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
-import { Admin, AdminsMicroserviceConnection, AdminsMicroserviceConstants, FindOneByEmailPayloadDto, FindOneOrFailByIdPayloadDto } from '@app/common';
+import { Admin, AdminsMicroserviceConnection, AdminsMicroserviceConstants, AuthedUser, FindOneByEmailPayloadDto, FindOneOrFailByIdPayloadDto, RpcAuthenticationPayloadDto } from '@app/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { Constants } from '../../../constants';
 import { UpdateProfileRequestDto } from '../dtos/update-profile-request.dto';
@@ -13,10 +13,11 @@ export class AdminProfileValidation {
   }
 
   // validate update.
-  async validateUpdate(adminId: number, updateProfileDto: UpdateProfileRequestDto): Promise<void> {
+  async validateUpdate(authedUser: AuthedUser, updateProfileDto: UpdateProfileRequestDto): Promise<void> {
     await this.adminsMicroserviceConnection.adminsServiceImpl.findOneOrFailById(
+      new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
       new FindOneOrFailByIdPayloadDto<Admin>({
-        id: adminId,
+        id: authedUser.id,
       }),
     );
     if (updateProfileDto.email) {

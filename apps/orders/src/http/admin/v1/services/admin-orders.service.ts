@@ -2,6 +2,7 @@ import { BadRequestException, Inject, Injectable, StreamableFile } from '@nestjs
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, Repository, SelectQueryBuilder } from 'typeorm';
 import {
+  AuthedUser,
   Customer,
   CustomersMicroserviceConnection,
   CustomersMicroserviceConstants,
@@ -10,6 +11,7 @@ import {
   FindOneByIdPayloadDto,
   FindOneOrFailByIdPayloadDto,
   Order,
+  RpcAuthenticationPayloadDto,
   Vendor,
   VendorsMicroserviceConnection,
   VendorsMicroserviceConstants,
@@ -112,6 +114,7 @@ export class AdminOrdersService {
 
   // find all by customer id.
   async findAllByCustomerId(
+    authedUser: AuthedUser,
     customerId: number,
     findCustomerOrdersRequestDto: FindCustomerOrdersRequestDto,
   ): Promise<
@@ -126,6 +129,7 @@ export class AdminOrdersService {
     | { total: number; data: Order[]; ordersTotalPrice: any }
   > {
     await this.customersMicroserviceConnection.customersServiceImpl.findOneOrFailById(
+      new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
       new FindOneOrFailByIdPayloadDto<Customer>({
         id: customerId,
       }),
@@ -179,6 +183,7 @@ export class AdminOrdersService {
 
   // find all by vendor id.
   async findAllByVendorId(
+    authedUser: AuthedUser,
     vendorId: number,
     findVendorOrdersRequestDto: FindVendorOrdersRequestDto,
   ): Promise<
@@ -194,6 +199,7 @@ export class AdminOrdersService {
     | { total: number; ordersAverageTimeMinutes: number; data: Order[]; ordersTotalPrice: any }
   > {
     await this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneOrFailById(
+      new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
       new FindOneOrFailByIdPayloadDto<Vendor>({
         id: vendorId,
       }),
@@ -290,8 +296,12 @@ export class AdminOrdersService {
   }
 
   // export all by customer id.
-  async exportAllByCustomerId(customerId: number, findCustomerOrdersRequestDto: FindCustomerOrdersRequestDto): Promise<StreamableFile> {
-    const { data }: { data: Order[] } = await this.findAllByCustomerId(customerId, findCustomerOrdersRequestDto);
+  async exportAllByCustomerId(authedUser: AuthedUser, customerId: number, findCustomerOrdersRequestDto: FindCustomerOrdersRequestDto): Promise<StreamableFile> {
+    const {
+      data,
+    }: {
+      data: Order[];
+    } = await this.findAllByCustomerId(authedUser, customerId, findCustomerOrdersRequestDto);
     const workbook: Workbook = new Workbook();
     const worksheet: Worksheet = workbook.addWorksheet('الطلبات');
     // add headers.
@@ -312,8 +322,8 @@ export class AdminOrdersService {
   }
 
   // export all by vendor id.
-  async exportAllByVendorId(vendorId: number, findVendorOrdersRequestDto: FindVendorOrdersRequestDto): Promise<StreamableFile> {
-    const { data }: { data: Order[] } = await this.findAllByVendorId(vendorId, findVendorOrdersRequestDto);
+  async exportAllByVendorId(authedUser: AuthedUser, vendorId: number, findVendorOrdersRequestDto: FindVendorOrdersRequestDto): Promise<StreamableFile> {
+    const { data }: { data: Order[] } = await this.findAllByVendorId(authedUser, vendorId, findVendorOrdersRequestDto);
     const workbook: Workbook = new Workbook();
     const worksheet: Worksheet = workbook.addWorksheet('الطلبات');
     // add headers.

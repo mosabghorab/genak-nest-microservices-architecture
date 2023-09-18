@@ -12,12 +12,12 @@ export class AdminProfileController {
   @Serialize(AdminResponseDto, 'Profile updated successfully.')
   @Patch()
   update(@GetAuthedUser() authedUser: AuthedUser, @Body() updateProfileRequestDto: UpdateProfileRequestDto): Promise<Admin> {
-    return this.adminProfileService.update(authedUser.id, updateProfileRequestDto);
+    return this.adminProfileService.update(authedUser, updateProfileRequestDto);
   }
 
   @Serialize(AdminResponseDto, 'Profile retrieved successfully.')
   @Get()
   find(@GetAuthedUser() authedUser: AuthedUser): Promise<Admin> {
-    return this.adminProfileService.find(authedUser.id);
+    return this.adminProfileService.find(authedUser);
   }
 }

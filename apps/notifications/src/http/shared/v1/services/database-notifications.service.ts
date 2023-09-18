@@ -10,6 +10,7 @@ import {
   Order,
   OrdersMicroserviceConnection,
   OrdersMicroserviceConstants,
+  RpcAuthenticationPayloadDto,
 } from '@app/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -43,12 +44,14 @@ export class DatabaseNotificationsService {
     for (const notification of notifications) {
       if (notification.notificationTarget === NotificationTarget.ORDER) {
         notification['order'] = await this.ordersMicroserviceConnection.ordersServiceImpl.findOneById(
+          new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
           new FindOneByIdPayloadDto<Order>({
             id: notification.notificationTargetId,
           }),
         );
       } else if (notification.notificationTarget === NotificationTarget.COMPLAIN) {
         notification['complain'] = await this.complainsMicroserviceConnection.complainsServiceImpl.findOneById(
+          new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
           new FindOneByIdPayloadDto<Complain>({
             id: notification.notificationTargetId,
           }),

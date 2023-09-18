@@ -12,7 +12,7 @@ export class CustomerReviewsController {
   @Serialize(ReviewResponseDto, 'Review created successfully.')
   @Post()
   create(@GetAuthedUser() authedUser: AuthedUser, @Body() createReviewRequestDto: CreateReviewRequestDto): Promise<Review> {
-    return this.customerReviewsService.create(authedUser.id, createReviewRequestDto);
+    return this.customerReviewsService.create(authedUser, createReviewRequestDto);
   }
 
   @Serialize(ReviewResponseDto, 'All reviews.')

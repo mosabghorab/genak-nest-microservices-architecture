@@ -8,9 +8,10 @@ import {
   CustomersMicroserviceConnection,
   CustomersMicroserviceConstants,
   DateHelpers,
-  FcmToken,
   FindOneOrFailByIdPayloadDto,
   FindOneOrFailByPhonePayloadDto,
+  PushToken,
+  RpcAuthenticationPayloadDto,
   UserType,
   VerificationCode,
 } from '@app/common';
@@ -64,7 +65,7 @@ export class CustomerAuthService {
     if (DateHelpers.calculateTimeDifferenceInMinutes(verificationCode.createdAt, new Date()) > 3) {
       throw new BadRequestException('Expired verification code.');
     }
-    const fcmToken: FcmToken = await this.fcmTokensService.findOne(<FindOnePushTokenPayloadDto>{
+    const fcmToken: PushToken = await this.fcmTokensService.findOne(<FindOnePushTokenPayloadDto>{
       tokenableId: customer.id,
       tokenableType: UserType.CUSTOMER,
       token: signInWithPhoneRequestDto.fcmToken,
@@ -90,12 +91,13 @@ export class CustomerAuthService {
   }
 
   // delete account.
-  async deleteAccount(customerId: number): Promise<Customer> {
+  async deleteAccount(authedUser: AuthedUser): Promise<Customer> {
     const customer: Customer = await this.customersMicroserviceConnection.customersServiceImpl.findOneOrFailById(
+      new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
       new FindOneOrFailByIdPayloadDto<Customer>({
-        id: customerId,
+        id: authedUser.id,
       }),
     );
-    return this.customersMicroserviceConnection.customersServiceImpl.removeOneByInstance(customer);
+    return this.customersMicroserviceConnection.customersServiceImpl.removeOneByInstance(new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }), customer);
   }
 }

@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import {
   AdminsMicroserviceConnection,
   AdminsMicroserviceConstants,
+  AuthedUser,
   Customer,
   CustomersMicroserviceConnection,
   CustomersMicroserviceConstants,
@@ -15,6 +16,7 @@ import {
   Product,
   ProductsMicroserviceConnection,
   ProductsMicroserviceConstants,
+  RpcAuthenticationPayloadDto,
   ServiceType,
   Vendor,
   VendorsMicroserviceConnection,
@@ -60,7 +62,10 @@ export class ReportsService {
   }
 
   // find general reports.
-  async findGeneralReports(findGeneralReportsRequestDto: FindGeneralReportsRequestDto): Promise<{
+  async findGeneralReports(
+    authedUser: AuthedUser,
+    findGeneralReportsRequestDto: FindGeneralReportsRequestDto,
+  ): Promise<{
     latestVendors: Vendor[];
     ordersCount: number;
     governoratesWithVendorsAndCustomersAndOrdersCount: Location[];
@@ -69,19 +74,35 @@ export class ReportsService {
     vendorsCount: number;
     usersCount: number;
   }> {
-    const customersCount: number = await this.customersMicroserviceConnection.customersServiceImpl.count();
-    const adminsCount: number = await this.adminsMicroserviceConnection.adminsServiceImpl.count();
-    const allVendorsCount: number = await this.vendorsMicroserviceConnection.vendorsServiceImpl.count();
-    const vendorsCountByServiceType: number = await this.vendorsMicroserviceConnection.vendorsServiceImpl.count(findGeneralReportsRequestDto.serviceType);
-    const ordersCount: number = await this.ordersMicroserviceConnection.ordersServiceImpl.count(findGeneralReportsRequestDto.serviceType);
-    const governoratesWithVendorsAndCustomersAndOrdersCount: Location[] = await this.locationsMicroserviceConnection.locationsServiceImpl.findGovernoratesWithVendorsAndCustomersAndOrdersCount(
+    const customersCount: number = await this.customersMicroserviceConnection.customersServiceImpl.count(new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }));
+    const adminsCount: number = await this.adminsMicroserviceConnection.adminsServiceImpl.count(new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }));
+    const allVendorsCount: number = await this.vendorsMicroserviceConnection.vendorsServiceImpl.count(new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }));
+    const vendorsCountByServiceType: number = await this.vendorsMicroserviceConnection.vendorsServiceImpl.count(
+      new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
       findGeneralReportsRequestDto.serviceType,
     );
-    const latestOrders: Order[] = await this.ordersMicroserviceConnection.ordersServiceImpl.findLatest(10, findGeneralReportsRequestDto.serviceType, {
-      customer: true,
-      vendor: true,
-    });
-    const latestVendors: Vendor[] = await this.vendorsMicroserviceConnection.vendorsServiceImpl.findLatest(10, findGeneralReportsRequestDto.serviceType);
+    const ordersCount: number = await this.ordersMicroserviceConnection.ordersServiceImpl.count(
+      new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
+      findGeneralReportsRequestDto.serviceType,
+    );
+    const governoratesWithVendorsAndCustomersAndOrdersCount: Location[] = await this.locationsMicroserviceConnection.locationsServiceImpl.findGovernoratesWithVendorsAndCustomersAndOrdersCount(
+      new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
+      findGeneralReportsRequestDto.serviceType,
+    );
+    const latestOrders: Order[] = await this.ordersMicroserviceConnection.ordersServiceImpl.findLatest(
+      new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
+      10,
+      findGeneralReportsRequestDto.serviceType,
+      {
+        customer: true,
+        vendor: true,
+      },
+    );
+    const latestVendors: Vendor[] = await this.vendorsMicroserviceConnection.vendorsServiceImpl.findLatest(
+      new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
+      10,
+      findGeneralReportsRequestDto.serviceType,
+    );
     return {
       usersCount: allVendorsCount + customersCount + adminsCount,
       customersCount,
@@ -94,16 +115,34 @@ export class ReportsService {
   }
 
   // find vendors reports.
-  async findVendorsReports(findVendorsReportsRequestDto: FindVendorsReportsRequestDto): Promise<{
+  async findVendorsReports(
+    authedUser: AuthedUser,
+    findVendorsReportsRequestDto: FindVendorsReportsRequestDto,
+  ): Promise<{
     governoratesWithVendorsCount: Location[];
     documentsRequiredVendorsCount: number;
     pendingVendorsCount: number;
     activeVendorsCount: number;
   }> {
-    const documentsRequiredVendorsCount: number = await this.vendorsMicroserviceConnection.vendorsServiceImpl.count(findVendorsReportsRequestDto.serviceType, VendorStatus.DOCUMENTS_REQUIRED);
-    const pendingVendorsCount: number = await this.vendorsMicroserviceConnection.vendorsServiceImpl.count(findVendorsReportsRequestDto.serviceType, VendorStatus.PENDING);
-    const activeVendorsCount: number = await this.vendorsMicroserviceConnection.vendorsServiceImpl.count(findVendorsReportsRequestDto.serviceType, VendorStatus.ACTIVE);
-    const governoratesWithVendorsCount: Location[] = await this.locationsMicroserviceConnection.locationsServiceImpl.findGovernoratesWithVendorsCount(findVendorsReportsRequestDto.serviceType);
+    const documentsRequiredVendorsCount: number = await this.vendorsMicroserviceConnection.vendorsServiceImpl.count(
+      new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
+      findVendorsReportsRequestDto.serviceType,
+      VendorStatus.DOCUMENTS_REQUIRED,
+    );
+    const pendingVendorsCount: number = await this.vendorsMicroserviceConnection.vendorsServiceImpl.count(
+      new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
+      findVendorsReportsRequestDto.serviceType,
+      VendorStatus.PENDING,
+    );
+    const activeVendorsCount: number = await this.vendorsMicroserviceConnection.vendorsServiceImpl.count(
+      new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
+      findVendorsReportsRequestDto.serviceType,
+      VendorStatus.ACTIVE,
+    );
+    const governoratesWithVendorsCount: Location[] = await this.locationsMicroserviceConnection.locationsServiceImpl.findGovernoratesWithVendorsCount(
+      new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
+      findVendorsReportsRequestDto.serviceType,
+    );
     return {
       documentsRequiredVendorsCount,
       pendingVendorsCount,
@@ -113,9 +152,14 @@ export class ReportsService {
   }
 
   // find customers reports.
-  async findCustomersReports(): Promise<{ customersCount: number; governoratesWithCustomersCount: Location[] }> {
-    const customersCount: number = await this.customersMicroserviceConnection.customersServiceImpl.count();
-    const governoratesWithCustomersCount: Location[] = await this.locationsMicroserviceConnection.locationsServiceImpl.findGovernoratesWithCustomersCount();
+  async findCustomersReports(authedUser: AuthedUser): Promise<{
+    customersCount: number;
+    governoratesWithCustomersCount: Location[];
+  }> {
+    const customersCount: number = await this.customersMicroserviceConnection.customersServiceImpl.count(new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }));
+    const governoratesWithCustomersCount: Location[] = await this.locationsMicroserviceConnection.locationsServiceImpl.findGovernoratesWithCustomersCount(
+      new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
+    );
     return {
       customersCount,
       governoratesWithCustomersCount,
@@ -123,7 +167,10 @@ export class ReportsService {
   }
 
   // find sales reports.
-  async findSalesReports(findSalesReportsRequestDto: FindSalesReportsRequestDto): Promise<{
+  async findSalesReports(
+    authedUser: AuthedUser,
+    findSalesReportsRequestDto: FindSalesReportsRequestDto,
+  ): Promise<{
     customOrderItemsTotalQuantities: number;
     ordersCount: number;
     totalSales: number;
@@ -131,10 +178,23 @@ export class ReportsService {
     governoratesWithOrdersCount: Location[];
     customOrderItemsTotalSales: number;
   }> {
-    const ordersCount: number = await this.ordersMicroserviceConnection.ordersServiceImpl.count(findSalesReportsRequestDto.serviceType);
-    const totalSales: number = parseFloat((await this.ordersMicroserviceConnection.ordersServiceImpl.totalSales(findSalesReportsRequestDto.serviceType)).totalSales) || 0;
-    const governoratesWithOrdersCount: Location[] = await this.locationsMicroserviceConnection.locationsServiceImpl.findGovernoratesWithOrdersCount(findSalesReportsRequestDto.serviceType);
-    const productsWithTotalSales: Product[] = await this.productsMicroserviceConnection.productsServiceImpl.findWithTotalSales(findSalesReportsRequestDto.serviceType);
+    const ordersCount: number = await this.ordersMicroserviceConnection.ordersServiceImpl.count(
+      new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
+      findSalesReportsRequestDto.serviceType,
+    );
+    const totalSales: number =
+      parseFloat(
+        (await this.ordersMicroserviceConnection.ordersServiceImpl.totalSales(new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }), findSalesReportsRequestDto.serviceType))
+          .totalSales,
+      ) || 0;
+    const governoratesWithOrdersCount: Location[] = await this.locationsMicroserviceConnection.locationsServiceImpl.findGovernoratesWithOrdersCount(
+      new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
+      findSalesReportsRequestDto.serviceType,
+    );
+    const productsWithTotalSales: Product[] = await this.productsMicroserviceConnection.productsServiceImpl.findWithTotalSales(
+      new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
+      findSalesReportsRequestDto.serviceType,
+    );
     let customOrderItemsTotalSales: number;
     let customOrderItemsTotalQuantities: number;
     if (findSalesReportsRequestDto.serviceType === ServiceType.WATER) {
@@ -144,7 +204,7 @@ export class ReportsService {
       }: {
         totalSales: string;
         totalQuantities: string;
-      } = await this.ordersMicroserviceConnection.orderItemsServiceImpl.findCustomOrderItemsTotalSalesAndQuantities();
+      } = await this.ordersMicroserviceConnection.orderItemsServiceImpl.findCustomOrderItemsTotalSalesAndQuantities(new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }));
       customOrderItemsTotalSales = parseFloat(totalSales) || 0;
       customOrderItemsTotalQuantities = parseInt(totalQuantities) || 0;
     }
@@ -159,7 +219,10 @@ export class ReportsService {
   }
 
   // find sales reports with filter.
-  async findSalesReportsWithFilter(findSalesReportsWithFilterRequestDto: FindSalesReportsWithFilterRequestDto): Promise<{
+  async findSalesReportsWithFilter(
+    authedUser: AuthedUser,
+    findSalesReportsWithFilterRequestDto: FindSalesReportsWithFilterRequestDto,
+  ): Promise<{
     customOrderItemsTotalQuantities: number;
     ordersCount: number;
     vendorsBestSellersWithOrdersCount: Vendor[];
@@ -172,6 +235,7 @@ export class ReportsService {
     customOrderItemsTotalSales: number;
   }> {
     const ordersCount: number = await this.ordersMicroserviceConnection.ordersServiceImpl.count(
+      new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
       findSalesReportsWithFilterRequestDto.serviceType,
       new DateFilterPayloadDto({
         dateFilterOption: findSalesReportsWithFilterRequestDto.dateFilterOption,
@@ -183,6 +247,7 @@ export class ReportsService {
       parseFloat(
         (
           await this.ordersMicroserviceConnection.ordersServiceImpl.totalSales(
+            new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
             findSalesReportsWithFilterRequestDto.serviceType,
             new DateFilterPayloadDto({
               dateFilterOption: findSalesReportsWithFilterRequestDto.dateFilterOption,
@@ -194,6 +259,7 @@ export class ReportsService {
       ) || 0;
 
     const governoratesWithOrdersCount: Location[] = await this.locationsMicroserviceConnection.locationsServiceImpl.findGovernoratesWithOrdersCount(
+      new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
       findSalesReportsWithFilterRequestDto.serviceType,
       new DateFilterPayloadDto({
         dateFilterOption: findSalesReportsWithFilterRequestDto.dateFilterOption,
@@ -203,6 +269,7 @@ export class ReportsService {
     );
 
     const regionsWithOrdersCount: Location[] = await this.locationsMicroserviceConnection.locationsServiceImpl.findRegionsWithOrdersCount(
+      new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
       findSalesReportsWithFilterRequestDto.serviceType,
       new DateFilterPayloadDto({
         dateFilterOption: findSalesReportsWithFilterRequestDto.dateFilterOption,
@@ -211,12 +278,17 @@ export class ReportsService {
       }),
     );
 
-    const productsWithTotalSales: Product[] = await this.productsMicroserviceConnection.productsServiceImpl.findWithTotalSales(findSalesReportsWithFilterRequestDto.serviceType, <DateFilterPayloadDto>{
-      dateFilterOption: findSalesReportsWithFilterRequestDto.dateFilterOption,
-      startDate: findSalesReportsWithFilterRequestDto.startDate,
-      endDate: findSalesReportsWithFilterRequestDto.endDate,
-    });
+    const productsWithTotalSales: Product[] = await this.productsMicroserviceConnection.productsServiceImpl.findWithTotalSales(
+      new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
+      findSalesReportsWithFilterRequestDto.serviceType,
+      <DateFilterPayloadDto>{
+        dateFilterOption: findSalesReportsWithFilterRequestDto.dateFilterOption,
+        startDate: findSalesReportsWithFilterRequestDto.startDate,
+        endDate: findSalesReportsWithFilterRequestDto.endDate,
+      },
+    );
     const productsWithOrdersCount: Product[] = await this.productsMicroserviceConnection.productsServiceImpl.findWithOrdersCount(
+      new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
       findSalesReportsWithFilterRequestDto.serviceType,
       new DateFilterPayloadDto({
         dateFilterOption: findSalesReportsWithFilterRequestDto.dateFilterOption,
@@ -226,6 +298,7 @@ export class ReportsService {
     );
 
     const vendorsBestSellersWithOrdersCount: Vendor[] = await this.vendorsMicroserviceConnection.vendorsServiceImpl.findBestSellersWithOrdersCount(
+      new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
       findSalesReportsWithFilterRequestDto.serviceType,
       new DateFilterPayloadDto({
         dateFilterOption: findSalesReportsWithFilterRequestDto.dateFilterOption,
@@ -235,6 +308,7 @@ export class ReportsService {
     );
 
     const customersBestBuyersWithOrdersCount: Customer[] = await this.customersMicroserviceConnection.customersServiceImpl.findBestBuyersWithOrdersCount(
+      new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
       findSalesReportsWithFilterRequestDto.serviceType,
       new DateFilterPayloadDto({
         dateFilterOption: findSalesReportsWithFilterRequestDto.dateFilterOption,
@@ -252,6 +326,7 @@ export class ReportsService {
         totalSales: string;
         totalQuantities: string;
       } = await this.ordersMicroserviceConnection.orderItemsServiceImpl.findCustomOrderItemsTotalSalesAndQuantities(
+        new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
         new DateFilterPayloadDto({
           dateFilterOption: findSalesReportsWithFilterRequestDto.dateFilterOption,
           startDate: findSalesReportsWithFilterRequestDto.startDate,

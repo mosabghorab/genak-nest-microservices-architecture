@@ -1,7 +1,16 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Attachment, DeleteFilePayloadDto, FindOneByIdPayloadDto, FindOneOrFailByIdPayloadDto, StorageMicroserviceConnection, StorageMicroserviceConstants } from '@app/common';
+import {
+  Attachment,
+  AuthedUser,
+  DeleteFilePayloadDto,
+  FindOneByIdPayloadDto,
+  FindOneOrFailByIdPayloadDto,
+  RpcAuthenticationPayloadDto,
+  StorageMicroserviceConnection,
+  StorageMicroserviceConstants,
+} from '@app/common';
 import { UpdateAttachmentStatusRequestDto } from '../dtos/update-attachment-status-request.dto';
 import { Constants } from '../../../../constants';
 import { ClientProxy } from '@nestjs/microservices';
@@ -60,18 +69,19 @@ export class AdminAttachmentsService {
   }
 
   // remove one by id.
-  async removeOneById(id: number): Promise<Attachment> {
+  async removeOneById(authedUser: AuthedUser, id: number): Promise<Attachment> {
     const attachment: Attachment = await this.findOneOrFailById(
       new FindOneOrFailByIdPayloadDto<Attachment>({
         id,
       }),
     );
-    return this.removeOneByInstance(attachment);
+    return this.removeOneByInstance(authedUser, attachment);
   }
 
   // remove one by instance.
-  async removeOneByInstance(attachment: Attachment): Promise<Attachment> {
+  async removeOneByInstance(authedUser: AuthedUser, attachment: Attachment): Promise<Attachment> {
     await this.storageMicroserviceConnection.storageServiceImpl.deleteFile(
+      new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
       new DeleteFilePayloadDto({
         prefixPath: Constants.VENDORS_ATTACHMENTS_PREFIX_PATH,
         fileUrl: attachment.file,

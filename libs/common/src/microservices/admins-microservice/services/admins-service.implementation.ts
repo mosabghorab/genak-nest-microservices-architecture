@@ -9,6 +9,7 @@ import {
   FindOneOrFailByIdPayloadDto,
   IAdminsService,
   PermissionGroup,
+  RpcAuthenticationPayloadDto,
   SearchPayloadDto,
 } from '@app/common';
 import { firstValueFrom } from 'rxjs';
@@ -20,20 +21,27 @@ export class AdminsServiceImpl implements IAdminsService {
   constructor(private readonly adminsMicroservice: ClientProxy, private readonly version: string) {}
 
   // find one by id.
-  findOneById(findOneByIdPayloadDto: FindOneByIdPayloadDto<Admin>): Promise<Admin | null> {
-    return firstValueFrom<Admin>(
-      this.adminsMicroservice.send<Admin, { findOneByIdPayloadDto: FindOneByIdPayloadDto<Admin> }>(
+  findOneById(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto, findOneByIdPayloadDto: FindOneByIdPayloadDto<Admin>): Promise<Admin | null> {
+    return firstValueFrom<Admin | null>(
+      this.adminsMicroservice.send<
+        Admin | null,
+        {
+          rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto;
+          findOneByIdPayloadDto: FindOneByIdPayloadDto<Admin>;
+        }
+      >(
         {
           cmd: `${AdminsMicroserviceConstants.ADMINS_SERVICE_FIND_ONE_BY_ID_MESSAGE_PATTERN}/v${this.version}`,
         },
-        { findOneByIdPayloadDto },
+        { rpcAuthenticationPayloadDto, findOneByIdPayloadDto },
       ),
     );
   }
 
   // find one or fail by id.
-  async findOneOrFailById(findOneOrFailByIdPayloadDto: FindOneOrFailByIdPayloadDto<Admin>): Promise<Admin> {
+  async findOneOrFailById(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto, findOneOrFailByIdPayloadDto: FindOneOrFailByIdPayloadDto<Admin>): Promise<Admin> {
     const admin: Admin = await this.findOneById(
+      rpcAuthenticationPayloadDto,
       new FindOneByIdPayloadDto<Admin>({
         id: findOneOrFailByIdPayloadDto.id,
         relations: findOneOrFailByIdPayloadDto.relations,
@@ -42,24 +50,32 @@ export class AdminsServiceImpl implements IAdminsService {
     if (!admin) {
       throw new NotFoundException(findOneOrFailByIdPayloadDto.failureMessage || 'Admin not found.');
     }
-    return plainToInstance(Admin, admin);
+    return admin;
   }
 
   // find one by email.
-  findOneByEmail(findOneByEmailPayloadDto: FindOneByEmailPayloadDto<Admin>): Promise<Admin | null> {
-    return firstValueFrom<Admin>(
-      this.adminsMicroservice.send<Admin, { findOneByEmailPayloadDto: FindOneByEmailPayloadDto<Admin> }>(
-        {
-          cmd: `${AdminsMicroserviceConstants.ADMINS_SERVICE_FIND_ONE_BY_EMAIL_MESSAGE_PATTERN}/v${this.version}`,
-        },
-        { findOneByEmailPayloadDto },
+  async findOneByEmail(findOneByEmailPayloadDto: FindOneByEmailPayloadDto<Admin>): Promise<Admin | null> {
+    return plainToInstance(
+      Admin,
+      await firstValueFrom<Admin | null>(
+        this.adminsMicroservice.send<
+          Admin | null,
+          {
+            findOneByEmailPayloadDto: FindOneByEmailPayloadDto<Admin>;
+          }
+        >(
+          {
+            cmd: `${AdminsMicroserviceConstants.ADMINS_SERVICE_FIND_ONE_BY_EMAIL_MESSAGE_PATTERN}/v${this.version}`,
+          },
+          { findOneByEmailPayloadDto },
+        ),
       ),
     );
   }
 
   // find one or fail by email.
   async findOneOrFailByEmail(findOneOrFailByEmailPayloadDto: FindOneOrFailByEmailPayloadDto<Admin>): Promise<Admin> {
-    const admin: Admin = await this.findOneByEmail(
+    const admin: Admin | null = await this.findOneByEmail(
       new FindOneByEmailPayloadDto<Admin>({
         email: findOneOrFailByEmailPayloadDto.email,
         relations: findOneOrFailByEmailPayloadDto.relations,
@@ -68,17 +84,24 @@ export class AdminsServiceImpl implements IAdminsService {
     if (!admin) {
       throw new NotFoundException(findOneOrFailByEmailPayloadDto.failureMessage || 'Admin not found.');
     }
-    return plainToInstance(Admin, admin);
+    return admin;
   }
 
   // search by name.
-  searchByName(searchPayloadDto: SearchPayloadDto<Admin>): Promise<Admin[]> {
+  searchByName(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto, searchPayloadDto: SearchPayloadDto<Admin>): Promise<Admin[]> {
     return firstValueFrom<Admin[]>(
-      this.adminsMicroservice.send<Admin[], { searchPayloadDto: SearchPayloadDto<Admin> }>(
+      this.adminsMicroservice.send<
+        Admin[],
+        {
+          rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto;
+          searchPayloadDto: SearchPayloadDto<Admin>;
+        }
+      >(
         {
           cmd: `${AdminsMicroserviceConstants.ADMINS_SERVICE_SEARCH_BY_NAME_MESSAGE_PATTERN}/v${this.version}`,
         },
         {
+          rpcAuthenticationPayloadDto,
           searchPayloadDto,
         },
       ),
@@ -86,49 +109,67 @@ export class AdminsServiceImpl implements IAdminsService {
   }
 
   // find all by permission group.
-  findAllByPermissionGroup(permissionGroup: PermissionGroup): Promise<Admin[]> {
+  findAllByPermissionGroup(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto, permissionGroup: PermissionGroup): Promise<Admin[]> {
     return firstValueFrom<Admin[]>(
-      this.adminsMicroservice.send<Admin[], PermissionGroup>(
+      this.adminsMicroservice.send<
+        Admin[],
+        {
+          rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto;
+          permissionGroup: PermissionGroup;
+        }
+      >(
         {
           cmd: `${AdminsMicroserviceConstants.ADMINS_SERVICE_FIND_ALL_BY_PERMISSION_GROUP_MESSAGE_PATTERN}/v${this.version}`,
         },
-        permissionGroup,
+        { rpcAuthenticationPayloadDto, permissionGroup },
       ),
     );
   }
 
   // update password.
-  updatePassword(adminUpdatePasswordPayloadDto: AdminUpdatePasswordPayloadDto): Promise<Admin> {
+  updatePassword(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto, adminUpdatePasswordPayloadDto: AdminUpdatePasswordPayloadDto): Promise<Admin> {
     return firstValueFrom<Admin>(
-      this.adminsMicroservice.send<Admin, { adminUpdatePasswordPayloadDto: AdminUpdatePasswordPayloadDto }>(
+      this.adminsMicroservice.send<
+        Admin,
+        {
+          rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto;
+          adminUpdatePasswordPayloadDto: AdminUpdatePasswordPayloadDto;
+        }
+      >(
         {
           cmd: `${AdminsMicroserviceConstants.ADMINS_SERVICE_UPDATE_PASSWORD_MESSAGE_PATTERN}/v${this.version}`,
         },
-        { adminUpdatePasswordPayloadDto },
+        { rpcAuthenticationPayloadDto, adminUpdatePasswordPayloadDto },
       ),
     );
   }
 
   // update profile.
-  updateProfile(adminUpdateProfilePayloadDto: AdminUpdateProfilePayloadDto): Promise<Admin> {
+  updateProfile(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto, adminUpdateProfilePayloadDto: AdminUpdateProfilePayloadDto): Promise<Admin> {
     return firstValueFrom<Admin>(
-      this.adminsMicroservice.send<Admin, { adminUpdateProfilePayloadDto: AdminUpdateProfilePayloadDto }>(
+      this.adminsMicroservice.send<
+        Admin,
+        {
+          rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto;
+          adminUpdateProfilePayloadDto: AdminUpdateProfilePayloadDto;
+        }
+      >(
         {
           cmd: `${AdminsMicroserviceConstants.ADMINS_SERVICE_UPDATE_PROFILE_MESSAGE_PATTERN}/v${this.version}`,
         },
-        { adminUpdateProfilePayloadDto },
+        { rpcAuthenticationPayloadDto, adminUpdateProfilePayloadDto },
       ),
     );
   }
 
   // count.
-  count(): Promise<number> {
+  count(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto): Promise<number> {
     return firstValueFrom<number>(
-      this.adminsMicroservice.send<number, any>(
+      this.adminsMicroservice.send<number, { rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto }>(
         {
           cmd: `${AdminsMicroserviceConstants.ADMINS_SERVICE_COUNT_MESSAGE_PATTERN}/v${this.version}`,
         },
-        {},
+        { rpcAuthenticationPayloadDto },
       ),
     );
   }

@@ -4,6 +4,7 @@ import { Between, ILike, Repository } from 'typeorm';
 import { CreateReviewRequestDto } from '../dtos/create-review-request.dto';
 import { FindAllReviewsRequestDto } from '../dtos/find-all-reviews-request.dto';
 import {
+  AuthedUser,
   ClientUserType,
   Customer,
   CustomersMicroserviceConnection,
@@ -14,6 +15,7 @@ import {
   OrdersMicroserviceConnection,
   OrdersMicroserviceConstants,
   Review,
+  RpcAuthenticationPayloadDto,
   Vendor,
   VendorsMicroserviceConnection,
   VendorsMicroserviceConstants,
@@ -43,26 +45,29 @@ export class VendorReviewsService {
   }
 
   // create.
-  async create(vendorId: number, createReviewRequestDto: CreateReviewRequestDto): Promise<Review> {
+  async create(authedUser: AuthedUser, createReviewRequestDto: CreateReviewRequestDto): Promise<Review> {
     const vendor: Vendor = await this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneOrFailById(
+      new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
       new FindOneOrFailByIdPayloadDto<Vendor>({
-        id: vendorId,
+        id: authedUser.id,
       }),
     );
     await this.ordersMicroserviceConnection.ordersServiceImpl.findOneOrFailByIdAndServiceType(
+      new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
       new FindOneOrderOrFailByIdAndServiceTypePayloadDto({
         id: createReviewRequestDto.orderId,
         serviceType: vendor.serviceType,
       }),
     );
     await this.customersMicroserviceConnection.customersServiceImpl.findOneOrFailById(
+      new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
       new FindOneOrFailByIdPayloadDto<Customer>({
         id: createReviewRequestDto.customerId,
       }),
     );
     return this.reviewRepository.save(
       await this.reviewRepository.create({
-        vendorId,
+        vendorId: authedUser.id,
         reviewedBy: ClientUserType.VENDOR,
         serviceType: vendor.serviceType,
         ...createReviewRequestDto,
@@ -71,7 +76,7 @@ export class VendorReviewsService {
   }
 
   // find all.
-  async findAll(vendorId: number, findAllReviewsRequestDto: FindAllReviewsRequestDto): Promise<Review[]> {
+  async findAll(authedUser: AuthedUser, findAllReviewsRequestDto: FindAllReviewsRequestDto): Promise<Review[]> {
     const {
       today,
       tomorrow,
@@ -80,13 +85,14 @@ export class VendorReviewsService {
       tomorrow: Date;
     } = DateHelpers.getTodayAndTomorrowForADate(findAllReviewsRequestDto.date);
     const vendor: Vendor = await this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneOrFailById(
+      new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
       new FindOneOrFailByIdPayloadDto<Vendor>({
-        id: vendorId,
+        id: authedUser.id,
       }),
     );
     return this.reviewRepository.find({
       where: {
-        vendorId,
+        vendorId: authedUser.id,
         serviceType: vendor.serviceType,
         reviewedBy: ClientUserType.VENDOR,
         order: {

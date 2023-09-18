@@ -1,4 +1,13 @@
-import { DateFilterPayloadDto, FindOneByIdPayloadDto, FindOneOrFailByIdPayloadDto, IProductsService, Product, ProductsMicroserviceConstants, ServiceType } from '@app/common';
+import {
+  DateFilterPayloadDto,
+  FindOneByIdPayloadDto,
+  FindOneOrFailByIdPayloadDto,
+  IProductsService,
+  Product,
+  ProductsMicroserviceConstants,
+  RpcAuthenticationPayloadDto,
+  ServiceType,
+} from '@app/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { NotFoundException } from '@nestjs/common';
@@ -7,20 +16,27 @@ export class ProductsServiceImpl implements IProductsService {
   constructor(private readonly productsMicroservice: ClientProxy, private readonly version: string) {}
 
   // find one by id.
-  findOneById(findOneByIdPayloadDto: FindOneByIdPayloadDto<Product>): Promise<Product | null> {
+  findOneById(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto, findOneByIdPayloadDto: FindOneByIdPayloadDto<Product>): Promise<Product | null> {
     return firstValueFrom<Product>(
-      this.productsMicroservice.send<Product, { findOneByIdPayloadDto: FindOneByIdPayloadDto<Product> }>(
+      this.productsMicroservice.send<
+        Product,
+        {
+          rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto;
+          findOneByIdPayloadDto: FindOneByIdPayloadDto<Product>;
+        }
+      >(
         {
           cmd: `${ProductsMicroserviceConstants.PRODUCTS_SERVICE_FIND_ONE_BY_ID_MESSAGE_PATTERN}/v${this.version}`,
         },
-        { findOneByIdPayloadDto },
+        { rpcAuthenticationPayloadDto, findOneByIdPayloadDto },
       ),
     );
   }
 
   // find one or fail by id.
-  async findOneOrFailById(findOneOrFailByIdPayloadDto: FindOneOrFailByIdPayloadDto<Product>): Promise<Product> {
+  async findOneOrFailById(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto, findOneOrFailByIdPayloadDto: FindOneOrFailByIdPayloadDto<Product>): Promise<Product> {
     const product: Product = await this.findOneById(
+      rpcAuthenticationPayloadDto,
       new FindOneByIdPayloadDto<Product>({
         id: findOneOrFailByIdPayloadDto.id,
         relations: findOneOrFailByIdPayloadDto.relations,
@@ -33,11 +49,12 @@ export class ProductsServiceImpl implements IProductsService {
   }
 
   // find with orders count.
-  findWithOrdersCount(serviceType: ServiceType, dateFilterPayloadDto: DateFilterPayloadDto): Promise<Product[]> {
+  findWithOrdersCount(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto, serviceType: ServiceType, dateFilterPayloadDto: DateFilterPayloadDto): Promise<Product[]> {
     return firstValueFrom<Product[]>(
       this.productsMicroservice.send<
         Product[],
         {
+          rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto;
           serviceType: ServiceType;
           dateFilterPayloadDto: DateFilterPayloadDto;
         }
@@ -46,6 +63,7 @@ export class ProductsServiceImpl implements IProductsService {
           cmd: `${ProductsMicroserviceConstants.PRODUCTS_SERVICE_FIND_WITH_ORDERS_COUNT_MESSAGE_PATTERN}/v${this.version}`,
         },
         {
+          rpcAuthenticationPayloadDto,
           serviceType,
           dateFilterPayloadDto,
         },
@@ -54,11 +72,12 @@ export class ProductsServiceImpl implements IProductsService {
   }
 
   // find with total sales.
-  findWithTotalSales(serviceType: ServiceType, dateFilterPayloadDto?: DateFilterPayloadDto): Promise<Product[]> {
+  findWithTotalSales(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto, serviceType: ServiceType, dateFilterPayloadDto?: DateFilterPayloadDto): Promise<Product[]> {
     return firstValueFrom<Product[]>(
       this.productsMicroservice.send<
         Product[],
         {
+          rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto;
           serviceType: ServiceType;
           dateFilterPayloadDto?: DateFilterPayloadDto;
         }
@@ -67,6 +86,7 @@ export class ProductsServiceImpl implements IProductsService {
           cmd: `${ProductsMicroserviceConstants.PRODUCTS_SERVICE_FIND_WITH_TOTAL_SALES_MESSAGE_PATTERN}/v${this.version}`,
         },
         {
+          rpcAuthenticationPayloadDto,
           serviceType,
           dateFilterPayloadDto,
         },

@@ -2,6 +2,7 @@ import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import {
   Attachment,
   AttachmentStatus,
+  AuthedUser,
   CommonConstants,
   CreateAttachmentPayloadDto,
   Document,
@@ -14,6 +15,7 @@ import {
   Location,
   LocationsMicroserviceConnection,
   LocationsMicroserviceConstants,
+  RpcAuthenticationPayloadDto,
   Vendor,
   VendorsMicroserviceConnection,
   VendorsMicroserviceConstants,
@@ -61,7 +63,7 @@ export class VendorAuthValidation {
 
   // validate upload documents.
   async validateUploadDocuments(
-    vendorId: number,
+    authedUser: AuthedUser,
     files?: Express.Multer.File[],
   ): Promise<{
     vendor: Vendor;
@@ -71,14 +73,16 @@ export class VendorAuthValidation {
       throw new BadRequestException('Please upload the required documents.');
     }
     const vendor: Vendor = await this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneOrFailById(
+      new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
       new FindOneOrFailByIdPayloadDto<Vendor>({
-        id: vendorId,
+        id: authedUser.id,
         relations: {
           attachments: true,
         },
       }),
     );
     const documents: Document[] = await this.documentsMicroserviceConnection.documentsServiceImpl.findAll(
+      new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
       new FindAllDocumentsPayloadDto({
         serviceType: vendor.serviceType,
       }),
@@ -102,7 +106,7 @@ export class VendorAuthValidation {
           createAttachmentPayloadDtoList.push(
             new CreateAttachmentPayloadDto({
               documentId: document.id,
-              vendorId: vendorId,
+              vendorId: authedUser.id,
               file: file,
             }),
           );
@@ -114,7 +118,7 @@ export class VendorAuthValidation {
           createAttachmentPayloadDtoList.push(
             new CreateAttachmentPayloadDto({
               documentId: document.id,
-              vendorId: vendorId,
+              vendorId: authedUser.id,
               file: file,
             }),
           );

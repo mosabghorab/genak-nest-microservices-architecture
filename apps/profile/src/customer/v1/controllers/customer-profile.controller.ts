@@ -11,12 +11,12 @@ export class CustomerProfileController {
   @Serialize(CustomerResponseDto, 'Profile updated successfully.')
   @Patch()
   update(@GetAuthedUser() authedUser: AuthedUser, @Body() updateProfileRequestDto: UpdateProfileRequestDto): Promise<Customer> {
-    return this.customerProfileService.update(authedUser.id, updateProfileRequestDto);
+    return this.customerProfileService.update(authedUser, updateProfileRequestDto);
   }
 
   @Serialize(CustomerResponseDto, 'Profile retrieved successfully.')
   @Get()
   find(@GetAuthedUser() authedUser: AuthedUser): Promise<Customer> {
-    return this.customerProfileService.find(authedUser.id);
+    return this.customerProfileService.find(authedUser);
   }
 }

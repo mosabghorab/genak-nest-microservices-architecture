@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, Repository } from 'typeorm';
-import { Complain, DateFilterOption, DateHelpers, FindOneByIdPayloadDto, FindOneOrFailByIdPayloadDto } from '@app/common';
+import { AuthedUser, Complain, DateFilterOption, DateHelpers, FindOneByIdPayloadDto, FindOneOrFailByIdPayloadDto } from '@app/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { FindAllComplainsRequestDto } from '../dtos/find-all-complains-request.dto';
 import { UpdateComplainStatusRequestDto } from '../dtos/update-complain-status-request.dto';
@@ -77,7 +77,7 @@ export class AdminComplainsService {
   }
 
   // update status.
-  async updateStatus(id: number, updateComplainStatusRequestDto: UpdateComplainStatusRequestDto): Promise<Complain> {
+  async updateStatus(authedUser: AuthedUser, id: number, updateComplainStatusRequestDto: UpdateComplainStatusRequestDto): Promise<Complain> {
     const complain: Complain = await this.findOneOrFailById(
       new FindOneOrFailByIdPayloadDto<Complain>({
         id,
@@ -86,7 +86,7 @@ export class AdminComplainsService {
     complain.status = updateComplainStatusRequestDto.status;
     const savedComplain: Complain = await this.complainRepository.save(complain);
     if (savedComplain) {
-      this.eventEmitter.emit(Constants.COMPLAIN_STATUS_CHANGED_EVENT, new ComplainStatusChangedEvent(savedComplain));
+      this.eventEmitter.emit(Constants.COMPLAIN_STATUS_CHANGED_EVENT, new ComplainStatusChangedEvent(authedUser, savedComplain));
     }
     return savedComplain;
   }

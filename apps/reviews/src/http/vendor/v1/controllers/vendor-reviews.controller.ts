@@ -12,12 +12,12 @@ export class VendorReviewsController {
   @Serialize(ReviewResponseDto, 'Review created successfully.')
   @Post()
   create(@GetAuthedUser() authedUser: AuthedUser, @Body() createReviewRequestDto: CreateReviewRequestDto): Promise<Review> {
-    return this.vendorReviewsService.create(authedUser.id, createReviewRequestDto);
+    return this.vendorReviewsService.create(authedUser, createReviewRequestDto);
   }
 
   @Serialize(ReviewResponseDto, 'All reviews.')
   @Get()
   findAll(@GetAuthedUser() authedUser: AuthedUser, @Query() findAllReviewsRequestDto: FindAllReviewsRequestDto): Promise<Review[]> {
-    return this.vendorReviewsService.findAll(authedUser.id, findAllReviewsRequestDto);
+    return this.vendorReviewsService.findAll(authedUser, findAllReviewsRequestDto);
   }
 }

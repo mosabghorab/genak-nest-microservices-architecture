@@ -11,9 +11,14 @@ export class AuthGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const isPublic: boolean = this.reflector.getAllAndOverride<any>(PUBLIC_KEY, [context.getHandler(), context.getClass()]) as boolean;
     if (isPublic) return true;
-    const request: any = context.switchToHttp().getRequest();
-    const token: string = Helpers.extractTokenFromHeader(request);
-    if (!token) {
+    const requestData: any = context.getType() === 'rpc' ? context.switchToRpc().getData() : context.switchToHttp().getRequest();
+    const authentication: string =
+      context.getType() === 'rpc' ? context.switchToRpc().getData()?.rpcAuthenticationPayloadDto?.authentication : context.switchToHttp().getRequest().headers?.['authorization'];
+    if (!authentication) {
+      throw new UnauthorizedException();
+    }
+    const [type, token]: string[] = authentication?.split(' ') ?? [];
+    if (type !== 'Bearer' || !token) {
       throw new UnauthorizedException();
     }
     let authedUser: AuthedUser;
@@ -21,6 +26,7 @@ export class AuthGuard implements CanActivate {
       authedUser = await this.jwtService.verifyAsync(token, {
         secret: this.configService.get<string>('JWT_SECRET'),
       });
+      authedUser.authentication = authentication;
     } catch {
       throw new UnauthorizedException();
     }
@@ -29,7 +35,7 @@ export class AuthGuard implements CanActivate {
     if (authedUser.type === UserType.ADMIN) {
       const skipAdminRoles: boolean = this.reflector.getAllAndOverride<any>(SKIP_ADMIN_ROLES_KEY, [context.getHandler(), context.getClass()]) as boolean;
       if (skipAdminRoles) {
-        request.user = authedUser;
+        requestData.authedUser = authedUser;
         return true;
       }
       const permissionGroup: PermissionGroup = this.reflector.getAllAndOverride<any>(PERMISSIONS_TARGET_KEY, [context.getClass()]) as PermissionGroup;
@@ -38,7 +44,7 @@ export class AuthGuard implements CanActivate {
         throw new ForbiddenException();
       }
     }
-    request.user = authedUser;
+    requestData.authedUser = authedUser;
     return true;
   }
 }

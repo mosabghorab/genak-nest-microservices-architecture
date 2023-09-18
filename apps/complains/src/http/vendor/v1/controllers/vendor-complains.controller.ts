@@ -18,6 +18,6 @@ export class VendorComplainsController {
     @UploadedFile(Helpers.defaultImageValidator(false))
     image?: Express.Multer.File,
   ): Promise<Complain> {
-    return this.vendorComplainsService.create(authedUser.id, createComplainRequestDto, image);
+    return this.vendorComplainsService.create(authedUser, createComplainRequestDto, image);
   }
 }

@@ -1,17 +1,17 @@
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Injectable } from '@nestjs/common';
-import { FcmToken, FindAllPushTokensPayloadDto } from '@app/common';
+import { FindAllPushTokensPayloadDto, PushToken } from '@app/common';
 
 @Injectable()
-export class FcmTokensService {
+export class PushTokensService {
   constructor(
-    @InjectRepository(FcmToken)
-    private readonly fcmTokenRepository: Repository<FcmToken>,
+    @InjectRepository(PushToken)
+    private readonly fcmTokenRepository: Repository<PushToken>,
   ) {}
 
   // find all.
-  findAll(findAllPushTokensPayloadDto: FindAllPushTokensPayloadDto): Promise<FcmToken[]> {
+  findAll(findAllPushTokensPayloadDto: FindAllPushTokensPayloadDto): Promise<PushToken[]> {
     return this.fcmTokenRepository.find({
       where: {
         tokenableId: findAllPushTokensPayloadDto.tokenableId,

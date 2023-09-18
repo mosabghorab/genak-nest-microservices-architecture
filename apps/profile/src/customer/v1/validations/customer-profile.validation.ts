@@ -1,5 +1,6 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import {
+  AuthedUser,
   Customer,
   CustomersMicroserviceConnection,
   CustomersMicroserviceConstants,
@@ -8,6 +9,7 @@ import {
   Location,
   LocationsMicroserviceConnection,
   LocationsMicroserviceConstants,
+  RpcAuthenticationPayloadDto,
 } from '@app/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { Constants } from '../../../constants';
@@ -29,10 +31,11 @@ export class CustomerProfileValidation {
   }
 
   // validate update.
-  async validateUpdate(customerId: number, updateProfileRequestDto: UpdateProfileRequestDto): Promise<void> {
+  async validateUpdate(authedUser: AuthedUser, updateProfileRequestDto: UpdateProfileRequestDto): Promise<void> {
     await this.customersMicroserviceConnection.customersServiceImpl.findOneOrFailById(
+      new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
       new FindOneOrFailByIdPayloadDto<Customer>({
-        id: customerId,
+        id: authedUser.id,
       }),
     );
     if (updateProfileRequestDto.phone) {

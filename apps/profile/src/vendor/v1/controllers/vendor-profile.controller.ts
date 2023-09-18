@@ -18,12 +18,12 @@ export class VendorProfileController {
     @UploadedFile(Helpers.defaultImageValidator(false))
     avatar?: Express.Multer.File,
   ): Promise<Vendor> {
-    return this.vendorProfileService.update(authedUser.id, updateProfileRequestDto, avatar);
+    return this.vendorProfileService.update(authedUser, updateProfileRequestDto, avatar);
   }
 
   @Serialize(VendorResponseDto, 'Profile retrieved successfully.')
   @Get()
   find(@GetAuthedUser() authedUser: AuthedUser): Promise<Vendor> {
-    return this.vendorProfileService.find(authedUser.id);
+    return this.vendorProfileService.find(authedUser);
   }
 }

@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { Admin, AdminsMicroserviceConnection, AdminsMicroserviceConstants, AdminUpdateProfilePayloadDto, FindOneOrFailByIdPayloadDto } from '@app/common';
+import { Admin, AdminsMicroserviceConnection, AdminsMicroserviceConstants, AdminUpdateProfilePayloadDto, AuthedUser, FindOneOrFailByIdPayloadDto, RpcAuthenticationPayloadDto } from '@app/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { Constants } from '../../../../../auth/src/constants';
 import { UpdateProfileRequestDto } from '../dtos/update-profile-request.dto';
@@ -14,21 +14,23 @@ export class AdminProfileService {
   }
 
   // update.
-  async update(adminId: number, updateProfileRequestDto: UpdateProfileRequestDto): Promise<Admin> {
-    await this.adminProfileValidation.validateUpdate(adminId, updateProfileRequestDto);
+  async update(authedUser: AuthedUser, updateProfileRequestDto: UpdateProfileRequestDto): Promise<Admin> {
+    await this.adminProfileValidation.validateUpdate(authedUser, updateProfileRequestDto);
     return this.adminsMicroserviceConnection.adminsServiceImpl.updateProfile(
+      new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
       new AdminUpdateProfilePayloadDto({
-        adminId,
+        adminId: authedUser.id,
         ...updateProfileRequestDto,
       }),
     );
   }
 
   // find.
-  find(adminId: number): Promise<Admin> {
+  find(authedUser: AuthedUser): Promise<Admin> {
     return this.adminsMicroserviceConnection.adminsServiceImpl.findOneOrFailById(
+      new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
       new FindOneOrFailByIdPayloadDto<Admin>({
-        id: adminId,
+        id: authedUser.id,
         relations: { adminsRoles: { role: { rolesPermissions: { permission: true } } } },
       }),
     );

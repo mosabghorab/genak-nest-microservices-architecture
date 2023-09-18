@@ -19,6 +19,6 @@ export class AdminAuthController {
   @Serialize(AdminResponseDto, 'Password changed successfully.')
   @Patch('change-password')
   changePassword(@GetAuthedUser() authedUser: AuthedUser, @Body() changePasswordRequestDto: ChangePasswordRequestDto): Promise<Admin> {
-    return this.adminAuthService.changePassword(authedUser.id, changePasswordRequestDto);
+    return this.adminAuthService.changePassword(authedUser, changePasswordRequestDto);
   }
 }

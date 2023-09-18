@@ -8,7 +8,6 @@ import {
   Customer,
   CustomersMicroserviceConnection,
   CustomersMicroserviceConstants,
-  FcmToken,
   FindAllPushTokensPayloadDto,
   FindOneOrFailByIdPayloadDto,
   NotificationsMicroserviceConnection,
@@ -18,6 +17,8 @@ import {
   OrdersMicroserviceConnection,
   OrdersMicroserviceConstants,
   PushNotificationType,
+  PushToken,
+  RpcAuthenticationPayloadDto,
   SendPushNotificationPayloadDto,
   UserType,
   Vendor,
@@ -64,11 +65,12 @@ export class ComplainStatusChangedHandler {
 
   // send fcm notification.
   private async _sendFcmNotification(complainStatusChangedEvent: ComplainStatusChangedEvent): Promise<void> {
-    const { complain }: ComplainStatusChangedEvent = complainStatusChangedEvent;
+    const { authedUser, complain }: ComplainStatusChangedEvent = complainStatusChangedEvent;
     let fcmTokens: string[] = [];
     if (complain.complainerUserType === ClientUserType.CUSTOMER) {
       const isNotificationsEnabled: boolean = (
         await this.customersMicroserviceConnection.customersServiceImpl.findOneOrFailById(
+          new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
           new FindOneOrFailByIdPayloadDto<Customer>({
             id: complain.complainerId,
           }),
@@ -76,20 +78,23 @@ export class ComplainStatusChangedHandler {
       ).notificationsEnabled;
       if (isNotificationsEnabled) {
         const order: Order = await this.ordersMicroserviceConnection.ordersServiceImpl.findOneOrFailById(
+          new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
           new FindOneOrFailByIdPayloadDto<Order>({
             id: complain.orderId,
           }),
         );
         fcmTokens = (
-          await this.authMicroserviceConnection.fcmTokensServiceImpl.findAll(
+          await this.authMicroserviceConnection.pushTokensServiceImpl.findAll(
+            new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
             new FindAllPushTokensPayloadDto({
               tokenableId: complain.complainerId,
               tokenableType: UserType.CUSTOMER,
             }),
           )
-        ).map((fcmToken: FcmToken): string => fcmToken.token);
+        ).map((fcmToken: PushToken): string => fcmToken.token);
         if (fcmTokens.length > 0) {
           this.notificationsMicroserviceConnection.notificationsServiceImpl.sendFcmNotification(
+            new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
             new SendPushNotificationPayloadDto({
               type: PushNotificationType.TOKENS,
               fcmTokens: fcmTokens,
@@ -104,6 +109,7 @@ export class ComplainStatusChangedHandler {
     } else {
       const isNotificationsEnabled: boolean = (
         await this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneOrFailById(
+          new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
           new FindOneOrFailByIdPayloadDto<Vendor>({
             id: complain.complainerId,
           }),
@@ -111,20 +117,23 @@ export class ComplainStatusChangedHandler {
       ).notificationsEnabled;
       if (isNotificationsEnabled) {
         const order: Order = await this.ordersMicroserviceConnection.ordersServiceImpl.findOneOrFailById(
+          new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
           new FindOneOrFailByIdPayloadDto<Order>({
             id: complain.orderId,
           }),
         );
         fcmTokens = (
-          await this.authMicroserviceConnection.fcmTokensServiceImpl.findAll(
+          await this.authMicroserviceConnection.pushTokensServiceImpl.findAll(
+            new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
             new FindAllPushTokensPayloadDto({
               tokenableId: complain.complainerId,
               tokenableType: UserType.VENDOR,
             }),
           )
-        ).map((fcmToken: FcmToken): string => fcmToken.token);
+        ).map((fcmToken: PushToken): string => fcmToken.token);
         if (fcmTokens.length > 0) {
           this.notificationsMicroserviceConnection.notificationsServiceImpl.sendFcmNotification(
+            new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
             new SendPushNotificationPayloadDto({
               type: PushNotificationType.TOKENS,
               fcmTokens: fcmTokens,
@@ -141,8 +150,9 @@ export class ComplainStatusChangedHandler {
 
   // create database notification.
   private async _createDatabaseNotification(complainStatusChangedEvent: ComplainStatusChangedEvent): Promise<void> {
-    const { complain }: ComplainStatusChangedEvent = complainStatusChangedEvent;
+    const { authedUser, complain }: ComplainStatusChangedEvent = complainStatusChangedEvent;
     const order: Order = await this.ordersMicroserviceConnection.ordersServiceImpl.findOneOrFailById(
+      new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
       new FindOneOrFailByIdPayloadDto<Order>({
         id: complain.orderId,
       }),
@@ -161,6 +171,9 @@ export class ComplainStatusChangedHandler {
       title: 'Complain Status',
       body: `Complain status with order id ${order.uniqueId} changed to ${complain.status}`,
     });
-    this.notificationsMicroserviceConnection.notificationsServiceImpl.createDatabaseNotification(createDatabaseNotificationPayloadDto);
+    this.notificationsMicroserviceConnection.notificationsServiceImpl.createDatabaseNotification(
+      new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
+      createDatabaseNotificationPayloadDto,
+    );
   }
 }

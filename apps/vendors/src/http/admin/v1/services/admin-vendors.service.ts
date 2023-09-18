@@ -5,6 +5,7 @@ import {
   Attachment,
   AttachmentsMicroserviceConnection,
   AttachmentsMicroserviceConstants,
+  AuthedUser,
   CreateAttachmentPayloadDto,
   DateFilterOption,
   DateHelpers,
@@ -16,6 +17,7 @@ import {
   FindOneOrFailByPhonePayloadDto,
   Location,
   LocationVendor,
+  RpcAuthenticationPayloadDto,
   StorageMicroserviceConnection,
   StorageMicroserviceConstants,
   UploadFilePayloadDto,
@@ -165,7 +167,7 @@ export class AdminVendorsService {
   }
 
   // create.
-  async create(createVendorRequestDto: CreateVendorRequestDto, files?: Express.Multer.File[]): Promise<Vendor> {
+  async create(authedUser: AuthedUser, createVendorRequestDto: CreateVendorRequestDto, files?: Express.Multer.File[]): Promise<Vendor> {
     const governorate: Location = await this.adminVendorsValidation.validateCreation(createVendorRequestDto);
     const {
       createAttachmentPayloadDtoList,
@@ -173,10 +175,11 @@ export class AdminVendorsService {
     }: {
       avatar?: any;
       createAttachmentPayloadDtoList: CreateAttachmentPayloadDto[];
-    } = await this.adminVendorsValidation.validateCreationUploadDocuments(createVendorRequestDto, files);
+    } = await this.adminVendorsValidation.validateCreationUploadDocuments(authedUser, createVendorRequestDto, files);
     let avatarUrl: string;
     if (avatar) {
       avatarUrl = await this.storageMicroserviceConnection.storageServiceImpl.uploadFile(
+        new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
         new UploadFilePayloadDto({
           prefixPath: Constants.VENDORS_IMAGES_PREFIX_PATH,
           file: avatar,
@@ -203,6 +206,7 @@ export class AdminVendorsService {
     const attachments: Attachment[] = [];
     for (const createAttachmentPayloadDto of createAttachmentPayloadDtoList) {
       const fileUrl: string = await this.storageMicroserviceConnection.storageServiceImpl.uploadFile(
+        new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
         new UploadFilePayloadDto({
           prefixPath: Constants.VENDORS_ATTACHMENTS_PREFIX_PATH,
           file: createAttachmentPayloadDto.file,
@@ -221,7 +225,7 @@ export class AdminVendorsService {
   }
 
   // update.
-  async update(vendorId: number, updateVendorRequestDto: UpdateVendorRequestDto, files?: Express.Multer.File[]): Promise<Vendor> {
+  async update(authedUser: AuthedUser, vendorId: number, updateVendorRequestDto: UpdateVendorRequestDto, files?: Express.Multer.File[]): Promise<Vendor> {
     const vendor: Vendor = await this.adminVendorsValidation.validateUpdate(vendorId, updateVendorRequestDto);
     const {
       createAttachmentPayloadDtoList,
@@ -229,16 +233,18 @@ export class AdminVendorsService {
     }: {
       avatar?: any;
       createAttachmentPayloadDtoList: CreateAttachmentPayloadDto[];
-    } = await this.adminVendorsValidation.validateUpdateUploadDocuments(vendor, files);
+    } = await this.adminVendorsValidation.validateUpdateUploadDocuments(authedUser, vendor, files);
     if (avatar) {
       if (vendor.avatar)
         await this.storageMicroserviceConnection.storageServiceImpl.deleteFile(
+          new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
           new DeleteFilePayloadDto({
             prefixPath: Constants.VENDORS_IMAGES_PREFIX_PATH,
             fileUrl: vendor.avatar,
           }),
         );
       vendor.avatar = await this.storageMicroserviceConnection.storageServiceImpl.uploadFile(
+        new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
         new UploadFilePayloadDto({
           prefixPath: Constants.VENDORS_IMAGES_PREFIX_PATH,
           file: avatar,
@@ -263,6 +269,7 @@ export class AdminVendorsService {
     const attachments: Attachment[] = [];
     for (const createAttachmentPayloadDto of createAttachmentPayloadDtoList) {
       const oldAttachments: Attachment[] = await this.attachmentsMicroserviceConnection.attachmentsServiceImpl.findAllByVendorIdAndDocumentId(
+        new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
         new FindAllAttachmentsByVendorIdAndDocumentIdPayloadDto({
           vendorId: savedVendor.id,
           documentId: createAttachmentPayloadDto.documentId,
@@ -270,11 +277,12 @@ export class AdminVendorsService {
       );
       if (oldAttachments) {
         for (const oldAttachment of oldAttachments) {
-          await this.attachmentsMicroserviceConnection.attachmentsServiceImpl.removeOneByInstance(oldAttachment);
+          await this.attachmentsMicroserviceConnection.attachmentsServiceImpl.removeOneByInstance(new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }), oldAttachment);
           savedVendor.attachments = savedVendor.attachments.filter((attachment: Attachment): boolean => attachment.id !== oldAttachment.id);
         }
       }
       const fileUrl: string = await this.storageMicroserviceConnection.storageServiceImpl.uploadFile(
+        new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
         new UploadFilePayloadDto({
           prefixPath: Constants.VENDORS_IMAGES_PREFIX_PATH,
           file: avatar,

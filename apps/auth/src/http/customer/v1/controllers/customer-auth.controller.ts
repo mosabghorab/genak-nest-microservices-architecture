@@ -34,6 +34,6 @@ export class CustomerAuthController {
   @Serialize(CustomerResponseDto, 'Account deleted successfully.')
   @Delete('delete-account')
   async deleteAccount(@GetAuthedUser() authedUser: AuthedUser): Promise<Customer> {
-    return this.customerAuthService.deleteAccount(authedUser.id);
+    return this.customerAuthService.deleteAccount(authedUser);
   }
 }

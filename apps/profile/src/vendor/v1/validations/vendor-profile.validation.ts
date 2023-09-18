@@ -1,5 +1,5 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
-import { FindOneByPhonePayloadDto, FindOneOrFailByIdPayloadDto, Vendor, VendorsMicroserviceConnection, VendorsMicroserviceConstants } from '@app/common';
+import { AuthedUser, FindOneByPhonePayloadDto, FindOneOrFailByIdPayloadDto, RpcAuthenticationPayloadDto, Vendor, VendorsMicroserviceConnection, VendorsMicroserviceConstants } from '@app/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { Constants } from '../../../constants';
 import { UpdateProfileRequestDto } from '../dtos/update-profile-request.dto';
@@ -16,10 +16,11 @@ export class VendorProfileValidation {
   }
 
   // validate update.
-  async validateUpdate(vendorId: number, updateProfileRequestDto: UpdateProfileRequestDto): Promise<void> {
+  async validateUpdate(authedUser: AuthedUser, updateProfileRequestDto: UpdateProfileRequestDto): Promise<void> {
     await this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneOrFailById(
+      new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
       new FindOneOrFailByIdPayloadDto<Vendor>({
-        id: vendorId,
+        id: authedUser.id,
       }),
     );
     if (updateProfileRequestDto.phone) {

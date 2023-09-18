@@ -1,9 +1,9 @@
-import { Complain, FindOneByIdPayloadDto, FindOneOrFailByIdPayloadDto } from '@app/common';
+import { Complain, FindOneByIdPayloadDto, FindOneOrFailByIdPayloadDto, RpcAuthenticationPayloadDto } from '@app/common';
 
 export interface IComplainsService {
   // find one by id.
-  findOneById(findOneByIdPayloadDto: FindOneByIdPayloadDto<Complain>): Promise<Complain | null>;
+  findOneById(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto, findOneByIdPayloadDto: FindOneByIdPayloadDto<Complain>): Promise<Complain | null>;
 
   // find one or fail by id.
-  findOneOrFailById(findOneOrFailByIdPayloadDto: FindOneOrFailByIdPayloadDto<Complain>): Promise<Complain>;
+  findOneOrFailById(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto, findOneOrFailByIdPayloadDto: FindOneOrFailByIdPayloadDto<Complain>): Promise<Complain>;
 }

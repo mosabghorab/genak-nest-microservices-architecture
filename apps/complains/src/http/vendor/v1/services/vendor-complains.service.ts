@@ -2,12 +2,14 @@ import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import {
+  AuthedUser,
   ClientUserType,
   Complain,
   FindOneOrderOrFailByIdAndServiceTypePayloadDto,
   FindOneOrFailByIdPayloadDto,
   OrdersMicroserviceConnection,
   OrdersMicroserviceConstants,
+  RpcAuthenticationPayloadDto,
   StorageMicroserviceConnection,
   StorageMicroserviceConstants,
   UploadFilePayloadDto,
@@ -44,13 +46,15 @@ export class VendorComplainsService {
   }
 
   // create.
-  async create(vendorId: number, createComplainRequestDto: CreateComplainRequestDto, image?: Express.Multer.File): Promise<Complain> {
+  async create(authedUser: AuthedUser, createComplainRequestDto: CreateComplainRequestDto, image?: Express.Multer.File): Promise<Complain> {
     const vendor: Vendor = await this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneOrFailById(
+      new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
       new FindOneOrFailByIdPayloadDto<Vendor>({
-        id: vendorId,
+        id: authedUser.id,
       }),
     );
     await this.ordersMicroserviceConnection.ordersServiceImpl.findOneOrFailByIdAndServiceType(
+      new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
       new FindOneOrderOrFailByIdAndServiceTypePayloadDto({
         id: createComplainRequestDto.orderId,
         serviceType: vendor.serviceType,
@@ -59,6 +63,7 @@ export class VendorComplainsService {
     let imageUrl: string;
     if (image) {
       imageUrl = await this.storageMicroserviceConnection.storageServiceImpl.uploadFile(
+        new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
         new UploadFilePayloadDto({
           prefixPath: Constants.COMPLAINS_IMAGES_PREFIX_PATH,
           file: image,
@@ -67,7 +72,7 @@ export class VendorComplainsService {
     }
     const savedComplain: Complain = await this.complainRepository.save(
       await this.complainRepository.create({
-        complainerId: vendorId,
+        complainerId: authedUser.id,
         complainerUserType: ClientUserType.VENDOR,
         serviceType: vendor.serviceType,
         image: imageUrl,
@@ -75,7 +80,7 @@ export class VendorComplainsService {
       }),
     );
     if (savedComplain) {
-      this.eventEmitter.emit(Constants.COMPLAIN_CREATED_EVENT, new ComplainCreatedEvent(savedComplain));
+      this.eventEmitter.emit(Constants.COMPLAIN_CREATED_EVENT, new ComplainCreatedEvent(authedUser, savedComplain));
     }
     return savedComplain;
   }

@@ -1,19 +1,19 @@
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Injectable } from '@nestjs/common';
-import { FcmToken, FindAllPushTokensPayloadDto } from '@app/common';
+import { FindAllPushTokensPayloadDto, PushToken } from '@app/common';
 import { FindOnePushTokenPayloadDto } from '../dtos/find-one-push-token-payload.dto';
 import { CreatePushTokenPayloadDto } from '../dtos/create-push-token-payload.dto';
 
 @Injectable()
 export class PushTokensService {
   constructor(
-    @InjectRepository(FcmToken)
-    private readonly fcmTokenRepository: Repository<FcmToken>,
+    @InjectRepository(PushToken)
+    private readonly fcmTokenRepository: Repository<PushToken>,
   ) {}
 
   // find one.
-  findOne(findOnePushTokenPayloadDto: FindOnePushTokenPayloadDto): Promise<FcmToken | null> {
+  findOne(findOnePushTokenPayloadDto: FindOnePushTokenPayloadDto): Promise<PushToken | null> {
     return this.fcmTokenRepository.findOne({
       where: {
         token: findOnePushTokenPayloadDto.token,
@@ -24,7 +24,7 @@ export class PushTokensService {
   }
 
   // find all.
-  findAll(findAllPushTokensPayloadDto: FindAllPushTokensPayloadDto): Promise<FcmToken[]> {
+  findAll(findAllPushTokensPayloadDto: FindAllPushTokensPayloadDto): Promise<PushToken[]> {
     return this.fcmTokenRepository.find({
       where: {
         tokenableId: findAllPushTokensPayloadDto.tokenableId,
@@ -34,12 +34,12 @@ export class PushTokensService {
   }
 
   // create.
-  async create(createPushTokenPayloadDto: CreatePushTokenPayloadDto): Promise<FcmToken> {
+  async create(createPushTokenPayloadDto: CreatePushTokenPayloadDto): Promise<PushToken> {
     return this.fcmTokenRepository.create(await this.fcmTokenRepository.save(createPushTokenPayloadDto));
   }
 
   // remove one by instance.
-  removeOneByInstance(fcmToken: FcmToken): Promise<FcmToken> {
+  removeOneByInstance(fcmToken: PushToken): Promise<PushToken> {
     return this.fcmTokenRepository.remove(fcmToken);
   }
 }

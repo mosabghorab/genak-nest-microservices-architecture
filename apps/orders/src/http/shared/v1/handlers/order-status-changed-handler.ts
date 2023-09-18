@@ -7,13 +7,14 @@ import {
   Customer,
   CustomersMicroserviceConnection,
   CustomersMicroserviceConstants,
-  FcmToken,
   FindAllPushTokensPayloadDto,
   FindOneOrFailByIdPayloadDto,
   NotificationsMicroserviceConnection,
   NotificationsMicroserviceConstants,
   NotificationTarget,
   PushNotificationType,
+  PushToken,
+  RpcAuthenticationPayloadDto,
   SendPushNotificationPayloadDto,
   UserType,
   Vendor,
@@ -57,88 +58,97 @@ export class OrderStatusChangedHandler {
   // send fcm notification.
   private async _sendFcmNotification(orderStatusChangedEvent: OrderStatusChangedEvent): Promise<void> {
     const { authedUser, order }: OrderStatusChangedEvent = orderStatusChangedEvent;
-    let fcmTokens: string[] = [];
+    let pushTokens: string[] = [];
     if (authedUser.type === UserType.VENDOR) {
       const isNotificationsEnabled: boolean = (
         await this.customersMicroserviceConnection.customersServiceImpl.findOneOrFailById(
+          new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
           new FindOneOrFailByIdPayloadDto<Customer>({
             id: order.customerId,
           }),
         )
       ).notificationsEnabled;
       if (isNotificationsEnabled) {
-        fcmTokens = (
-          await this.authMicroserviceConnection.fcmTokensServiceImpl.findAll(
+        pushTokens = (
+          await this.authMicroserviceConnection.pushTokensServiceImpl.findAll(
+            new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
             new FindAllPushTokensPayloadDto({
               tokenableId: order.customerId,
               tokenableType: UserType.CUSTOMER,
             }),
           )
-        ).map((fcmToken: FcmToken) => fcmToken.token);
+        ).map((fcmToken: PushToken) => fcmToken.token);
       }
     } else if (authedUser.type === UserType.CUSTOMER) {
       const isNotificationsEnabled: boolean = (
         await this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneOrFailById(
+          new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
           new FindOneOrFailByIdPayloadDto<Vendor>({
             id: order.vendorId,
           }),
         )
       ).notificationsEnabled;
       if (isNotificationsEnabled) {
-        fcmTokens = (
-          await this.authMicroserviceConnection.fcmTokensServiceImpl.findAll(
+        pushTokens = (
+          await this.authMicroserviceConnection.pushTokensServiceImpl.findAll(
+            new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
             new FindAllPushTokensPayloadDto({
               tokenableId: order.vendorId,
               tokenableType: UserType.VENDOR,
             }),
           )
-        ).map((fcmToken: FcmToken) => fcmToken.token);
+        ).map((fcmToken: PushToken) => fcmToken.token);
       }
     } else if (authedUser.type === UserType.ADMIN) {
       const customerIsNotificationsEnabled: boolean = (
         await this.customersMicroserviceConnection.customersServiceImpl.findOneOrFailById(
+          new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
           new FindOneOrFailByIdPayloadDto<Customer>({
             id: order.customerId,
           }),
         )
       ).notificationsEnabled;
       if (customerIsNotificationsEnabled) {
-        fcmTokens.push(
+        pushTokens.push(
           ...(
-            await this.authMicroserviceConnection.fcmTokensServiceImpl.findAll(
+            await this.authMicroserviceConnection.pushTokensServiceImpl.findAll(
+              new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
               new FindAllPushTokensPayloadDto({
                 tokenableId: order.customerId,
                 tokenableType: UserType.CUSTOMER,
               }),
             )
-          ).map((fcmToken: FcmToken) => fcmToken.token),
+          ).map((fcmToken: PushToken) => fcmToken.token),
         );
       }
       const vendorIsNotificationsEnabled: boolean = (
         await this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneOrFailById(
+          new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
           new FindOneOrFailByIdPayloadDto<Vendor>({
             id: order.vendorId,
           }),
         )
       ).notificationsEnabled;
       if (vendorIsNotificationsEnabled) {
-        fcmTokens.push(
+        pushTokens.push(
           ...(
-            await this.authMicroserviceConnection.fcmTokensServiceImpl.findAll(
+            await this.authMicroserviceConnection.pushTokensServiceImpl.findAll(
+              new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
               new FindAllPushTokensPayloadDto({
                 tokenableId: order.vendorId,
                 tokenableType: UserType.VENDOR,
               }),
             )
-          ).map((fcmToken: FcmToken) => fcmToken.token),
+          ).map((fcmToken: PushToken) => fcmToken.token),
         );
       }
     }
-    if (fcmTokens.length > 0) {
+    if (pushTokens.length > 0) {
       this.notificationsMicroserviceConnection.notificationsServiceImpl.sendFcmNotification(
+        new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
         new SendPushNotificationPayloadDto({
           type: PushNotificationType.TOKENS,
-          fcmTokens: fcmTokens,
+          fcmTokens: pushTokens,
           title: 'Order Status',
           body: `Order status with id ${order.uniqueId} changed to ${order.status} by ${authedUser.type}`,
           notificationTarget: NotificationTarget.ORDER,
@@ -168,8 +178,14 @@ export class OrderStatusChangedHandler {
         title: 'Order Status',
         body: `Order status with id ${order.uniqueId} changed to ${order.status} by ${authedUser.type}`,
       });
-      this.notificationsMicroserviceConnection.notificationsServiceImpl.createDatabaseNotification(createDatabaseNotificationPayloadDtoForCustomer);
-      this.notificationsMicroserviceConnection.notificationsServiceImpl.createDatabaseNotification(createDatabaseNotificationPayloadDtoForVendor);
+      this.notificationsMicroserviceConnection.notificationsServiceImpl.createDatabaseNotification(
+        new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
+        createDatabaseNotificationPayloadDtoForCustomer,
+      );
+      this.notificationsMicroserviceConnection.notificationsServiceImpl.createDatabaseNotification(
+        new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
+        createDatabaseNotificationPayloadDtoForVendor,
+      );
     } else {
       let notifiableType: UserType;
       let notifiableId: number;
@@ -188,7 +204,10 @@ export class OrderStatusChangedHandler {
         title: 'Order Status',
         body: `Order status with id ${order.uniqueId} changed to ${order.status} by ${authedUser.type}`,
       });
-      this.notificationsMicroserviceConnection.notificationsServiceImpl.createDatabaseNotification(createDatabaseNotificationPayloadDto);
+      this.notificationsMicroserviceConnection.notificationsServiceImpl.createDatabaseNotification(
+        new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
+        createDatabaseNotificationPayloadDto,
+      );
     }
   }
 }

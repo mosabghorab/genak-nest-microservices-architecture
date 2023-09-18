@@ -4,12 +4,13 @@ import {
   AuthMicroserviceConnection,
   AuthMicroserviceConstants,
   CreateDatabaseNotificationPayloadDto,
-  FcmToken,
   FindAllPushTokensPayloadDto,
   NotificationsMicroserviceConnection,
   NotificationsMicroserviceConstants,
   NotificationTarget,
   PushNotificationType,
+  PushToken,
+  RpcAuthenticationPayloadDto,
   SendPushNotificationPayloadDto,
   UserType,
 } from '@app/common';
@@ -39,22 +40,24 @@ export class OrderCreatedHandler {
 
   // send fcm notification.
   private async _sendFcmNotification(orderCreatedEvent: OrderCreatedEvent): Promise<void> {
-    const { order, vendor, customer }: OrderCreatedEvent = orderCreatedEvent;
-    let fcmTokens: string[] = [];
+    const { authedUser, order, vendor, customer }: OrderCreatedEvent = orderCreatedEvent;
+    let pushTokens: string[] = [];
     if (vendor.notificationsEnabled) {
-      fcmTokens = (
-        await this.authMicroserviceConnection.fcmTokensServiceImpl.findAll(
+      pushTokens = (
+        await this.authMicroserviceConnection.pushTokensServiceImpl.findAll(
+          new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
           new FindAllPushTokensPayloadDto({
             tokenableId: vendor.id,
             tokenableType: UserType.VENDOR,
           }),
         )
-      ).map((fcmToken: FcmToken) => fcmToken.token);
-      if (fcmTokens.length > 0) {
+      ).map((fcmToken: PushToken) => fcmToken.token);
+      if (pushTokens.length > 0) {
         this.notificationsMicroserviceConnection.notificationsServiceImpl.sendFcmNotification(
+          new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
           new SendPushNotificationPayloadDto({
             type: PushNotificationType.TOKENS,
-            fcmTokens: fcmTokens,
+            fcmTokens: pushTokens,
             title: 'z',
             body: `You got a new order from: ${customer.name}`,
             notificationTarget: NotificationTarget.ORDER,
@@ -67,7 +70,7 @@ export class OrderCreatedHandler {
 
   // create database notification.
   private async _createDatabaseNotification(orderStatusChangedEvent: OrderCreatedEvent): Promise<void> {
-    const { order, vendor, customer }: OrderCreatedEvent = orderStatusChangedEvent;
+    const { authedUser, order, vendor, customer }: OrderCreatedEvent = orderStatusChangedEvent;
     const createDatabaseNotificationPayloadDto: CreateDatabaseNotificationPayloadDto = new CreateDatabaseNotificationPayloadDto({
       notifiableId: vendor.id,
       notifiableType: UserType.VENDOR,
@@ -76,6 +79,9 @@ export class OrderCreatedHandler {
       title: 'New Order',
       body: `You got a new order from: ${customer.name}`,
     });
-    this.notificationsMicroserviceConnection.notificationsServiceImpl.createDatabaseNotification(createDatabaseNotificationPayloadDto);
+    this.notificationsMicroserviceConnection.notificationsServiceImpl.createDatabaseNotification(
+      new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
+      createDatabaseNotificationPayloadDto,
+    );
   }
 }

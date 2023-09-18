@@ -2,12 +2,14 @@ import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import {
+  AuthedUser,
   ClientUserType,
   Complain,
   FindOneOrFailByIdPayloadDto,
   Order,
   OrdersMicroserviceConnection,
   OrdersMicroserviceConstants,
+  RpcAuthenticationPayloadDto,
   StorageMicroserviceConnection,
   StorageMicroserviceConstants,
   UploadFilePayloadDto,
@@ -37,8 +39,9 @@ export class CustomerComplainsService {
   }
 
   // create.
-  async create(customerId: number, createComplainRequestDto: CreateComplainRequestDto, image?: Express.Multer.File): Promise<Complain> {
+  async create(authedUser: AuthedUser, createComplainRequestDto: CreateComplainRequestDto, image?: Express.Multer.File): Promise<Complain> {
     const order: Order = await this.ordersMicroserviceConnection.ordersServiceImpl.findOneOrFailById(
+      new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
       new FindOneOrFailByIdPayloadDto<Order>({
         id: createComplainRequestDto.orderId,
       }),
@@ -46,6 +49,7 @@ export class CustomerComplainsService {
     let imageUrl: string;
     if (image) {
       imageUrl = await this.storageMicroserviceConnection.storageServiceImpl.uploadFile(
+        new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
         new UploadFilePayloadDto({
           prefixPath: Constants.COMPLAINS_IMAGES_PREFIX_PATH,
           file: image,
@@ -54,7 +58,7 @@ export class CustomerComplainsService {
     }
     const savedComplain: Complain = await this.complainRepository.save(
       await this.complainRepository.create({
-        complainerId: customerId,
+        complainerId: authedUser.id,
         complainerUserType: ClientUserType.CUSTOMER,
         image: imageUrl,
         serviceType: order.serviceType,
@@ -62,7 +66,7 @@ export class CustomerComplainsService {
       }),
     );
     if (savedComplain) {
-      this.eventEmitter.emit(Constants.COMPLAIN_CREATED_EVENT, new ComplainCreatedEvent(savedComplain));
+      this.eventEmitter.emit(Constants.COMPLAIN_CREATED_EVENT, new ComplainCreatedEvent(authedUser, savedComplain));
     }
     return savedComplain;
   }

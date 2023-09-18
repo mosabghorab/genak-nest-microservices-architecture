@@ -5,7 +5,7 @@ export * from './complain.entity';
 export * from './customer.entity';
 export * from './customer-address.entity';
 export * from './document.entity';
-export * from './fcm-token.entity';
+export * from './push-token.entity';
 export * from './location.entity';
 export * from './location-vendor.entity';
 export * from './on-boarding-screen.entity';

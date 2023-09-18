@@ -1,5 +1,7 @@
-import { Controller } from '@nestjs/common';
+import { Controller, UseGuards } from '@nestjs/common';
 import {
+  AllowFor,
+  AuthGuard,
   Customer,
   CustomerSignUpPayloadDto,
   CustomersMicroserviceConstants,
@@ -7,18 +9,24 @@ import {
   DateFilterPayloadDto,
   FindOneByIdPayloadDto,
   FindOneByPhonePayloadDto,
+  Public,
   SearchPayloadDto,
   ServiceType,
+  SkipAdminRoles,
+  UserType,
 } from '@app/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { CustomersService } from '../services/customers.service';
 
 const VERSION = '1';
 
+@UseGuards(AuthGuard)
 @Controller()
 export class CustomersController {
   constructor(private readonly customersService: CustomersService) {}
 
+  @AllowFor(UserType.ADMIN, UserType.VENDOR, UserType.CUSTOMER)
+  @SkipAdminRoles()
   @MessagePattern({
     cmd: `${CustomersMicroserviceConstants.CUSTOMERS_SERVICE_FIND_ONE_BY_ID_MESSAGE_PATTERN}/v${VERSION}`,
   })
@@ -26,6 +34,7 @@ export class CustomersController {
     return this.customersService.findOneById(findOneByIdPayloadDto);
   }
 
+  @Public()
   @MessagePattern({
     cmd: `${CustomersMicroserviceConstants.CUSTOMERS_SERVICE_FIND_ONE_BY_PHONE_MESSAGE_PATTERN}/v${VERSION}`,
   })
@@ -33,6 +42,8 @@ export class CustomersController {
     return this.customersService.findOneByPhone(findOneByPhonePayloadDto);
   }
 
+  @AllowFor(UserType.ADMIN)
+  @SkipAdminRoles()
   @MessagePattern({
     cmd: `${CustomersMicroserviceConstants.CUSTOMERS_SERVICE_SEARCH_BY_NAME_MESSAGE_PATTERN}/v${VERSION}`,
   })
@@ -40,6 +51,7 @@ export class CustomersController {
     return this.customersService.searchByName(searchPayloadDto);
   }
 
+  @Public()
   @MessagePattern({
     cmd: `${CustomersMicroserviceConstants.CUSTOMERS_SERVICE_CREATE_MESSAGE_PATTERN}/v${VERSION}`,
   })
@@ -47,13 +59,15 @@ export class CustomersController {
     return this.customersService.create(customerSignUpPayloadDto);
   }
 
+  @AllowFor(UserType.CUSTOMER)
   @MessagePattern({
     cmd: `${CustomersMicroserviceConstants.CUSTOMERS_SERVICE_REMOVE_ONE_BY_INSTANCE_MESSAGE_PATTERN}/v${VERSION}`,
   })
-  removeOneById(@Payload() customer: Customer): Promise<Customer> {
+  removeOneByInstance(@Payload() customer: Customer): Promise<Customer> {
     return this.customersService.removeOneByInstance(customer);
   }
 
+  @AllowFor(UserType.CUSTOMER)
   @MessagePattern({
     cmd: `${CustomersMicroserviceConstants.CUSTOMERS_SERVICE_UPDATE_PROFILE_MESSAGE_PATTERN}/v${VERSION}`,
   })
@@ -61,6 +75,8 @@ export class CustomersController {
     return this.customersService.updateProfile(customerUpdateProfilePayloadDto);
   }
 
+  @AllowFor(UserType.ADMIN)
+  @SkipAdminRoles()
   @MessagePattern({
     cmd: `${CustomersMicroserviceConstants.CUSTOMERS_SERVICE_COUNT_MESSAGE_PATTERN}/v${VERSION}`,
   })
@@ -68,6 +84,8 @@ export class CustomersController {
     return this.customersService.count();
   }
 
+  @AllowFor(UserType.ADMIN)
+  @SkipAdminRoles()
   @MessagePattern({
     cmd: `${CustomersMicroserviceConstants.CUSTOMERS_SERVICE_FIND_BEST_BUYERS_WITH_ORDERS_COUNT_MESSAGE_PATTERN}/v${VERSION}`,
   })

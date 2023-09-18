@@ -1,9 +1,9 @@
-import { DeleteFilePayloadDto, UploadFilePayloadDto } from '@app/common';
+import { DeleteFilePayloadDto, RpcAuthenticationPayloadDto, UploadFilePayloadDto } from '@app/common';
 
 export interface IStorageService {
   // upload file.
-  uploadFile(uploadFilePayloadDto: UploadFilePayloadDto): Promise<string>;
+  uploadFile(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto, uploadFilePayloadDto: UploadFilePayloadDto): Promise<string>;
 
   // delete file.
-  deleteFile(deleteFilePayloadDto: DeleteFilePayloadDto): Promise<boolean>;
+  deleteFile(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto, deleteFilePayloadDto: DeleteFilePayloadDto): Promise<boolean>;
 }

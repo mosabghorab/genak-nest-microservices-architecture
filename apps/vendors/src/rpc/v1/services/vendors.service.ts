@@ -5,6 +5,7 @@ import {
   Attachment,
   AttachmentsMicroserviceConnection,
   AttachmentsMicroserviceConstants,
+  AuthedUser,
   DateFilterOption,
   DateFilterPayloadDto,
   DateHelpers,
@@ -13,6 +14,7 @@ import {
   FindOneByIdPayloadDto,
   FindOneByPhonePayloadDto,
   OrderByType,
+  RpcAuthenticationPayloadDto,
   SearchPayloadDto,
   ServiceType,
   StorageMicroserviceConnection,
@@ -68,10 +70,11 @@ export class VendorsService {
   }
 
   // create.
-  async create(vendorSignUpPayloadDto: VendorSignUpPayloadDto, avatar?: Express.Multer.File): Promise<Vendor> {
+  async create(authedUser: AuthedUser, vendorSignUpPayloadDto: VendorSignUpPayloadDto, avatar?: Express.Multer.File): Promise<Vendor> {
     let avatarUrl: string;
     if (avatar) {
       avatarUrl = await this.storageMicroserviceConnection.storageServiceImpl.uploadFile(
+        new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
         new UploadFilePayloadDto({
           prefixPath: Constants.VENDORS_IMAGES_PREFIX_PATH,
           file: avatar,
@@ -87,7 +90,7 @@ export class VendorsService {
   }
 
   // upload documents.
-  async uploadDocuments(vendorUploadDocumentsPayloadDto: VendorUploadDocumentsPayloadDto): Promise<Vendor> {
+  async uploadDocuments(authedUser: AuthedUser, vendorUploadDocumentsPayloadDto: VendorUploadDocumentsPayloadDto): Promise<Vendor> {
     const vendor: Vendor = await this.findOneById(
       new FindOneByIdPayloadDto<Vendor>({
         id: vendorUploadDocumentsPayloadDto.vendorId,
@@ -99,6 +102,7 @@ export class VendorsService {
     const attachments: Attachment[] = [];
     for (const createAttachmentDto of vendorUploadDocumentsPayloadDto.createAttachmentPayloadDtoList) {
       const oldAttachments: Attachment[] = await this.attachmentsMicroserviceConnection.attachmentsServiceImpl.findAllByVendorIdAndDocumentId(
+        new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
         new FindAllAttachmentsByVendorIdAndDocumentIdPayloadDto({
           vendorId: vendorUploadDocumentsPayloadDto.vendorId,
           documentId: createAttachmentDto.documentId,
@@ -106,11 +110,12 @@ export class VendorsService {
       );
       if (oldAttachments) {
         for (const oldAttachment of oldAttachments) {
-          await this.attachmentsMicroserviceConnection.attachmentsServiceImpl.removeOneByInstance(oldAttachment);
+          await this.attachmentsMicroserviceConnection.attachmentsServiceImpl.removeOneByInstance(new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }), oldAttachment);
           vendor.attachments = vendor.attachments.filter((attachment: Attachment): boolean => attachment.id !== oldAttachment.id);
         }
       }
       const fileUrl: string = await this.storageMicroserviceConnection.storageServiceImpl.uploadFile(
+        new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
         new UploadFilePayloadDto({
           prefixPath: Constants.VENDORS_ATTACHMENTS_PREFIX_PATH,
           file: createAttachmentDto.file,
@@ -127,7 +132,7 @@ export class VendorsService {
   }
 
   // update profile.
-  async updateProfile(vendorUpdateProfilePayloadDto: VendorUpdateProfilePayloadDto): Promise<Vendor> {
+  async updateProfile(authedUser: AuthedUser, vendorUpdateProfilePayloadDto: VendorUpdateProfilePayloadDto): Promise<Vendor> {
     const vendor: Vendor = await this.findOneById(
       new FindOneByIdPayloadDto<Vendor>({
         id: vendorUpdateProfilePayloadDto.vendorId,
@@ -136,12 +141,14 @@ export class VendorsService {
     if (vendorUpdateProfilePayloadDto.avatar) {
       if (vendor.avatar)
         await this.storageMicroserviceConnection.storageServiceImpl.deleteFile(
+          new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
           new DeleteFilePayloadDto({
             prefixPath: Constants.VENDORS_IMAGES_PREFIX_PATH,
             fileUrl: vendor.avatar,
           }),
         );
       vendor.avatar = await this.storageMicroserviceConnection.storageServiceImpl.uploadFile(
+        new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
         new UploadFilePayloadDto({
           prefixPath: Constants.VENDORS_IMAGES_PREFIX_PATH,
           file: vendorUpdateProfilePayloadDto.avatar,

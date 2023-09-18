@@ -1,7 +1,17 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { DeleteFilePayloadDto, FindOneByIdPayloadDto, FindOneOrFailByIdPayloadDto, Product, StorageMicroserviceConnection, StorageMicroserviceConstants, UploadFilePayloadDto } from '@app/common';
+import {
+  AuthedUser,
+  DeleteFilePayloadDto,
+  FindOneByIdPayloadDto,
+  FindOneOrFailByIdPayloadDto,
+  Product,
+  RpcAuthenticationPayloadDto,
+  StorageMicroserviceConnection,
+  StorageMicroserviceConstants,
+  UploadFilePayloadDto,
+} from '@app/common';
 import { FindAllProductsRequestDto } from '../dtos/find-all-products-request.dto';
 import { CreateProductRequestDto } from '../dtos/create-product-request.dto';
 import { UpdateProductRequestDto } from '../dtos/update-product-request.dto';
@@ -53,8 +63,9 @@ export class AdminProductsService {
   }
 
   // create.
-  async create(createProductRequestDto: CreateProductRequestDto, image: Express.Multer.File): Promise<Product> {
+  async create(authedUser: AuthedUser, createProductRequestDto: CreateProductRequestDto, image: Express.Multer.File): Promise<Product> {
     const imageUrl: string = await this.storageMicroserviceConnection.storageServiceImpl.uploadFile(
+      new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
       new UploadFilePayloadDto({
         prefixPath: Constants.PRODUCTS_IMAGES_PREFIX_PATH,
         file: image,
@@ -69,7 +80,7 @@ export class AdminProductsService {
   }
 
   // update.
-  async update(id: number, updateProductRequestDto: UpdateProductRequestDto, image?: Express.Multer.File): Promise<Product> {
+  async update(authedUser: AuthedUser, id: number, updateProductRequestDto: UpdateProductRequestDto, image?: Express.Multer.File): Promise<Product> {
     const product: Product = await this.findOneOrFailById(
       new FindOneOrFailByIdPayloadDto<Product>({
         id,
@@ -77,12 +88,14 @@ export class AdminProductsService {
     );
     if (image) {
       await this.storageMicroserviceConnection.storageServiceImpl.deleteFile(
+        new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
         new DeleteFilePayloadDto({
           prefixPath: Constants.PRODUCTS_IMAGES_PREFIX_PATH,
           fileUrl: product.image,
         }),
       );
       product.image = await this.storageMicroserviceConnection.storageServiceImpl.uploadFile(
+        new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
         new UploadFilePayloadDto({
           prefixPath: Constants.PRODUCTS_IMAGES_PREFIX_PATH,
           file: image,

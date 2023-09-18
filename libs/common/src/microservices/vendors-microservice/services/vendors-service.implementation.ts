@@ -6,6 +6,7 @@ import {
   FindOneOrFailByIdPayloadDto,
   FindOneOrFailByPhonePayloadDto,
   IVendorsService,
+  RpcAuthenticationPayloadDto,
   SearchPayloadDto,
   ServiceType,
   Vendor,
@@ -23,20 +24,27 @@ export class VendorsServiceImpl implements IVendorsService {
   constructor(private readonly vendorsMicroservice: ClientProxy, private readonly version: string) {}
 
   // find one by id.
-  findOneById(findOneByIdPayloadDto: FindOneByIdPayloadDto<Vendor>): Promise<Vendor | null> {
+  findOneById(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto, findOneByIdPayloadDto: FindOneByIdPayloadDto<Vendor>): Promise<Vendor | null> {
     return firstValueFrom<Vendor>(
-      this.vendorsMicroservice.send<Vendor, { findOneByIdPayloadDto: FindOneByIdPayloadDto<Vendor> }>(
+      this.vendorsMicroservice.send<
+        Vendor,
+        {
+          rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto;
+          findOneByIdPayloadDto: FindOneByIdPayloadDto<Vendor>;
+        }
+      >(
         {
           cmd: `${VendorsMicroserviceConstants.VENDORS_SERVICE_FIND_ONE_BY_ID_MESSAGE_PATTERN}/v${this.version}`,
         },
-        { findOneByIdPayloadDto },
+        { rpcAuthenticationPayloadDto, findOneByIdPayloadDto },
       ),
     );
   }
 
   // find one or fail by id.
-  async findOneOrFailById(findOneOrFailByIdPayloadDto: FindOneOrFailByIdPayloadDto<Vendor>): Promise<Vendor> {
+  async findOneOrFailById(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto, findOneOrFailByIdPayloadDto: FindOneOrFailByIdPayloadDto<Vendor>): Promise<Vendor> {
     const vendor: Vendor = await this.findOneById(
+      rpcAuthenticationPayloadDto,
       new FindOneByIdPayloadDto<Vendor>({
         id: findOneOrFailByIdPayloadDto.id,
         relations: findOneOrFailByIdPayloadDto.relations,
@@ -75,13 +83,20 @@ export class VendorsServiceImpl implements IVendorsService {
   }
 
   // search by name.
-  searchByName(searchPayloadDto: SearchPayloadDto<Vendor>): Promise<Vendor[]> {
+  searchByName(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto, searchPayloadDto: SearchPayloadDto<Vendor>): Promise<Vendor[]> {
     return firstValueFrom<Vendor[]>(
-      this.vendorsMicroservice.send<Vendor[], { searchPayloadDto: SearchPayloadDto<Vendor> }>(
+      this.vendorsMicroservice.send<
+        Vendor[],
+        {
+          rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto;
+          searchPayloadDto: SearchPayloadDto<Vendor>;
+        }
+      >(
         {
           cmd: `${VendorsMicroserviceConstants.VENDORS_SERVICE_SEARCH_BY_NAME_MESSAGE_PATTERN}/v${this.version}`,
         },
         {
+          rpcAuthenticationPayloadDto,
           searchPayloadDto,
         },
       ),
@@ -110,49 +125,75 @@ export class VendorsServiceImpl implements IVendorsService {
   }
 
   // remove on by instance.
-  removeOneByInstance(vendor: Vendor): Promise<Vendor> {
+  removeOneByInstance(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto, vendor: Vendor): Promise<Vendor> {
     return firstValueFrom<Vendor>(
-      this.vendorsMicroservice.send<Vendor, Vendor>(
+      this.vendorsMicroservice.send<
+        Vendor,
+        {
+          rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto;
+          vendor: Vendor;
+        }
+      >(
         {
           cmd: `${VendorsMicroserviceConstants.VENDORS_SERVICE_REMOVE_ONE_BY_INSTANCE_MESSAGE_PATTERN}/v${this.version}`,
         },
-        vendor,
+        { rpcAuthenticationPayloadDto, vendor },
       ),
     );
   }
 
   // upload documents.
-  uploadDocuments(vendorUploadDocumentsPayloadDto: VendorUploadDocumentsPayloadDto): Promise<Vendor> {
+  uploadDocuments(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto, vendorUploadDocumentsPayloadDto: VendorUploadDocumentsPayloadDto): Promise<Vendor> {
     return firstValueFrom<Vendor>(
-      this.vendorsMicroservice.send<Vendor, { vendorUploadDocumentsPayloadDto: VendorUploadDocumentsPayloadDto }>(
+      this.vendorsMicroservice.send<
+        Vendor,
+        {
+          rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto;
+          vendorUploadDocumentsPayloadDto: VendorUploadDocumentsPayloadDto;
+        }
+      >(
         {
           cmd: `${VendorsMicroserviceConstants.VENDORS_SERVICE_UPLOAD_DOCUMENTS_MESSAGE_PATTERN}/v${this.version}`,
         },
-        { vendorUploadDocumentsPayloadDto },
+        { rpcAuthenticationPayloadDto, vendorUploadDocumentsPayloadDto },
       ),
     );
   }
 
   // update profile.
-  updateProfile(vendorUpdateProfilePayloadDto: VendorUpdateProfilePayloadDto): Promise<Vendor> {
+  updateProfile(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto, vendorUpdateProfilePayloadDto: VendorUpdateProfilePayloadDto): Promise<Vendor> {
     return firstValueFrom<Vendor>(
-      this.vendorsMicroservice.send<Vendor, { vendorUpdateProfilePayloadDto: VendorUpdateProfilePayloadDto }>(
+      this.vendorsMicroservice.send<
+        Vendor,
+        {
+          rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto;
+          vendorUpdateProfilePayloadDto: VendorUpdateProfilePayloadDto;
+        }
+      >(
         {
           cmd: `${VendorsMicroserviceConstants.VENDORS_SERVICE_UPDATE_PROFILE_MESSAGE_PATTERN}/v${this.version}`,
         },
-        { vendorUpdateProfilePayloadDto },
+        { rpcAuthenticationPayloadDto, vendorUpdateProfilePayloadDto },
       ),
     );
   }
 
   // count.
-  count(serviceType?: ServiceType, status?: VendorStatus): Promise<number> {
+  count(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto, serviceType?: ServiceType, status?: VendorStatus): Promise<number> {
     return firstValueFrom<number>(
-      this.vendorsMicroservice.send<number, { serviceType?: ServiceType; status?: VendorStatus }>(
+      this.vendorsMicroservice.send<
+        number,
+        {
+          rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto;
+          serviceType?: ServiceType;
+          status?: VendorStatus;
+        }
+      >(
         {
           cmd: `${VendorsMicroserviceConstants.VENDORS_SERVICE_COUNT_MESSAGE_PATTERN}/v${this.version}`,
         },
         {
+          rpcAuthenticationPayloadDto,
           serviceType,
           status,
         },
@@ -161,13 +202,21 @@ export class VendorsServiceImpl implements IVendorsService {
   }
 
   // find best sellers with orders count.
-  findBestSellersWithOrdersCount(serviceType: ServiceType, dateFilterPayloadDto: DateFilterPayloadDto): Promise<Vendor[]> {
+  findBestSellersWithOrdersCount(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto, serviceType: ServiceType, dateFilterPayloadDto: DateFilterPayloadDto): Promise<Vendor[]> {
     return firstValueFrom<Vendor[]>(
-      this.vendorsMicroservice.send<Vendor[], { serviceType: ServiceType; dateFilterPayloadDto: DateFilterPayloadDto }>(
+      this.vendorsMicroservice.send<
+        Vendor[],
+        {
+          rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto;
+          serviceType: ServiceType;
+          dateFilterPayloadDto: DateFilterPayloadDto;
+        }
+      >(
         {
           cmd: `${VendorsMicroserviceConstants.VENDORS_SERVICE_FIND_BEST_SELLERS_WITH_ORDERS_COUNT_MESSAGE_PATTERN}/v${this.version}`,
         },
         {
+          rpcAuthenticationPayloadDto,
           serviceType,
           dateFilterPayloadDto,
         },
@@ -176,11 +225,12 @@ export class VendorsServiceImpl implements IVendorsService {
   }
 
   // find latest.
-  findLatest(count: number, serviceType: ServiceType, relations?: FindOptionsRelations<Vendor>): Promise<Vendor[]> {
+  findLatest(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto, count: number, serviceType: ServiceType, relations?: FindOptionsRelations<Vendor>): Promise<Vendor[]> {
     return firstValueFrom<Vendor[]>(
       this.vendorsMicroservice.send<
         Vendor[],
         {
+          rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto;
           count: number;
           serviceType: ServiceType;
           relations?: FindOptionsRelations<Vendor>;
@@ -190,6 +240,7 @@ export class VendorsServiceImpl implements IVendorsService {
           cmd: `${VendorsMicroserviceConstants.VENDORS_SERVICE_FIND_LATEST_MESSAGE_PATTERN}/v${this.version}`,
         },
         {
+          rpcAuthenticationPayloadDto,
           count,
           serviceType,
           relations,

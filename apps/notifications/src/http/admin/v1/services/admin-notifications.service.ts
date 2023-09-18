@@ -5,16 +5,18 @@ import {
   Admin,
   AdminsMicroserviceConnection,
   AdminsMicroserviceConstants,
+  AuthedUser,
   AuthMicroserviceConnection,
   AuthMicroserviceConstants,
   Customer,
   CustomersMicroserviceConnection,
   CustomersMicroserviceConstants,
-  FcmToken,
   FindAllPushTokensPayloadDto,
   FindOneOrFailByIdPayloadDto,
   NotificationTarget,
   PushNotificationType,
+  PushToken,
+  RpcAuthenticationPayloadDto,
   SendPushNotificationPayloadDto,
   UserType,
   Vendor,
@@ -45,14 +47,15 @@ export class AdminNotificationsService {
   }
 
   // send push notification.
-  async sendPushNotification(sendPushNotificationRequestDto: SendPushNotificationRequestDto): Promise<void> {
+  async sendPushNotification(authedUser: AuthedUser, sendPushNotificationRequestDto: SendPushNotificationRequestDto): Promise<void> {
     if (sendPushNotificationRequestDto.userType) {
-      const fcmTokens: string[] = [];
+      const pushTokens: string[] = [];
       for (const userId of sendPushNotificationRequestDto.usersIds) {
         let notificationsEnabled: boolean;
         if (sendPushNotificationRequestDto.userType === UserType.CUSTOMER) {
           notificationsEnabled = (
             await this.customersMicroserviceConnection.customersServiceImpl.findOneOrFailById(
+              new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
               new FindOneOrFailByIdPayloadDto<Customer>({
                 id: userId,
               }),
@@ -61,6 +64,7 @@ export class AdminNotificationsService {
         } else if (sendPushNotificationRequestDto.userType === UserType.VENDOR) {
           notificationsEnabled = (
             await this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneOrFailById(
+              new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
               new FindOneOrFailByIdPayloadDto<Vendor>({
                 id: userId,
               }),
@@ -69,6 +73,7 @@ export class AdminNotificationsService {
         } else if (sendPushNotificationRequestDto.userType === UserType.ADMIN) {
           notificationsEnabled = (
             await this.adminsMicroserviceConnection.adminsServiceImpl.findOneOrFailById(
+              new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
               new FindOneOrFailByIdPayloadDto<Admin>({
                 id: userId,
               }),
@@ -76,23 +81,24 @@ export class AdminNotificationsService {
           ).notificationsEnabled;
         }
         if (!notificationsEnabled) continue;
-        fcmTokens.push(
+        pushTokens.push(
           ...(
-            await this.authMicroserviceConnection.fcmTokensServiceImpl.findAll(
+            await this.authMicroserviceConnection.pushTokensServiceImpl.findAll(
+              new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
               new FindAllPushTokensPayloadDto({
                 tokenableId: userId,
                 tokenableType: sendPushNotificationRequestDto.userType,
               }),
             )
-          ).map((fcmToken: FcmToken) => fcmToken.token),
+          ).map((fcmToken: PushToken) => fcmToken.token),
         );
       }
-      if (fcmTokens.length > 0) {
+      if (pushTokens.length > 0) {
         await this.adminPushNotificationsService.sendNotification(
           new SendPushNotificationPayloadDto({
             type: PushNotificationType.TOKENS,
             notificationTarget: NotificationTarget.GENERAL,
-            fcmTokens,
+            fcmTokens: pushTokens,
             title: sendPushNotificationRequestDto.title,
             body: sendPushNotificationRequestDto.body,
             imageUrl: sendPushNotificationRequestDto.imageUrl,

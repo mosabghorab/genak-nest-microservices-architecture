@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Between, ILike, Repository } from 'typeorm';
 import { FindAllReviewsRequestDto } from '../dtos/find-all-reviews-request.dto';
 import {
+  AuthedUser,
   ClientUserType,
   DateHelpers,
   FindOneOrFailByIdPayloadDto,
@@ -10,6 +11,7 @@ import {
   OrdersMicroserviceConnection,
   OrdersMicroserviceConstants,
   Review,
+  RpcAuthenticationPayloadDto,
   Vendor,
   VendorsMicroserviceConnection,
   VendorsMicroserviceConstants,
@@ -36,20 +38,22 @@ export class CustomerReviewsService {
   }
 
   // create.
-  async create(customerId: number, createReviewRequestDto: CreateReviewRequestDto): Promise<Review> {
+  async create(authedUser: AuthedUser, createReviewRequestDto: CreateReviewRequestDto): Promise<Review> {
     const order: Order = await this.ordersMicroserviceConnection.ordersServiceImpl.findOneOrFailById(
+      new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
       new FindOneOrFailByIdPayloadDto<Order>({
         id: createReviewRequestDto.orderId,
       }),
     );
     await this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneOrFailById(
+      new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
       new FindOneOrFailByIdPayloadDto<Vendor>({
         id: createReviewRequestDto.vendorId,
       }),
     );
     return this.reviewRepository.save(
       await this.reviewRepository.create({
-        customerId,
+        customerId: authedUser.id,
         reviewedBy: ClientUserType.CUSTOMER,
         serviceType: order.serviceType,
         ...createReviewRequestDto,

@@ -7,13 +7,14 @@ import {
   AuthMicroserviceConnection,
   AuthMicroserviceConstants,
   CreateDatabaseNotificationPayloadDto,
-  FcmToken,
   FindAllPushTokensPayloadDto,
   NotificationsMicroserviceConnection,
   NotificationsMicroserviceConstants,
   NotificationTarget,
   PermissionGroup,
   PushNotificationType,
+  PushToken,
+  RpcAuthenticationPayloadDto,
   SendPushNotificationPayloadDto,
   UserType,
 } from '@app/common';
@@ -49,25 +50,30 @@ export class ComplainCreatedHandler {
 
   // send fcm notification.
   private async _sendFcmNotification(complainCreatedEvent: ComplainCreatedEvent): Promise<void> {
-    const { complain }: ComplainCreatedEvent = complainCreatedEvent;
-    const admins: Admin[] = await this.adminsMicroserviceConnection.adminsServiceImpl.findAllByPermissionGroup(PermissionGroup.COMPLAINS);
+    const { authedUser, complain }: ComplainCreatedEvent = complainCreatedEvent;
+    const admins: Admin[] = await this.adminsMicroserviceConnection.adminsServiceImpl.findAllByPermissionGroup(
+      new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
+      PermissionGroup.COMPLAINS,
+    );
     if (admins && admins.length > 0) {
       const fcmTokens: string[] = [];
       for (const admin of admins) {
         if (admin.notificationsEnabled) {
           const fcmTokensForAdmin: string[] = (
-            await this.authMicroserviceConnection.fcmTokensServiceImpl.findAll(
+            await this.authMicroserviceConnection.pushTokensServiceImpl.findAll(
+              new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
               new FindAllPushTokensPayloadDto({
                 tokenableId: admin.id,
                 tokenableType: UserType.ADMIN,
               }),
             )
-          ).map((fcmToken: FcmToken) => fcmToken.token);
+          ).map((fcmToken: PushToken) => fcmToken.token);
           fcmTokens.push(...fcmTokensForAdmin);
         }
       }
       if (fcmTokens.length > 0) {
         this.notificationsMicroserviceConnection.notificationsServiceImpl.sendFcmNotification(
+          new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
           new SendPushNotificationPayloadDto({
             type: PushNotificationType.TOKENS,
             fcmTokens: fcmTokens,
@@ -83,8 +89,11 @@ export class ComplainCreatedHandler {
 
   // create database notification.
   private async _createDatabaseNotification(complainCreatedEvent: ComplainCreatedEvent): Promise<void> {
-    const { complain }: ComplainCreatedEvent = complainCreatedEvent;
-    const admins: Admin[] = await this.adminsMicroserviceConnection.adminsServiceImpl.findAllByPermissionGroup(PermissionGroup.COMPLAINS);
+    const { authedUser, complain }: ComplainCreatedEvent = complainCreatedEvent;
+    const admins: Admin[] = await this.adminsMicroserviceConnection.adminsServiceImpl.findAllByPermissionGroup(
+      new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
+      PermissionGroup.COMPLAINS,
+    );
     if (admins && admins.length > 0) {
       for (const admin of admins) {
         const createDatabaseNotificationPayloadDto: CreateDatabaseNotificationPayloadDto = new CreateDatabaseNotificationPayloadDto({
@@ -95,7 +104,10 @@ export class ComplainCreatedHandler {
           title: 'New Complain',
           body: `New complain created by ${complain.complainerUserType}`,
         });
-        this.notificationsMicroserviceConnection.notificationsServiceImpl.createDatabaseNotification(createDatabaseNotificationPayloadDto);
+        this.notificationsMicroserviceConnection.notificationsServiceImpl.createDatabaseNotification(
+          new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
+          createDatabaseNotificationPayloadDto,
+        );
       }
     }
   }

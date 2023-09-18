@@ -1,7 +1,15 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Attachment, DeleteFilePayloadDto, FindAllAttachmentsByVendorIdAndDocumentIdPayloadDto, StorageMicroserviceConnection, StorageMicroserviceConstants } from '@app/common';
+import {
+  Attachment,
+  AuthedUser,
+  DeleteFilePayloadDto,
+  FindAllAttachmentsByVendorIdAndDocumentIdPayloadDto,
+  RpcAuthenticationPayloadDto,
+  StorageMicroserviceConnection,
+  StorageMicroserviceConstants,
+} from '@app/common';
 import { Constants } from '../../../constants';
 import { ClientProxy } from '@nestjs/microservices';
 
@@ -29,8 +37,9 @@ export class AttachmentsService {
   }
 
   // remove one by instance.
-  async removeOneByInstance(attachment: Attachment): Promise<Attachment> {
+  async removeOneByInstance(authedUser: AuthedUser, attachment: Attachment): Promise<Attachment> {
     await this.storageMicroserviceConnection.storageServiceImpl.deleteFile(
+      new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
       new DeleteFilePayloadDto({
         prefixPath: Constants.VENDORS_ATTACHMENTS_PREFIX_PATH,
         fileUrl: attachment.file,

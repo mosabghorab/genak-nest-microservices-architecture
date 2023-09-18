@@ -1,5 +1,18 @@
 import { Body, Controller, Delete, Get, Header, Param, Patch, Post, Query, StreamableFile, UploadedFiles, UseInterceptors } from '@nestjs/common';
-import { AdminMustCanDo, AllowFor, FindOneOrFailByIdPayloadDto, PermissionAction, PermissionGroup, PermissionsTarget, Serialize, UserType, Vendor, VendorResponseDto } from '@app/common';
+import {
+  AdminMustCanDo,
+  AllowFor,
+  AuthedUser,
+  FindOneOrFailByIdPayloadDto,
+  GetAuthedUser,
+  PermissionAction,
+  PermissionGroup,
+  PermissionsTarget,
+  Serialize,
+  UserType,
+  Vendor,
+  VendorResponseDto,
+} from '@app/common';
 import { AdminVendorsService } from '../services/admin-vendors.service';
 import { CreateVendorRequestDto } from '../dtos/create-vendor-request.dto';
 import { AllVendorsResponseDto } from '../dtos/all-vendors-response.dto';
@@ -18,11 +31,12 @@ export class AdminVendorsController {
   @UseInterceptors(AnyFilesInterceptor())
   @Post()
   create(
+    @GetAuthedUser() authedUser: AuthedUser,
     @Body() createVendorRequestDto: CreateVendorRequestDto,
     @UploadedFiles()
     files?: Express.Multer.File[],
   ): Promise<Vendor> {
-    return this.adminVendorsService.create(createVendorRequestDto, files);
+    return this.adminVendorsService.create(authedUser, createVendorRequestDto, files);
   }
 
   @AdminMustCanDo(PermissionAction.VIEW)
@@ -69,12 +83,13 @@ export class AdminVendorsController {
   @UseInterceptors(AnyFilesInterceptor())
   @Patch(':id')
   update(
+    @GetAuthedUser() authedUser: AuthedUser,
     @Param('id') id: number,
     @Body() updateVendorRequestDto: UpdateVendorRequestDto,
     @UploadedFiles()
     files?: Express.Multer.File[],
   ): Promise<Vendor> {
-    return this.adminVendorsService.update(id, updateVendorRequestDto, files);
+    return this.adminVendorsService.update(authedUser, id, updateVendorRequestDto, files);
   }
 
   @AdminMustCanDo(PermissionAction.DELETE)

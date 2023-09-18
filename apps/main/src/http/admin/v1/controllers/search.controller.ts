@@ -1,5 +1,5 @@
 import { Controller, Get, Query } from '@nestjs/common';
-import { Admin, AllowFor, Customer, Order, Serialize, SkipAdminRoles, UserType, Vendor } from '@app/common';
+import { Admin, AllowFor, AuthedUser, Customer, GetAuthedUser, Order, Serialize, SkipAdminRoles, UserType, Vendor } from '@app/common';
 import { SearchService } from '../services/search.service';
 import { SearchRequestDto } from '../dtos/search-request.dto';
 import { SearchResponseDto } from '../dtos/search-response.dto';
@@ -12,10 +12,13 @@ export class SearchController {
 
   @Serialize(SearchResponseDto, 'Search done successfully.')
   @Get()
-  search(@Query() searchRequestDto: SearchRequestDto): Promise<{
+  search(
+    @GetAuthedUser() authedUser: AuthedUser,
+    @Query() searchRequestDto: SearchRequestDto,
+  ): Promise<{
     executionTime: string;
     data: Promise<{ orders: Order[]; customers: Customer[]; vendors: Vendor[]; admins: Admin[] }>;
   }> {
-    return this.searchService.search(searchRequestDto);
+    return this.searchService.search(authedUser, searchRequestDto);
   }
 }

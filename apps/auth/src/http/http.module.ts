@@ -5,9 +5,9 @@ import {
   CustomersMicroserviceConstants,
   DatabaseModule,
   DocumentsMicroserviceConstants,
-  FcmToken,
   LocationsMicroserviceConstants,
   NotificationsMicroserviceConstants,
+  PushToken,
   VendorsMicroserviceConstants,
   VerificationCode,
 } from '@app/common';
@@ -26,7 +26,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({
   imports: [
-    DatabaseModule.forFeature([FcmToken, VerificationCode]),
+    DatabaseModule.forFeature([PushToken, VerificationCode]),
     EventEmitterModule.forRoot(),
     CustomClientsModule.register(LocationsMicroserviceConstants.NAME, LocationsMicroserviceConstants.CONFIG_NAME),
     CustomClientsModule.register(AdminsMicroserviceConstants.NAME, AdminsMicroserviceConstants.CONFIG_NAME),

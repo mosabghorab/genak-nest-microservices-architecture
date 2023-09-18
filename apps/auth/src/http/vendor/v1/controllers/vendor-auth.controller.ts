@@ -45,13 +45,13 @@ export class VendorAuthController {
     @UploadedFiles()
     files?: Express.Multer.File[],
   ): Promise<Vendor> {
-    return this.vendorAuthService.uploadDocuments(authedUser.id, files);
+    return this.vendorAuthService.uploadDocuments(authedUser, files);
   }
 
   @AllowFor(UserType.VENDOR)
   @Serialize(VendorResponseDto, 'Account deleted successfully.')
   @Delete('delete-account')
   deleteAccount(@GetAuthedUser() authedUser: AuthedUser): Promise<Vendor> {
-    return this.vendorAuthService.deleteAccount(authedUser.id);
+    return this.vendorAuthService.deleteAccount(authedUser);
   }
 }

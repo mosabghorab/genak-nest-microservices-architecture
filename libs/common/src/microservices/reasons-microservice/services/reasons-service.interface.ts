@@ -1,5 +1,5 @@
-import { FindOneByIdPayloadDto, Reason } from '@app/common';
+import { FindOneByIdPayloadDto, Reason, RpcAuthenticationPayloadDto } from '@app/common';
 
 export interface IReasonsService {
-  findOneById(findOneByIdPayloadDto: FindOneByIdPayloadDto<Reason>): Promise<Reason | null>;
+  findOneById(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto, findOneByIdPayloadDto: FindOneByIdPayloadDto<Reason>): Promise<Reason | null>;
 }

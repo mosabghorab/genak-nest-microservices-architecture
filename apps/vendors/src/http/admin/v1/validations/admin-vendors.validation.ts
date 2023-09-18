@@ -2,6 +2,7 @@ import { BadRequestException, forwardRef, Inject, Injectable } from '@nestjs/com
 import {
   Attachment,
   AttachmentStatus,
+  AuthedUser,
   CommonConstants,
   CreateAttachmentPayloadDto,
   Document,
@@ -14,6 +15,7 @@ import {
   Location,
   LocationsMicroserviceConnection,
   LocationsMicroserviceConstants,
+  RpcAuthenticationPayloadDto,
   Vendor,
 } from '@app/common';
 import { AdminVendorsService } from '../services/admin-vendors.service';
@@ -71,6 +73,7 @@ export class AdminVendorsValidation {
 
   // validate creation upload documents.
   async validateCreationUploadDocuments(
+    authedUser: AuthedUser,
     createVendorRequestDto: CreateVendorRequestDto,
     files?: Express.Multer.File[],
   ): Promise<{
@@ -88,6 +91,7 @@ export class AdminVendorsValidation {
       throw new BadRequestException('Please upload the required documents.');
     }
     const documents: Document[] = await this.documentsMicroserviceConnection.documentsServiceImpl.findAll(
+      new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
       new FindAllDocumentsPayloadDto({
         serviceType: createVendorRequestDto.serviceType,
         active: true,
@@ -179,6 +183,7 @@ export class AdminVendorsValidation {
 
   // validate update upload documents.
   async validateUpdateUploadDocuments(
+    authedUser: AuthedUser,
     vendor: Vendor,
     files?: Express.Multer.File[],
   ): Promise<{
@@ -196,6 +201,7 @@ export class AdminVendorsValidation {
       throw new BadRequestException('Please upload the required documents.');
     }
     const documents: Document[] = await this.documentsMicroserviceConnection.documentsServiceImpl.findAll(
+      new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
       new FindAllDocumentsPayloadDto({
         serviceType: vendor.serviceType,
         active: true,

@@ -1,14 +1,8 @@
-import {
-  Column,
-  CreateDateColumn,
-  Entity,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
-} from 'typeorm';
+import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 import { UserType } from '@app/common';
 
 @Entity()
-export class FcmToken {
+export class PushToken {
   @PrimaryGeneratedColumn()
   id: number;
 

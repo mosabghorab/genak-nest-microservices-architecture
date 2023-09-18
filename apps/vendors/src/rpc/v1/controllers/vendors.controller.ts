@@ -1,10 +1,17 @@
-import { Controller } from '@nestjs/common';
+import { Controller, UseGuards } from '@nestjs/common';
 import {
+  AllowFor,
+  AuthedUser,
+  AuthGuard,
   DateFilterPayloadDto,
   FindOneByIdPayloadDto,
   FindOneByPhonePayloadDto,
+  GetAuthedUser,
+  Public,
   SearchPayloadDto,
   ServiceType,
+  SkipAdminRoles,
+  UserType,
   Vendor,
   VendorSignUpPayloadDto,
   VendorsMicroserviceConstants,
@@ -18,10 +25,13 @@ import { FindOptionsRelations } from 'typeorm';
 
 const VERSION = '1';
 
+@UseGuards(AuthGuard)
 @Controller()
 export class VendorsController {
   constructor(private readonly vendorsService: VendorsService) {}
 
+  @AllowFor(UserType.ADMIN, UserType.CUSTOMER, UserType.VENDOR)
+  @SkipAdminRoles()
   @MessagePattern({
     cmd: `${VendorsMicroserviceConstants.VENDORS_SERVICE_FIND_ONE_BY_ID_MESSAGE_PATTERN}/v${VERSION}`,
   })
@@ -29,6 +39,7 @@ export class VendorsController {
     return this.vendorsService.findOneById(findOneByIdPayloadDto);
   }
 
+  @Public()
   @MessagePattern({
     cmd: `${VendorsMicroserviceConstants.VENDORS_SERVICE_FIND_ONE_BY_PHONE_MESSAGE_PATTERN}/v${VERSION}`,
   })
@@ -36,6 +47,8 @@ export class VendorsController {
     return this.vendorsService.findOneByPhone(findOneByPhonePayloadDto);
   }
 
+  @AllowFor(UserType.ADMIN)
+  @SkipAdminRoles()
   @MessagePattern({
     cmd: `${VendorsMicroserviceConstants.VENDORS_SERVICE_SEARCH_BY_NAME_MESSAGE_PATTERN}/v${VERSION}`,
   })
@@ -43,34 +56,40 @@ export class VendorsController {
     return this.vendorsService.searchByName(searchPayloadDto);
   }
 
+  @Public()
   @MessagePattern({
     cmd: `${VendorsMicroserviceConstants.VENDORS_SERVICE_CREATE_MESSAGE_PATTERN}/v${VERSION}`,
   })
-  create(@Payload('vendorSignUpPayloadDto') vendorSignUpPayloadDto: VendorSignUpPayloadDto, @Payload('avatar') avatar?: Express.Multer.File): Promise<Vendor> {
-    return this.vendorsService.create(vendorSignUpPayloadDto, avatar);
+  create(@GetAuthedUser() authedUser: AuthedUser, @Payload('vendorSignUpPayloadDto') vendorSignUpPayloadDto: VendorSignUpPayloadDto, @Payload('avatar') avatar?: Express.Multer.File): Promise<Vendor> {
+    return this.vendorsService.create(authedUser, vendorSignUpPayloadDto, avatar);
   }
 
+  @AllowFor(UserType.VENDOR)
   @MessagePattern({
     cmd: `${VendorsMicroserviceConstants.VENDORS_SERVICE_REMOVE_ONE_BY_INSTANCE_MESSAGE_PATTERN}/v${VERSION}`,
   })
-  removeOneById(@Payload() vendor: Vendor): Promise<Vendor> {
+  removeOneByInstance(@Payload() vendor: Vendor): Promise<Vendor> {
     return this.vendorsService.removeOneByInstance(vendor);
   }
 
+  @AllowFor(UserType.VENDOR)
   @MessagePattern({
     cmd: `${VendorsMicroserviceConstants.VENDORS_SERVICE_UPLOAD_DOCUMENTS_MESSAGE_PATTERN}/v${VERSION}`,
   })
-  uploadDocuments(@Payload('vendorUploadDocumentsPayloadDto') vendorUploadDocumentsPayloadDto: VendorUploadDocumentsPayloadDto): Promise<Vendor> {
-    return this.vendorsService.uploadDocuments(vendorUploadDocumentsPayloadDto);
+  uploadDocuments(@GetAuthedUser() authedUser: AuthedUser, @Payload('vendorUploadDocumentsPayloadDto') vendorUploadDocumentsPayloadDto: VendorUploadDocumentsPayloadDto): Promise<Vendor> {
+    return this.vendorsService.uploadDocuments(authedUser, vendorUploadDocumentsPayloadDto);
   }
 
+  @AllowFor(UserType.VENDOR)
   @MessagePattern({
     cmd: `${VendorsMicroserviceConstants.VENDORS_SERVICE_UPDATE_PROFILE_MESSAGE_PATTERN}/v${VERSION}`,
   })
-  updateProfile(@Payload('vendorUpdateProfilePayloadDto') vendorUpdateProfilePayloadDto: VendorUpdateProfilePayloadDto): Promise<Vendor> {
-    return this.vendorsService.updateProfile(vendorUpdateProfilePayloadDto);
+  updateProfile(@GetAuthedUser() authedUser: AuthedUser, @Payload('vendorUpdateProfilePayloadDto') vendorUpdateProfilePayloadDto: VendorUpdateProfilePayloadDto): Promise<Vendor> {
+    return this.vendorsService.updateProfile(authedUser, vendorUpdateProfilePayloadDto);
   }
 
+  @AllowFor(UserType.ADMIN)
+  @SkipAdminRoles()
   @MessagePattern({
     cmd: `${VendorsMicroserviceConstants.VENDORS_SERVICE_COUNT_MESSAGE_PATTERN}/v${VERSION}`,
   })
@@ -78,6 +97,8 @@ export class VendorsController {
     return this.vendorsService.count(serviceType, status);
   }
 
+  @AllowFor(UserType.ADMIN)
+  @SkipAdminRoles()
   @MessagePattern({
     cmd: `${VendorsMicroserviceConstants.VENDORS_SERVICE_FIND_LATEST_MESSAGE_PATTERN}/v${VERSION}`,
   })
@@ -85,6 +106,8 @@ export class VendorsController {
     return this.vendorsService.findLatest(count, serviceType, relations);
   }
 
+  @AllowFor(UserType.ADMIN)
+  @SkipAdminRoles()
   @MessagePattern({
     cmd: `${VendorsMicroserviceConstants.VENDORS_SERVICE_FIND_BEST_SELLERS_WITH_ORDERS_COUNT_MESSAGE_PATTERN}/v${VERSION}`,
   })

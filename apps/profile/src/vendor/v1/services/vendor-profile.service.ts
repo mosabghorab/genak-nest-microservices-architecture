@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { FindOneOrFailByIdPayloadDto, Vendor, VendorsMicroserviceConnection, VendorsMicroserviceConstants, VendorUpdateProfilePayloadDto } from '@app/common';
+import { AuthedUser, FindOneOrFailByIdPayloadDto, RpcAuthenticationPayloadDto, Vendor, VendorsMicroserviceConnection, VendorsMicroserviceConstants, VendorUpdateProfilePayloadDto } from '@app/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { Constants } from '../../../constants';
 import { VendorProfileValidation } from '../validations/vendor-profile.validation';
@@ -14,11 +14,12 @@ export class VendorProfileService {
   }
 
   // update.
-  async update(vendorId: number, updateProfileRequestDto: UpdateProfileRequestDto, avatar?: Express.Multer.File): Promise<Vendor> {
-    await this.vendorProfileValidation.validateUpdate(vendorId, updateProfileRequestDto);
+  async update(authedUser: AuthedUser, updateProfileRequestDto: UpdateProfileRequestDto, avatar?: Express.Multer.File): Promise<Vendor> {
+    await this.vendorProfileValidation.validateUpdate(authedUser, updateProfileRequestDto);
     return this.vendorsMicroserviceConnection.vendorsServiceImpl.updateProfile(
+      new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
       new VendorUpdateProfilePayloadDto({
-        vendorId,
+        vendorId: authedUser.id,
         ...updateProfileRequestDto,
         avatar,
       }),
@@ -26,10 +27,11 @@ export class VendorProfileService {
   }
 
   // find.
-  find(vendorId: number): Promise<Vendor> {
+  find(authedUser: AuthedUser): Promise<Vendor> {
     return this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneOrFailById(
+      new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
       new FindOneOrFailByIdPayloadDto<Vendor>({
-        id: vendorId,
+        id: authedUser.id,
       }),
     );
   }

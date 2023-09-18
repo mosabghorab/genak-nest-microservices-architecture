@@ -5,6 +5,7 @@ import {
   FindOneOrderOrFailByIdAndServiceTypePayloadDto,
   FindOneOrFailByIdPayloadDto,
   Order,
+  RpcAuthenticationPayloadDto,
   SearchPayloadDto,
   ServiceType,
 } from '@app/common';
@@ -12,25 +13,29 @@ import { FindOptionsRelations } from 'typeorm';
 
 export interface IOrdersService {
   // find one by id.
-  findOneById(findOneByIdPayloadDto: FindOneByIdPayloadDto<Order>): Promise<Order | null>;
+  findOneById(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto, findOneByIdPayloadDto: FindOneByIdPayloadDto<Order>): Promise<Order | null>;
 
   // find one or fail by id.
-  findOneOrFailById(findOneOrFailByIdPayloadDto: FindOneOrFailByIdPayloadDto<Order>): Promise<Order>;
+  findOneOrFailById(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto, findOneOrFailByIdPayloadDto: FindOneOrFailByIdPayloadDto<Order>): Promise<Order>;
 
   // search by unique id.
-  searchByUniqueId(searchPayloadDto: SearchPayloadDto<Order>): Promise<Order[]>;
+  searchByUniqueId(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto, searchPayloadDto: SearchPayloadDto<Order>): Promise<Order[]>;
 
   // find one by id and service type.
-  findOneByIdAndServiceType(findOneOrderByIdAndServiceTypePayloadDto: FindOneOrderByIdAndServiceTypePayloadDto): Promise<Order | null>;
+  findOneByIdAndServiceType(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto, findOneOrderByIdAndServiceTypePayloadDto: FindOneOrderByIdAndServiceTypePayloadDto): Promise<Order | null>;
 
   // find one or fail by id and service type.
-  findOneOrFailByIdAndServiceType(findOneOrderOrFailByIdAndServiceTypePayloadDto: FindOneOrderOrFailByIdAndServiceTypePayloadDto): Promise<Order>;
+  findOneOrFailByIdAndServiceType(
+    rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto,
+    findOneOrderOrFailByIdAndServiceTypePayloadDto: FindOneOrderOrFailByIdAndServiceTypePayloadDto,
+  ): Promise<Order>;
 
   // count.
-  count(serviceType?: ServiceType, dateFilterPayloadDto?: DateFilterPayloadDto): Promise<number>;
+  count(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto, serviceType?: ServiceType, dateFilterPayloadDto?: DateFilterPayloadDto): Promise<number>;
 
   // total sales.
   totalSales(
+    rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto,
     serviceType: ServiceType,
     dateFilterPayloadDto?: DateFilterPayloadDto,
   ): Promise<{
@@ -38,5 +43,5 @@ export interface IOrdersService {
   }>;
 
   // find latest.
-  findLatest(count: number, serviceType: ServiceType, relations?: FindOptionsRelations<Order>): Promise<Order[]>;
+  findLatest(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto, count: number, serviceType: ServiceType, relations?: FindOptionsRelations<Order>): Promise<Order[]>;
 }

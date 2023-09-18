@@ -1,14 +1,16 @@
-import { Controller } from '@nestjs/common';
-import { DateFilterPayloadDto, FindOneByIdPayloadDto, Location, LocationsMicroserviceConstants, ServiceType } from '@app/common';
+import { Controller, UseGuards } from '@nestjs/common';
+import { AllowFor, AuthGuard, DateFilterPayloadDto, FindOneByIdPayloadDto, Location, LocationsMicroserviceConstants, Public, ServiceType, SkipAdminRoles, UserType } from '@app/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { LocationsService } from '../services/locations.service';
 
 const VERSION = '1';
 
+@UseGuards(AuthGuard)
 @Controller()
 export class LocationsController {
   constructor(private readonly locationsService: LocationsService) {}
 
+  @Public()
   @MessagePattern({
     cmd: `${LocationsMicroserviceConstants.LOCATIONS_SERVICE_FIND_ONE_BY_ID_MESSAGE_PATTERN}/v${VERSION}`,
   })
@@ -16,6 +18,8 @@ export class LocationsController {
     return this.locationsService.findOneById(findOneByIdPayloadDto);
   }
 
+  @AllowFor(UserType.ADMIN)
+  @SkipAdminRoles()
   @MessagePattern({
     cmd: `${LocationsMicroserviceConstants.LOCATIONS_SERVICE_FIND_GOVERNORATES_WITH_ORDERS_COUNT_MESSAGE_PATTERN}/v${VERSION}`,
   })
@@ -23,6 +27,8 @@ export class LocationsController {
     return this.locationsService.findGovernoratesWithOrdersCount(serviceType, dateFilterPayloadDto);
   }
 
+  @AllowFor(UserType.ADMIN)
+  @SkipAdminRoles()
   @MessagePattern({
     cmd: `${LocationsMicroserviceConstants.LOCATIONS_SERVICE_FIND_REGIONS_WITH_ORDERS_COUNT_MESSAGE_PATTERN}/v${VERSION}`,
   })
@@ -30,13 +36,17 @@ export class LocationsController {
     return this.locationsService.findRegionsWithOrdersCount(serviceType, dateFilterPayloadDto);
   }
 
+  @AllowFor(UserType.ADMIN)
+  @SkipAdminRoles()
   @MessagePattern({
     cmd: `${LocationsMicroserviceConstants.LOCATIONS_SERVICE_FIND_GOVERNORATES_WITH_VENDORS_COUNT_MESSAGE_PATTERN}/v${VERSION}`,
   })
-  findGovernoratesWithVendorsCount(@Payload() serviceType: ServiceType): Promise<Location[]> {
+  findGovernoratesWithVendorsCount(@Payload('serviceType') serviceType: ServiceType): Promise<Location[]> {
     return this.locationsService.findGovernoratesWithVendorsCount(serviceType);
   }
 
+  @AllowFor(UserType.ADMIN)
+  @SkipAdminRoles()
   @MessagePattern({
     cmd: `${LocationsMicroserviceConstants.LOCATIONS_SERVICE_FIND_GOVERNORATES_WITH_CUSTOMERS_COUNT_MESSAGE_PATTERN}/v${VERSION}`,
   })
@@ -44,10 +54,12 @@ export class LocationsController {
     return this.locationsService.findGovernoratesWithCustomersCount();
   }
 
+  @AllowFor(UserType.ADMIN)
+  @SkipAdminRoles()
   @MessagePattern({
     cmd: `${LocationsMicroserviceConstants.LOCATIONS_SERVICE_FIND_GOVERNORATES_WITH_VENDORS_AND_CUSTOMERS_AND_ORDERS_COUNT_MESSAGE_PATTERN}/v${VERSION}`,
   })
-  findGovernoratesWithVendorsAndCustomersAndOrdersCount(@Payload() serviceType: ServiceType): Promise<Location[]> {
+  findGovernoratesWithVendorsAndCustomersAndOrdersCount(@Payload('serviceType') serviceType: ServiceType): Promise<Location[]> {
     return this.locationsService.findGovernoratesWithVendorsAndCustomersAndOrdersCount(serviceType);
   }
 }

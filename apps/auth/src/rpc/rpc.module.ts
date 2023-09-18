@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
-import { DatabaseModule, FcmToken } from '@app/common';
-import { FcmTokensController } from './v1/controllers/fcm-tokens.controller';
-import { FcmTokensService } from './v1/services/fcm-tokens.service';
+import { DatabaseModule, PushToken } from '@app/common';
+import { PushTokensController } from './v1/controllers/push-tokens.controller';
+import { PushTokensService } from './v1/services/push-tokens.service';
 
 @Module({
-  imports: [DatabaseModule.forFeature([FcmToken])],
-  controllers: [FcmTokensController],
-  providers: [FcmTokensService],
+  imports: [DatabaseModule.forFeature([PushToken])],
+  controllers: [PushTokensController],
+  providers: [PushTokensService],
 })
 export class RpcModule {}

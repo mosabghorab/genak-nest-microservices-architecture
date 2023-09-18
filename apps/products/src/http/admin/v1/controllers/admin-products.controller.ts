@@ -1,5 +1,19 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UploadedFile, UseInterceptors } from '@nestjs/common';
-import { AdminMustCanDo, AllowFor, FindOneOrFailByIdPayloadDto, Helpers, PermissionAction, PermissionGroup, PermissionsTarget, Product, ProductResponseDto, Serialize, UserType } from '@app/common';
+import {
+  AdminMustCanDo,
+  AllowFor,
+  AuthedUser,
+  FindOneOrFailByIdPayloadDto,
+  GetAuthedUser,
+  Helpers,
+  PermissionAction,
+  PermissionGroup,
+  PermissionsTarget,
+  Product,
+  ProductResponseDto,
+  Serialize,
+  UserType,
+} from '@app/common';
 import { AdminProductsService } from '../services/admin-products.service';
 import { CreateProductRequestDto } from '../dtos/create-product-request.dto';
 import { FindAllProductsRequestDto } from '../dtos/find-all-products-request.dto';
@@ -16,8 +30,12 @@ export class AdminProductsController {
   @Serialize(ProductResponseDto, 'Product created successfully.')
   @UseInterceptors(FileInterceptor('image'))
   @Post()
-  create(@Body() createProductRequestDto: CreateProductRequestDto, @UploadedFile(Helpers.defaultImageValidator()) image: Express.Multer.File): Promise<Product> {
-    return this.adminProductsService.create(createProductRequestDto, image);
+  create(
+    @GetAuthedUser() authedUser: AuthedUser,
+    @Body() createProductRequestDto: CreateProductRequestDto,
+    @UploadedFile(Helpers.defaultImageValidator()) image: Express.Multer.File,
+  ): Promise<Product> {
+    return this.adminProductsService.create(authedUser, createProductRequestDto, image);
   }
 
   @AdminMustCanDo(PermissionAction.VIEW)
@@ -42,8 +60,13 @@ export class AdminProductsController {
   @Serialize(ProductResponseDto, 'Product updated successfully.')
   @UseInterceptors(FileInterceptor('image'))
   @Patch(':id')
-  update(@Param('id') id: number, @Body() updateProductRequestDto: UpdateProductRequestDto, @UploadedFile(Helpers.defaultImageValidator(false)) image?: Express.Multer.File): Promise<Product> {
-    return this.adminProductsService.update(id, updateProductRequestDto, image);
+  update(
+    @GetAuthedUser() authedUser: AuthedUser,
+    @Param('id') id: number,
+    @Body() updateProductRequestDto: UpdateProductRequestDto,
+    @UploadedFile(Helpers.defaultImageValidator(false)) image?: Express.Multer.File,
+  ): Promise<Product> {
+    return this.adminProductsService.update(authedUser, id, updateProductRequestDto, image);
   }
 
   @AdminMustCanDo(PermissionAction.DELETE)

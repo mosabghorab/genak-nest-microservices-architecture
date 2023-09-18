@@ -1,6 +1,6 @@
-import { Document, FindAllDocumentsPayloadDto } from '@app/common';
+import { Document, FindAllDocumentsPayloadDto, RpcAuthenticationPayloadDto } from '@app/common';
 
 export interface IDocumentsService {
   // find all.
-  findAll(findAllDocumentsPayloadDto: FindAllDocumentsPayloadDto): Promise<Document[]>;
+  findAll(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto, findAllDocumentsPayloadDto: FindAllDocumentsPayloadDto): Promise<Document[]>;
 }

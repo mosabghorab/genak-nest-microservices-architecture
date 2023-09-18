@@ -11,6 +11,6 @@ export class VendorOrdersController {
   @Serialize(OrderResponseDto, 'All orders.')
   @Get()
   findAll(@GetAuthedUser() authedUser: AuthedUser, @Query() findAllOrdersRequestDto: FindAllOrdersRequestDto): Promise<Order[]> {
-    return this.vendorOrdersService.findAll(authedUser.id, findAllOrdersRequestDto);
+    return this.vendorOrdersService.findAll(authedUser, findAllOrdersRequestDto);
   }
 }

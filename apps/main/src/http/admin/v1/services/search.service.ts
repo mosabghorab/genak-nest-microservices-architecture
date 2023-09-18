@@ -3,6 +3,7 @@ import {
   Admin,
   AdminsMicroserviceConnection,
   AdminsMicroserviceConstants,
+  AuthedUser,
   Customer,
   CustomersMicroserviceConnection,
   CustomersMicroserviceConstants,
@@ -10,6 +11,7 @@ import {
   Order,
   OrdersMicroserviceConnection,
   OrdersMicroserviceConstants,
+  RpcAuthenticationPayloadDto,
   SearchPayloadDto,
   Vendor,
   VendorsMicroserviceConnection,
@@ -43,7 +45,10 @@ export class SearchService {
   }
 
   // search.
-  search(searchRequestDto: SearchRequestDto): Promise<{
+  search(
+    authedUser: AuthedUser,
+    searchRequestDto: SearchRequestDto,
+  ): Promise<{
     executionTime: string;
     data: Promise<{ orders: Order[]; customers: Customer[]; vendors: Vendor[]; admins: Admin[] }>;
   }> {
@@ -62,21 +67,25 @@ export class SearchService {
         admins: Admin[];
       }> => {
         const customers: Customer[] = await this.customersMicroserviceConnection.customersServiceImpl.searchByName(
+          new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
           new SearchPayloadDto({
             searchQuery: searchRequestDto.searchQuery,
           }),
         );
         const vendors: Vendor[] = await this.vendorsMicroserviceConnection.vendorsServiceImpl.searchByName(
+          new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
           new SearchPayloadDto({
             searchQuery: searchRequestDto.searchQuery,
           }),
         );
         const admins: Admin[] = await this.adminsMicroserviceConnection.adminsServiceImpl.searchByName(
+          new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
           new SearchPayloadDto({
             searchQuery: searchRequestDto.searchQuery,
           }),
         );
         const orders: Order[] = await this.ordersMicroserviceConnection.ordersServiceImpl.searchByUniqueId(
+          new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
           new SearchPayloadDto({
             searchQuery: searchRequestDto.searchQuery,
           }),

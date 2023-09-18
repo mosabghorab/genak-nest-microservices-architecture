@@ -14,6 +14,7 @@ import {
   Reason,
   ReasonsMicroserviceConnection,
   ReasonsMicroserviceConstants,
+  RpcAuthenticationPayloadDto,
 } from '@app/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { UpdateOrderStatusRequestDto } from '../dtos/update-order-status-request.dto';
@@ -67,6 +68,7 @@ export class OrdersService {
     );
     if (updateOrderStatusRequestDto.reasonId) {
       const reason: Reason = await this.reasonsMicroserviceConnection.reasonsServiceImpl.findOneOrFailById(
+        new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
         new FindOneByIdPayloadDto<Reason>({
           id: updateOrderStatusRequestDto.reasonId,
         }),

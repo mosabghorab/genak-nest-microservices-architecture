@@ -1,4 +1,13 @@
-import { DateFilterPayloadDto, FindOneByIdPayloadDto, FindOneOrFailByIdPayloadDto, ILocationsService, Location, LocationsMicroserviceConstants, ServiceType } from '@app/common';
+import {
+  DateFilterPayloadDto,
+  FindOneByIdPayloadDto,
+  FindOneOrFailByIdPayloadDto,
+  ILocationsService,
+  Location,
+  LocationsMicroserviceConstants,
+  RpcAuthenticationPayloadDto,
+  ServiceType,
+} from '@app/common';
 import { firstValueFrom } from 'rxjs';
 import { ClientProxy } from '@nestjs/microservices';
 import { NotFoundException } from '@nestjs/common';
@@ -33,23 +42,24 @@ export class LocationsServiceImpl implements ILocationsService {
   }
 
   // find governorates with customers count.
-  findGovernoratesWithCustomersCount(): Promise<Location[]> {
+  findGovernoratesWithCustomersCount(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto): Promise<Location[]> {
     return firstValueFrom<Location[]>(
-      this.locationsMicroservice.send<Location[], any>(
+      this.locationsMicroservice.send<Location[], { rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto }>(
         {
           cmd: `${LocationsMicroserviceConstants.LOCATIONS_SERVICE_FIND_GOVERNORATES_WITH_CUSTOMERS_COUNT_MESSAGE_PATTERN}/v${this.version}`,
         },
-        {},
+        { rpcAuthenticationPayloadDto },
       ),
     );
   }
 
   // find governorates with orders count.
-  findGovernoratesWithOrdersCount(serviceType: ServiceType, dateFilterPayloadDto?: DateFilterPayloadDto): Promise<Location[]> {
+  findGovernoratesWithOrdersCount(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto, serviceType: ServiceType, dateFilterPayloadDto?: DateFilterPayloadDto): Promise<Location[]> {
     return firstValueFrom<Location[]>(
       this.locationsMicroservice.send<
         Location[],
         {
+          rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto;
           serviceType: ServiceType;
           dateFilterPayloadDto: DateFilterPayloadDto;
         }
@@ -58,6 +68,7 @@ export class LocationsServiceImpl implements ILocationsService {
           cmd: `${LocationsMicroserviceConstants.LOCATIONS_SERVICE_FIND_GOVERNORATES_WITH_ORDERS_COUNT_MESSAGE_PATTERN}/v${this.version}`,
         },
         {
+          rpcAuthenticationPayloadDto,
           serviceType,
           dateFilterPayloadDto,
         },
@@ -66,35 +77,48 @@ export class LocationsServiceImpl implements ILocationsService {
   }
 
   // find governorates with vendors , customers and orders count.
-  findGovernoratesWithVendorsAndCustomersAndOrdersCount(serviceType: ServiceType): Promise<Location[]> {
+  findGovernoratesWithVendorsAndCustomersAndOrdersCount(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto, serviceType: ServiceType): Promise<Location[]> {
     return firstValueFrom<Location[]>(
-      this.locationsMicroservice.send<Location[], ServiceType>(
+      this.locationsMicroservice.send<
+        Location[],
+        {
+          rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto;
+          serviceType: ServiceType;
+        }
+      >(
         {
           cmd: `${LocationsMicroserviceConstants.LOCATIONS_SERVICE_FIND_GOVERNORATES_WITH_VENDORS_AND_CUSTOMERS_AND_ORDERS_COUNT_MESSAGE_PATTERN}/v${this.version}`,
         },
-        serviceType,
+        { rpcAuthenticationPayloadDto, serviceType },
       ),
     );
   }
 
   // find governorates with vendors count.
-  findGovernoratesWithVendorsCount(serviceType: ServiceType): Promise<Location[]> {
+  findGovernoratesWithVendorsCount(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto, serviceType: ServiceType): Promise<Location[]> {
     return firstValueFrom<Location[]>(
-      this.locationsMicroservice.send<Location[], ServiceType>(
+      this.locationsMicroservice.send<
+        Location[],
+        {
+          rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto;
+          serviceType: ServiceType;
+        }
+      >(
         {
           cmd: `${LocationsMicroserviceConstants.LOCATIONS_SERVICE_FIND_GOVERNORATES_WITH_VENDORS_COUNT_MESSAGE_PATTERN}/v${this.version}`,
         },
-        serviceType,
+        { rpcAuthenticationPayloadDto, serviceType },
       ),
     );
   }
 
   // find regions with orders count.
-  findRegionsWithOrdersCount(serviceType: ServiceType, dateFilterPayloadDto: DateFilterPayloadDto): Promise<Location[]> {
+  findRegionsWithOrdersCount(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto, serviceType: ServiceType, dateFilterPayloadDto: DateFilterPayloadDto): Promise<Location[]> {
     return firstValueFrom<Location[]>(
       this.locationsMicroservice.send<
         Location[],
         {
+          rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto;
           serviceType: ServiceType;
           dateFilterPayloadDto: DateFilterPayloadDto;
         }
@@ -103,6 +127,7 @@ export class LocationsServiceImpl implements ILocationsService {
           cmd: `${LocationsMicroserviceConstants.LOCATIONS_SERVICE_FIND_REGIONS_WITH_ORDERS_COUNT_MESSAGE_PATTERN}/v${this.version}`,
         },
         {
+          rpcAuthenticationPayloadDto,
           serviceType,
           dateFilterPayloadDto,
         },

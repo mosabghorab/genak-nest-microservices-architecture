@@ -1,5 +1,5 @@
 import { Body, Controller, Delete, Get, Param, Patch, Query } from '@nestjs/common';
-import { AdminMustCanDo, AllowFor, Complain, ComplainResponseDto, PermissionAction, PermissionGroup, PermissionsTarget, Serialize, UserType } from '@app/common';
+import { AdminMustCanDo, AllowFor, AuthedUser, Complain, ComplainResponseDto, GetAuthedUser, PermissionAction, PermissionGroup, PermissionsTarget, Serialize, UserType } from '@app/common';
 import { AdminComplainsService } from '../services/admin-complains.service';
 import { AllComplainsResponseDto } from '../dtos/all-complains-response.dto';
 import { FindAllComplainsRequestDto } from '../dtos/find-all-complains-request.dto';
@@ -27,8 +27,8 @@ export class AdminComplainsController {
   @AdminMustCanDo(PermissionAction.UPDATE)
   @Serialize(ComplainResponseDto, 'Complain status updated successfully.')
   @Patch(':id/update-status')
-  updateStatus(@Param('id') id: number, @Body() updateComplainStatusRequestDto: UpdateComplainStatusRequestDto): Promise<Complain> {
-    return this.adminComplainsService.updateStatus(id, updateComplainStatusRequestDto);
+  updateStatus(@GetAuthedUser() authedUser: AuthedUser, @Param('id') id: number, @Body() updateComplainStatusRequestDto: UpdateComplainStatusRequestDto): Promise<Complain> {
+    return this.adminComplainsService.updateStatus(authedUser, id, updateComplainStatusRequestDto);
   }
 
   @AdminMustCanDo(PermissionAction.DELETE)

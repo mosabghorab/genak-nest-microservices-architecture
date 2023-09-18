@@ -9,9 +9,10 @@ import {
   ClientUserType,
   CreateAttachmentPayloadDto,
   DateHelpers,
-  FcmToken,
   FindOneOrFailByIdPayloadDto,
   FindOneOrFailByPhonePayloadDto,
+  PushToken,
+  RpcAuthenticationPayloadDto,
   UserType,
   Vendor,
   VendorSignUpPayloadDto,
@@ -66,7 +67,7 @@ export class VendorAuthService {
     if (DateHelpers.calculateTimeDifferenceInMinutes(verificationCode.createdAt, new Date()) > 3) {
       throw new BadRequestException('Expired verification code.');
     }
-    const fcmToken: FcmToken = await this.fcmTokensService.findOne(<FindOnePushTokenPayloadDto>{
+    const fcmToken: PushToken = await this.fcmTokensService.findOne(<FindOnePushTokenPayloadDto>{
       tokenableId: vendor.id,
       tokenableType: UserType.VENDOR,
       token: signInWithPhoneRequestDto.fcmToken,
@@ -92,15 +93,16 @@ export class VendorAuthService {
   }
 
   // upload documents.
-  async uploadDocuments(vendorId: number, files?: Express.Multer.File[]): Promise<Vendor> {
+  async uploadDocuments(authedUser: AuthedUser, files?: Express.Multer.File[]): Promise<Vendor> {
     const {
       createAttachmentPayloadDtoList,
       vendor,
     }: {
       vendor: Vendor;
       createAttachmentPayloadDtoList: CreateAttachmentPayloadDto[];
-    } = await this.vendorAuthValidation.validateUploadDocuments(vendorId, files);
+    } = await this.vendorAuthValidation.validateUploadDocuments(authedUser, files);
     return this.vendorsMicroserviceConnection.vendorsServiceImpl.uploadDocuments(
+      new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
       new VendorUploadDocumentsPayloadDto({
         vendorId: vendor.id,
         createAttachmentPayloadDtoList,
@@ -109,12 +111,13 @@ export class VendorAuthService {
   }
 
   // delete account.
-  async deleteAccount(vendorId: number): Promise<Vendor> {
+  async deleteAccount(authedUser: AuthedUser): Promise<Vendor> {
     const vendor: Vendor = await this.vendorsMicroserviceConnection.vendorsServiceImpl.findOneOrFailById(
+      new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }),
       new FindOneOrFailByIdPayloadDto<Vendor>({
-        id: vendorId,
+        id: authedUser.id,
       }),
     );
-    return this.vendorsMicroserviceConnection.vendorsServiceImpl.removeOneByInstance(vendor);
+    return this.vendorsMicroserviceConnection.vendorsServiceImpl.removeOneByInstance(new RpcAuthenticationPayloadDto({ authentication: authedUser.authentication }), vendor);
   }
 }

@@ -7,15 +7,16 @@ import {
   FindOneOrFailByEmailPayloadDto,
   FindOneOrFailByIdPayloadDto,
   PermissionGroup,
+  RpcAuthenticationPayloadDto,
   SearchPayloadDto,
 } from '@app/common';
 
 export interface IAdminsService {
   // find one by id.
-  findOneById(findOneByIdPayloadDto: FindOneByIdPayloadDto<Admin>): Promise<Admin | null>;
+  findOneById(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto, findOneByIdPayloadDto: FindOneByIdPayloadDto<Admin>): Promise<Admin | null>;
 
   // find one or fail by id.
-  findOneOrFailById(findOneOrFailByIdPayloadDto: FindOneOrFailByIdPayloadDto<Admin>): Promise<Admin>;
+  findOneOrFailById(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto, findOneOrFailByIdPayloadDto: FindOneOrFailByIdPayloadDto<Admin>): Promise<Admin>;
 
   // find one by email.
   findOneByEmail(findOneByEmailPayloadDto: FindOneByEmailPayloadDto<Admin>): Promise<Admin | null>;
@@ -24,17 +25,17 @@ export interface IAdminsService {
   findOneOrFailByEmail(findOneOrFailByEmailPayloadDto: FindOneOrFailByEmailPayloadDto<Admin>): Promise<Admin>;
 
   // search by name.
-  searchByName(searchPayloadDto: SearchPayloadDto<Admin>): Promise<Admin[]>;
+  searchByName(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto, searchPayloadDto: SearchPayloadDto<Admin>): Promise<Admin[]>;
 
   // find all by permission group.
-  findAllByPermissionGroup(permissionGroup: PermissionGroup): Promise<Admin[]>;
+  findAllByPermissionGroup(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto, permissionGroup: PermissionGroup): Promise<Admin[]>;
 
   // update password.
-  updatePassword(adminUpdatePasswordPayloadDto: AdminUpdatePasswordPayloadDto): Promise<Admin>;
+  updatePassword(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto, adminUpdatePasswordPayloadDto: AdminUpdatePasswordPayloadDto): Promise<Admin>;
 
   // update profile.
-  updateProfile(adminUpdateProfilePayloadDto: AdminUpdateProfilePayloadDto): Promise<Admin>;
+  updateProfile(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto, adminUpdateProfilePayloadDto: AdminUpdateProfilePayloadDto): Promise<Admin>;
 
   // count.
-  count(): Promise<number>;
+  count(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto): Promise<number>;
 }

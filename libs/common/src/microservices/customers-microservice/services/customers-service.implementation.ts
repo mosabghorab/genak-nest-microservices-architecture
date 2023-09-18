@@ -9,6 +9,7 @@ import {
   FindOneOrFailByIdPayloadDto,
   FindOneOrFailByPhonePayloadDto,
   ICustomersService,
+  RpcAuthenticationPayloadDto,
   SearchPayloadDto,
   ServiceType,
 } from '@app/common';
@@ -20,20 +21,27 @@ export class CustomersServiceImpl implements ICustomersService {
   constructor(private readonly customersMicroservice: ClientProxy, private readonly version: string) {}
 
   // find one by id.
-  findOneById(findOneByIdPayloadDto: FindOneByIdPayloadDto<Customer>): Promise<Customer | null> {
+  findOneById(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto, findOneByIdPayloadDto: FindOneByIdPayloadDto<Customer>): Promise<Customer | null> {
     return firstValueFrom<Customer>(
-      this.customersMicroservice.send<Customer, { findOneByIdPayloadDto: FindOneByIdPayloadDto<Customer> }>(
+      this.customersMicroservice.send<
+        Customer,
+        {
+          rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto;
+          findOneByIdPayloadDto: FindOneByIdPayloadDto<Customer>;
+        }
+      >(
         {
           cmd: `${CustomersMicroserviceConstants.CUSTOMERS_SERVICE_FIND_ONE_BY_ID_MESSAGE_PATTERN}/v${this.version}`,
         },
-        { findOneByIdPayloadDto },
+        { rpcAuthenticationPayloadDto, findOneByIdPayloadDto },
       ),
     );
   }
 
   // find one or fail by id.
-  async findOneOrFailById(findOneOrFailByIdPayloadDto: FindOneOrFailByIdPayloadDto<Customer>): Promise<Customer> {
+  async findOneOrFailById(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto, findOneOrFailByIdPayloadDto: FindOneOrFailByIdPayloadDto<Customer>): Promise<Customer> {
     const customer: Customer = await this.findOneById(
+      rpcAuthenticationPayloadDto,
       new FindOneByIdPayloadDto<Customer>({
         id: findOneOrFailByIdPayloadDto.id,
         relations: findOneOrFailByIdPayloadDto.relations,
@@ -72,13 +80,20 @@ export class CustomersServiceImpl implements ICustomersService {
   }
 
   // search by name.
-  searchByName(searchPayloadDto: SearchPayloadDto<Customer>): Promise<Customer[]> {
+  searchByName(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto, searchPayloadDto: SearchPayloadDto<Customer>): Promise<Customer[]> {
     return firstValueFrom<Customer[]>(
-      this.customersMicroservice.send<Customer[], { searchPayloadDto: SearchPayloadDto<Customer> }>(
+      this.customersMicroservice.send<
+        Customer[],
+        {
+          rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto;
+          searchPayloadDto: SearchPayloadDto<Customer>;
+        }
+      >(
         {
           cmd: `${CustomersMicroserviceConstants.CUSTOMERS_SERVICE_SEARCH_BY_NAME_MESSAGE_PATTERN}/v${this.version}`,
         },
         {
+          rpcAuthenticationPayloadDto,
           searchPayloadDto,
         },
       ),
@@ -88,7 +103,12 @@ export class CustomersServiceImpl implements ICustomersService {
   // create.
   create(customerSignUpPayloadDto: CustomerSignUpPayloadDto): Promise<Customer> {
     return firstValueFrom<Customer>(
-      this.customersMicroservice.send<Customer, { customerSignUpPayloadDto: CustomerSignUpPayloadDto }>(
+      this.customersMicroservice.send<
+        Customer,
+        {
+          customerSignUpPayloadDto: CustomerSignUpPayloadDto;
+        }
+      >(
         {
           cmd: `${CustomersMicroserviceConstants.CUSTOMERS_SERVICE_CREATE_MESSAGE_PATTERN}/v${this.version}`,
         },
@@ -98,47 +118,60 @@ export class CustomersServiceImpl implements ICustomersService {
   }
 
   // remove on by instance.
-  removeOneByInstance(customer: Customer): Promise<Customer> {
+  removeOneByInstance(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto, customer: Customer): Promise<Customer> {
     return firstValueFrom<Customer>(
-      this.customersMicroservice.send<Customer, Customer>(
+      this.customersMicroservice.send<
+        Customer,
+        {
+          rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto;
+          customer: Customer;
+        }
+      >(
         {
           cmd: `${CustomersMicroserviceConstants.CUSTOMERS_SERVICE_REMOVE_ONE_BY_INSTANCE_MESSAGE_PATTERN}/v${this.version}`,
         },
-        customer,
+        { rpcAuthenticationPayloadDto, customer },
       ),
     );
   }
 
   // update profile.
-  updateProfile(customerUpdateProfilePayloadDto: CustomerUpdateProfilePayloadDto): Promise<Customer> {
+  updateProfile(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto, customerUpdateProfilePayloadDto: CustomerUpdateProfilePayloadDto): Promise<Customer> {
     return firstValueFrom<Customer>(
-      this.customersMicroservice.send<Customer, { customerUpdateProfilePayloadDto: CustomerUpdateProfilePayloadDto }>(
+      this.customersMicroservice.send<
+        Customer,
+        {
+          rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto;
+          customerUpdateProfilePayloadDto: CustomerUpdateProfilePayloadDto;
+        }
+      >(
         {
           cmd: `${CustomersMicroserviceConstants.CUSTOMERS_SERVICE_UPDATE_PROFILE_MESSAGE_PATTERN}/v${this.version}`,
         },
-        { customerUpdateProfilePayloadDto },
+        { rpcAuthenticationPayloadDto, customerUpdateProfilePayloadDto },
       ),
     );
   }
 
   // count.
-  count(): Promise<number> {
+  count(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto): Promise<number> {
     return firstValueFrom<number>(
-      this.customersMicroservice.send<number, any>(
+      this.customersMicroservice.send<number, { rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto }>(
         {
           cmd: `${CustomersMicroserviceConstants.CUSTOMERS_SERVICE_COUNT_MESSAGE_PATTERN}/v${this.version}`,
         },
-        {},
+        { rpcAuthenticationPayloadDto },
       ),
     );
   }
 
   // find best buyers with orders count.
-  findBestBuyersWithOrdersCount(serviceType: ServiceType, dateFilterPayloadDto: DateFilterPayloadDto): Promise<Customer[]> {
+  findBestBuyersWithOrdersCount(rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto, serviceType: ServiceType, dateFilterPayloadDto: DateFilterPayloadDto): Promise<Customer[]> {
     return firstValueFrom<Customer[]>(
       this.customersMicroservice.send<
         Customer[],
         {
+          rpcAuthenticationPayloadDto: RpcAuthenticationPayloadDto;
           serviceType: ServiceType;
           dateFilterPayloadDto: DateFilterPayloadDto;
         }
@@ -147,6 +180,7 @@ export class CustomersServiceImpl implements ICustomersService {
           cmd: `${CustomersMicroserviceConstants.CUSTOMERS_SERVICE_FIND_BEST_BUYERS_WITH_ORDERS_COUNT_MESSAGE_PATTERN}/v${this.version}`,
         },
         {
+          rpcAuthenticationPayloadDto,
           serviceType,
           dateFilterPayloadDto,
         },
