@@ -82,13 +82,15 @@ export class AdminCustomersService {
       .leftJoinAndSelect('customer.governorate', 'governorate')
       .leftJoinAndSelect('customer.region', 'region')
       .leftJoin('customer.orders', 'order')
-      .addSelect('COUNT(DISTINCT order.id)', 'ordersCount')
-      .groupBy('customer.id');
+      .addSelect('COUNT(DISTINCT order.id)', 'orders_count')
+      .groupBy('customer.id')
+      .addGroupBy('governorate.id')
+      .addGroupBy('region.id');
     if (findAllCustomersRequestDto.paginationEnable) queryBuilder.skip(offset).take(findAllCustomersRequestDto.limit);
     const { entities, raw }: { entities: Customer[]; raw: any[] } = await queryBuilder.getRawAndEntities();
     const count: number = await queryBuilder.getCount();
     for (let i = 0; i < entities.length; i++) {
-      entities[i]['ordersCount'] = parseInt(raw[i]['ordersCount']) || 0;
+      entities[i]['ordersCount'] = parseInt(raw[i]['orders_count']) || 0;
     }
     return findAllCustomersRequestDto.paginationEnable
       ? {
@@ -133,7 +135,7 @@ export class AdminCustomersService {
     worksheet.addRow(['اسم الزبون', 'رقم الجوال', 'عدد الطلبات', 'المدينة', 'الحي']);
     // add data rows.
     data.forEach((customer: Customer): void => {
-      worksheet.addRow([customer.name, customer.phone, customer['ordersCount'], customer.governorate.name, customer.region.name]);
+      worksheet.addRow([customer.name, customer.phone, customer['orders_count'], customer.governorate.name, customer.region.name]);
     });
     const dirPath = './exports/';
     const filePath = `${dirPath}exported-file.xlsx`;

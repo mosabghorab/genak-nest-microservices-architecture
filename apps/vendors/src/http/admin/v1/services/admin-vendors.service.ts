@@ -123,7 +123,7 @@ export class AdminVendorsService {
       .createQueryBuilder('vendor')
       .leftJoinAndSelect('vendor.governorate', 'governorate')
       .leftJoin('vendor.orders', 'order')
-      .addSelect('COUNT(order.id)', ' ordersCount');
+      .addSelect('COUNT(order.id)', ' orders_count');
     if (findAllVendorsRequestDto.regionsIds) {
       queryBuilder.innerJoin('vendor.locationsVendors', 'locationVendor', 'locationVendor.locationId IN (:...regionsIds)', { regionsIds: findAllVendorsRequestDto.regionsIds });
     }
@@ -145,7 +145,7 @@ export class AdminVendorsService {
         endDate: dateRange.endDate,
       });
     }
-    queryBuilder.groupBy('vendor.id').orderBy('ordersCount', findAllVendorsRequestDto.orderByType);
+    queryBuilder.groupBy('vendor.id').addGroupBy('governorate.id').orderBy('orders_count', findAllVendorsRequestDto.orderByType);
     if (findAllVendorsRequestDto.paginationEnable) queryBuilder.skip(offset).take(findAllVendorsRequestDto.limit);
     const { entities, raw }: { entities: Vendor[]; raw: any[] } = await queryBuilder.getRawAndEntities();
     const count: number = await queryBuilder.getCount();
@@ -153,7 +153,7 @@ export class AdminVendorsService {
       entities[i].locationsVendors = await this.locationsVendorsService.findAllByVendorId(entities[i].id, {
         location: true,
       });
-      entities[i]['ordersCount'] = parseInt(raw[i]['ordersCount']) || 0;
+      entities[i]['ordersCount'] = parseInt(raw[i]['orders_count']) || 0;
     }
     return findAllVendorsRequestDto.paginationEnable
       ? {

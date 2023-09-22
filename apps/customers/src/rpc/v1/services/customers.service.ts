@@ -89,14 +89,14 @@ export class CustomersService {
         startDate: dateRange.startDate,
         endDate: dateRange.endDate,
       })
-      .addSelect('COUNT(DISTINCT order.id)', 'ordersCount')
+      .addSelect('COUNT(DISTINCT order.id)', 'orders_count')
       .groupBy('customer.id')
-      .having('ordersCount > 0')
-      .orderBy('ordersCount', OrderByType.DESC)
+      .having('COUNT(DISTINCT order.id) > 0')
+      .orderBy('orders_count', OrderByType.DESC)
       .limit(5)
       .getRawAndEntities();
     for (let i = 0; i < entities.length; i++) {
-      entities[i]['ordersCount'] = parseInt(raw[i]['ordersCount']) || 0;
+      entities[i]['ordersCount'] = parseInt(raw[i]['orders_count']) || 0;
     }
     return entities;
   }

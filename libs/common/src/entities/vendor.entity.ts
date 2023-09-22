@@ -26,10 +26,10 @@ export class Vendor {
   @Column()
   governorateId: number;
 
-  @Column({ type: 'double', nullable: true })
+  @Column({ type: 'numeric', nullable: true })
   lat?: number;
 
-  @Column({ type: 'double', nullable: true })
+  @Column({ type: 'numeric', nullable: true })
   lng?: number;
 
   @Column({ type: 'text', nullable: true })

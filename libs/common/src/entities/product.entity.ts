@@ -13,7 +13,7 @@ export class Product {
   @Column({ type: 'enum', enum: ServiceType })
   serviceType: ServiceType;
 
-  @Column({ type: 'double' })
+  @Column({ type: 'numeric' })
   price: number;
 
   @Column()

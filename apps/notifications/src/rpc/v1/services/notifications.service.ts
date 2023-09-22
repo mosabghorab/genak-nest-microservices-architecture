@@ -1,5 +1,5 @@
 import { CreateDatabaseNotificationPayloadDto, SendPushNotificationPayloadDto, SendSmsNotificationPayloadDto } from '@app/common';
-import { FcmNotificationsService } from '../services/fcm-notifications.service';
+import { PushNotificationsService } from './push-notifications.service';
 import { DatabaseNotificationsService } from '../services/database-notifications.service';
 import { SmsNotificationsService } from '../services/sms-notifications.service';
 import { Injectable } from '@nestjs/common';
@@ -7,7 +7,7 @@ import { Injectable } from '@nestjs/common';
 @Injectable()
 export class NotificationsService {
   constructor(
-    private readonly fcmNotificationsService: FcmNotificationsService,
+    private readonly fcmNotificationsService: PushNotificationsService,
     private readonly databaseNotificationsService: DatabaseNotificationsService,
     private readonly smsNotificationsService: SmsNotificationsService,
   ) {}

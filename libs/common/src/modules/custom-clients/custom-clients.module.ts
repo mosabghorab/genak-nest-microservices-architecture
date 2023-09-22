@@ -4,10 +4,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 
 @Module({})
 export class CustomClientsModule {
-  static register(
-    microserviceName: string,
-    configMicroserviceName: string,
-  ): DynamicModule {
+  static register(microserviceName: string, configMicroserviceName: string): DynamicModule {
     return {
       module: CustomClientsModule,
       imports: [
@@ -17,17 +14,13 @@ export class CustomClientsModule {
             useFactory: (
               configService: ConfigService,
             ): {
-              options: { port: any; host: any };
-              transport: Transport.TCP;
+              options: { urls: string[]; queue: string };
+              transport: Transport.RMQ;
             } => ({
-              transport: Transport.TCP,
+              transport: Transport.RMQ,
               options: {
-                host: configService.get(
-                  `${configMicroserviceName}_MICROSERVICE_HOST`,
-                ),
-                port: configService.get(
-                  `${configMicroserviceName}_MICROSERVICE_TCP_PORT`,
-                ),
+                urls: [configService.get<string>('RABBIT_MQ_URI')],
+                queue: configService.get<string>(`${configMicroserviceName}_MICROSERVICE_RABBIT_MQ_QUEUE`),
               },
             }),
             inject: [ConfigService],

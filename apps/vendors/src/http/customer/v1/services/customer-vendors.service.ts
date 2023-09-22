@@ -46,7 +46,7 @@ export class CustomerVendorsService {
       .leftJoin('vendor.reviews', 'review', 'review.reviewedBy = :reviewedBy', {
         reviewedBy: ClientUserType.CUSTOMER,
       })
-      .addSelect(['AVG(order.averageTimeMinutes) AS averageTimeMinutes', 'AVG(review.rate) AS averageRate', 'COUNT(DISTINCT review.id) AS reviewsCount']);
+      .addSelect(['AVG(order.averageTimeMinutes) AS average_time_minutes', 'AVG(review.rate) AS average_rate', 'COUNT(DISTINCT review.id) AS reviews_count']);
     if (findAllVendorsRequestDto.regionsIds) {
       queryBuilder.innerJoin('vendor.locationsVendors', 'locationVendor', 'locationVendor.locationId IN (:...regionsIds)', {
         regionsIds: findAllVendorsRequestDto.regionsIds,
@@ -75,9 +75,9 @@ export class CustomerVendorsService {
     queryBuilder.groupBy('vendor.id');
     const { entities, raw }: { entities: Vendor[]; raw: any[] } = await queryBuilder.getRawAndEntities();
     for (let i = 0; i < entities.length; i++) {
-      entities[i]['averageTimeMinutes'] = Math.floor(raw[i]['averageTimeMinutes']) || 0;
-      entities[i]['averageRate'] = Math.ceil(raw[i]['averageRate']) || 0;
-      entities[i]['reviewsCount'] = parseInt(raw[i]['reviewsCount']) || 0;
+      entities[i]['averageTimeMinutes'] = Math.floor(raw[i]['average_time_minutes']) || 0;
+      entities[i]['averageRate'] = Math.ceil(raw[i]['average_rate']) || 0;
+      entities[i]['reviewsCount'] = parseInt(raw[i]['reviews_count']) || 0;
     }
     return entities;
   }

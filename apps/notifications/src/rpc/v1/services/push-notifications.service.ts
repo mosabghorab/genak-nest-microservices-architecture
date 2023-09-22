@@ -4,7 +4,7 @@ import { firebaseAdmin } from '../../../firebase-admin-init';
 import { Messaging } from 'firebase-admin/lib/messaging';
 
 @Injectable()
-export class FcmNotificationsService {
+export class PushNotificationsService {
   private readonly fcm: Messaging = firebaseAdmin.messaging();
 
   // send notification.

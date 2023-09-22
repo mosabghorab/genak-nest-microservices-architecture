@@ -40,13 +40,13 @@ export class Order {
   @Column({ nullable: true })
   note?: string;
 
-  @Column({ type: 'double' })
+  @Column({ type: 'numeric' })
   total: number;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   startTime?: Date;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   endTime?: Date;
 
   @Column({ nullable: true })
