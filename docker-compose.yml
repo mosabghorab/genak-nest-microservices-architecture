@@ -2,3 +2,265 @@ version: "3"
 services:
   genak-admins:
     container_name: genak-admins-container
+    build:
+      context: .
+      dockerfile: ./apps/admins/Dockerfile
+    ports:
+      - "3008:3008"
+    volumes:
+      - ./apps/admins/src:/app/src:ro
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - rabbitmq
+  genak-attachments:
+    build:
+      context: .
+      dockerfile: ./apps/attachments/Dockerfile
+    ports:
+      - "3007:3007"
+    volumes:
+      - ./apps/attachments/src:/app/src:ro
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - rabbitmq
+  genak-auth:
+    build:
+      context: .
+      dockerfile: ./apps/auth/Dockerfile
+    ports:
+      - "3011:3011"
+    volumes:
+      - ./apps/auth/src:/app/src:ro
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - rabbitmq
+  genak-complains:
+    build:
+      context: .
+      dockerfile: ./apps/complains/Dockerfile
+    ports:
+      - "3014:3014"
+    volumes:
+      - ./apps/complains/src:/app/src:ro
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - rabbitmq
+  genak-customers:
+    build:
+      context: .
+      dockerfile: ./apps/customers/Dockerfile
+    ports:
+      - "3004:3004"
+    volumes:
+      - ./apps/customers/src:/app/src:ro
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - rabbitmq
+  genak-documents:
+    build:
+      context: .
+      dockerfile: ./apps/documents/Dockerfile
+    ports:
+      - "3006:3006"
+    volumes:
+      - ./apps/documents/src:/app/src:ro
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - rabbitmq
+  genak-locations:
+    build:
+      context: .
+      dockerfile: ./apps/locations/Dockerfile
+    ports:
+      - "3003:3003"
+    volumes:
+      - ./apps/locations/src:/app/src:ro
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - rabbitmq
+  genak-main:
+    build:
+      context: .
+      dockerfile: ./apps/main/Dockerfile
+    ports:
+      - "3017:3017"
+    volumes:
+      - ./apps/main/src:/app/src:ro
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - rabbitmq
+  genak-notifications:
+    build:
+      context: .
+      dockerfile: ./apps/notifications/Dockerfile
+    ports:
+      - "3009:3009"
+    volumes:
+      - ./apps/notifications/src:/app/src:ro
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - rabbitmq
+  genak-on-boarding-screens:
+    build:
+      context: .
+      dockerfile: ./apps/on-boarding-screens/Dockerfile
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./apps/on-boarding-screens/src:/app/src:ro
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - rabbitmq
+  genak-orders:
+    build:
+      context: .
+      dockerfile: ./apps/orders/Dockerfile
+    ports:
+      - "3012:3012"
+    volumes:
+      - ./apps/orders/src:/app/src:ro
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - rabbitmq
+  genak-products:
+    build:
+      context: .
+      dockerfile: ./apps/products/Dockerfile
+    ports:
+      - "3002:3002"
+    volumes:
+      - ./apps/products/src:/app/src:ro
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - rabbitmq
+  genak-profile:
+    build:
+      context: .
+      dockerfile: ./apps/profile/Dockerfile
+    ports:
+      - "3010:3010"
+    volumes:
+      - ./apps/profile/src:/app/src:ro
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - rabbitmq
+  genak-reasons:
+    build:
+      context: .
+      dockerfile: ./apps/reasons/Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./apps/reasons/src:/app/src:ro
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - rabbitmq
+  genak-reports:
+    build:
+      context: .
+      dockerfile: ./apps/reports/Dockerfile
+    ports:
+      - "3015:3015"
+    volumes:
+      - ./apps/reports/src:/app/src:ro
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - rabbitmq
+  genak-reviews:
+    build:
+      context: .
+      dockerfile: ./apps/reviews/Dockerfile
+    ports:
+      - "3013:3013"
+    volumes:
+      - ./apps/reviews/src:/app/src:ro
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - rabbitmq
+  genak-settings:
+    build:
+      context: .
+      dockerfile: ./apps/settings/Dockerfile
+    ports:
+      - "3016:3016"
+    volumes:
+      - ./apps/settings/src:/app/src:ro
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - rabbitmq
+  genak-storage:
+    build:
+      context: .
+      dockerfile: ./apps/storage/Dockerfile
+    volumes:
+      - ./apps/storage/src:/app/src:ro
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - rabbitmq
+  genak-vendors:
+    build:
+      context: .
+      dockerfile: ./apps/vendors/Dockerfile
+    ports:
+      - "3005:3005"
+    volumes:
+      - ./apps/vendors/src:/app/src:ro
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - rabbitmq
+  postgres:
+    image: postgres
+    restart: always
+    ports:
+      - 5432:5432
+    volumes:
+      - postgres-db:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USERNAME: postgres
+      POSTGRES_PASSWORD: example
+  rabbitmq:
+    image: rabbitmq
+    ports:
+      - '5672:5672'
+volumes:
+  postgres-db:
+
+

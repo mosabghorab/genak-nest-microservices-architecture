@@ -1,9 +1,13 @@
 # compiled output
 /dist
 /node_modules
-.env.dev
-.env.test
+
+.env
 /service-account-key.json
+/backups
+/exports
+package-lock.json
+
 
 # Logs
 logs

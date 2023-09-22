@@ -1,8 +1,0 @@
-version: "3"
-services:
-  genak-admins:
-    build:
-      context: ./apps/admins/
-      target: prod
-    env_file:
-      - .env.prod
