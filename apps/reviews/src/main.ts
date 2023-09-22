@@ -9,10 +9,10 @@ async function bootstrap(): Promise<void> {
   const app: INestApplication = await NestFactory.create(ReviewsModule);
   const configService: ConfigService = app.get(ConfigService);
   app.connectMicroservice({
-    transport: Transport.TCP,
+    transport: Transport.RMQ,
     options: {
-      host: configService.get<string>('REVIEWS_MICROSERVICE_HOST'),
-      port: configService.get<string>('REVIEWS_MICROSERVICE_TCP_PORT'),
+      urls: [configService.get<string>('RABBIT_MQ_URI')],
+      queue: configService.get<string>('REVIEWS_MICROSERVICE_RABBIT_MQ_QUEUE'),
     },
   });
   app.useGlobalPipes(

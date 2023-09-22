@@ -1,13 +1,4 @@
-import {
-  Column,
-  CreateDateColumn,
-  Entity,
-  JoinColumn,
-  ManyToOne,
-  OneToMany,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
-} from 'typeorm';
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 import { Customer, Order } from '@app/common';
 
 @Entity()
@@ -27,10 +18,10 @@ export class CustomerAddress {
   @Column({ nullable: true })
   description: string;
 
-  @Column({ type: 'double' })
+  @Column({ type: 'numeric' })
   lat: number;
 
-  @Column({ type: 'double' })
+  @Column({ type: 'numeric' })
   lng: number;
 
   @CreateDateColumn()

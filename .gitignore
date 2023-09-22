@@ -1,7 +1,7 @@
 # compiled output
 /dist
 /node_modules
-.env.development
+.env.dev
 .env.test
 /service-account-key.json
 

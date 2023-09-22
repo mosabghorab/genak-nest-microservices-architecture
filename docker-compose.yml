@@ -1,0 +1,4 @@
+version: "3"
+services:
+  genak-admins:
+    container_name: genak-admins-container

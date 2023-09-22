@@ -17,7 +17,7 @@ async function bootstrap(): Promise<void> {
   app.setGlobalPrefix('/api/');
   app.enableVersioning({ type: VersioningType.URI });
   app.use(compression());
-  await app.listen(configService.get<string>('APP_MICROSERVICE_HTTP_PORT'));
+  await app.listen(configService.get<string>('MAIN_MICROSERVICE_HTTP_PORT'));
 }
 
 bootstrap();

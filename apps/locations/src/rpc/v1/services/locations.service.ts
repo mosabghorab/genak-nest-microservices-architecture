@@ -25,14 +25,14 @@ export class LocationsService {
       .leftJoin('location.customersByGovernorate', 'customer')
       .leftJoin('location.vendors', 'vendor', 'vendor.serviceType = :serviceType', { serviceType })
       .leftJoin('customer.orders', 'order', 'order.serviceType = :serviceType', { serviceType })
-      .addSelect(['COUNT(DISTINCT vendor.id) AS vendorsCount', 'COUNT(DISTINCT customer.id) AS customersCount', 'COUNT(DISTINCT order.id) AS ordersCount'])
+      .addSelect(['COUNT(DISTINCT vendor.id) AS vendors_count', 'COUNT(DISTINCT customer.id) AS customers_count', 'COUNT(DISTINCT order.id) AS orders_count'])
       .where('location.parentId is NULL')
       .groupBy('location.id')
       .getRawAndEntities();
     for (let i = 0; i < entities.length; i++) {
-      entities[i]['vendorsCount'] = parseInt(raw[i]['vendorsCount']) || 0;
-      entities[i]['customersCount'] = parseInt(raw[i]['customersCount']) || 0;
-      entities[i]['ordersCount'] = parseInt(raw[i]['ordersCount']) || 0;
+      entities[i]['vendorsCount'] = parseInt(raw[i]['vendors_count']) || 0;
+      entities[i]['customersCount'] = parseInt(raw[i]['customers_count']) || 0;
+      entities[i]['ordersCount'] = parseInt(raw[i]['orders_count']) || 0;
     }
     return entities;
   }
@@ -64,12 +64,12 @@ export class LocationsService {
         startDate: dateFilterPayloadDto?.dateFilterOption ? dateRange.startDate : null,
         endDate: dateFilterPayloadDto?.dateFilterOption ? dateRange.endDate : null,
       })
-      .addSelect('COUNT(DISTINCT order.id)', 'ordersCount')
+      .addSelect('COUNT(DISTINCT order.id)', 'orders_count')
       .where('location.parentId is NULL')
       .groupBy('location.id')
       .getRawAndEntities();
     for (let i = 0; i < entities.length; i++) {
-      entities[i]['ordersCount'] = parseInt(raw[i]['ordersCount']) || 0;
+      entities[i]['ordersCount'] = parseInt(raw[i]['orders_count']) || 0;
     }
     return entities;
   }
@@ -99,12 +99,12 @@ export class LocationsService {
         startDate: dateRange.startDate,
         endDate: dateRange.endDate,
       })
-      .addSelect('COUNT(DISTINCT order.id)', 'ordersCount')
+      .addSelect('COUNT(DISTINCT order.id)', 'orders_count')
       .where('location.parentId is NOT NULL')
       .groupBy('location.id')
       .getRawAndEntities();
     for (let i = 0; i < entities.length; i++) {
-      entities[i]['ordersCount'] = parseInt(raw[i]['ordersCount']) || 0;
+      entities[i]['ordersCount'] = parseInt(raw[i]['orders_count']) || 0;
     }
     return entities;
   }
@@ -115,9 +115,9 @@ export class LocationsService {
       .createQueryBuilder('location')
       .leftJoin('location.vendors', 'vendor', 'vendor.serviceType = :serviceType', { serviceType })
       .addSelect([
-        'COUNT(DISTINCT CASE WHEN vendor.status = :documentsRequiredStatus THEN vendor.id ELSE NULL END) AS documentsRequiredVendorsCount',
-        'COUNT(DISTINCT CASE WHEN vendor.status = :pendingStatus THEN vendor.id ELSE NULL END) AS pendingVendorsCount',
-        'COUNT(DISTINCT CASE WHEN vendor.status = :activeStatus THEN vendor.id ELSE NULL END) AS activeVendorsCount',
+        'COUNT(DISTINCT CASE WHEN vendor.status = :documentsRequiredStatus THEN vendor.id ELSE NULL END) AS documents_required_vendors_count',
+        'COUNT(DISTINCT CASE WHEN vendor.status = :pendingStatus THEN vendor.id ELSE NULL END) AS pending_vendors_count',
+        'COUNT(DISTINCT CASE WHEN vendor.status = :activeStatus THEN vendor.id ELSE NULL END) AS active_vendors_count',
       ])
       .setParameter('documentsRequiredStatus', VendorStatus.DOCUMENTS_REQUIRED)
       .setParameter('pendingStatus', VendorStatus.PENDING)
@@ -126,9 +126,9 @@ export class LocationsService {
       .groupBy('location.id')
       .getRawAndEntities();
     for (let i = 0; i < entities.length; i++) {
-      entities[i]['documentsRequiredVendorsCount'] = parseInt(raw[i]['documentsRequiredVendorsCount']) || 0;
-      entities[i]['pendingVendorsCount'] = parseInt(raw[i]['pendingVendorsCount']) || 0;
-      entities[i]['activeVendorsCount'] = parseInt(raw[i]['activeVendorsCount']) || 0;
+      entities[i]['documentsRequiredVendorsCount'] = parseInt(raw[i]['documents_required_vendors_count']) || 0;
+      entities[i]['pendingVendorsCount'] = parseInt(raw[i]['pending_vendors_count']) || 0;
+      entities[i]['activeVendorsCount'] = parseInt(raw[i]['active_vendors_count']) || 0;
     }
     return entities;
   }
@@ -138,12 +138,12 @@ export class LocationsService {
     const { entities, raw }: { entities: Location[]; raw: any[] } = await this.locationRepository
       .createQueryBuilder('location')
       .leftJoin('location.customersByGovernorate', 'customer')
-      .addSelect('COUNT(DISTINCT customer.id)', 'customersCount')
+      .addSelect('COUNT(DISTINCT customer.id)', 'customers_count')
       .where('location.parentId is NULL')
       .groupBy('location.id')
       .getRawAndEntities();
     for (let i = 0; i < entities.length; i++) {
-      entities[i]['customersCount'] = parseInt(raw[i]['customersCount']) || 0;
+      entities[i]['customersCount'] = parseInt(raw[i]['customers_count']) || 0;
     }
     return entities;
   }

@@ -38,7 +38,8 @@ export class DatabaseModule {
           inject: [ConfigService],
           useFactory: (configService: ConfigService) => {
             return {
-              type: 'mysql',
+              type: 'postgres',
+              host: configService.getOrThrow<string>('DATABASE_HOST'),
               database: configService.getOrThrow<string>('DATABASE_NAME'),
               username: configService.getOrThrow<string>('DATABASE_USERNAME'),
               password: configService.getOrThrow<string>('DATABASE_PASSWORD'),
