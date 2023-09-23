@@ -1,9 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Admin, AdminsMicroserviceConnection, AdminsMicroserviceConstants, AdminUpdateProfilePayloadDto, AuthedUser, FindOneOrFailByIdPayloadDto, RpcAuthenticationPayloadDto } from '@app/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { Constants } from '../../../../../auth/src/constants';
 import { UpdateProfileRequestDto } from '../dtos/update-profile-request.dto';
 import { AdminProfileValidation } from '../validations/admin-profile.validation';
+import { Constants } from '../../../constants';
 
 @Injectable()
 export class AdminProfileService {
