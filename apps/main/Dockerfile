@@ -16,4 +16,6 @@ EXPOSE 3017
 
 RUN npm run build
 
+CMD ["npm", "run", "seed"]
+
 CMD ["npm", "run", "start:prod"]
