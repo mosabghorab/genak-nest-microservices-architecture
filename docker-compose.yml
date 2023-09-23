@@ -7,114 +7,157 @@ services:
       dockerfile: ./apps/admins/Dockerfile
     env_file:
       - .env
+    depends_on:
+      - rabbitmq
   genak-attachments:
     build:
       context: .
       dockerfile: ./apps/attachments/Dockerfile
     env_file:
       - .env
+    depends_on:
+      - rabbitmq
   genak-auth:
     build:
       context: .
       dockerfile: ./apps/auth/Dockerfile
     env_file:
       - .env
+    depends_on:
+      - rabbitmq
   genak-complains:
     build:
       context: .
       dockerfile: ./apps/complains/Dockerfile
     env_file:
       - .env
+    depends_on:
+      - rabbitmq
   genak-customers:
     build:
       context: .
       dockerfile: ./apps/customers/Dockerfile
     env_file:
       - .env
+    depends_on:
+      - rabbitmq
   genak-documents:
     build:
       context: .
       dockerfile: ./apps/documents/Dockerfile
     env_file:
       - .env
+    depends_on:
+      - rabbitmq
   genak-locations:
     build:
       context: .
       dockerfile: ./apps/locations/Dockerfile
     env_file:
       - .env
+    depends_on:
+      - rabbitmq
   genak-main:
     build:
       context: .
       dockerfile: ./apps/main/Dockerfile
     env_file:
       - .env
+    depends_on:
+      - rabbitmq
   genak-notifications:
     build:
       context: .
       dockerfile: ./apps/notifications/Dockerfile
     env_file:
       - .env
+    depends_on:
+      - rabbitmq
   genak-on-boarding-screens:
     build:
       context: .
       dockerfile: ./apps/on-boarding-screens/Dockerfile
     env_file:
       - .env
+    depends_on:
+      - rabbitmq
   genak-orders:
     build:
       context: .
       dockerfile: ./apps/orders/Dockerfile
     env_file:
       - .env
+    depends_on:
+      - rabbitmq
   genak-products:
     build:
       context: .
       dockerfile: ./apps/products/Dockerfile
     env_file:
       - .env
+    depends_on:
+      - rabbitmq
   genak-profile:
     build:
       context: .
       dockerfile: ./apps/profile/Dockerfile
     env_file:
       - .env
+    depends_on:
+      - rabbitmq
   genak-reasons:
     build:
       context: .
       dockerfile: ./apps/reasons/Dockerfile
     env_file:
       - .env
+    depends_on:
+      - rabbitmq
   genak-reports:
     build:
       context: .
       dockerfile: ./apps/reports/Dockerfile
     env_file:
       - .env
+    depends_on:
+      - rabbitmq
   genak-reviews:
     build:
       context: .
       dockerfile: ./apps/reviews/Dockerfile
     env_file:
       - .env
+    depends_on:
+      - rabbitmq
   genak-settings:
     build:
       context: .
       dockerfile: ./apps/settings/Dockerfile
     env_file:
       - .env
+    depends_on:
+      - rabbitmq
   genak-storage:
     build:
       context: .
       dockerfile: ./apps/storage/Dockerfile
     env_file:
       - .env
+    depends_on:
+      - rabbitmq
   genak-vendors:
     build:
       context: .
       dockerfile: ./apps/vendors/Dockerfile
     env_file:
       - .env
+    depends_on:
+      - rabbitmq
+  rabbitmq:
+    image: rabbitmq
+    ports:
+      - '5672:5672'
+      - "15672:15672"
   nginx:
     image: nginx:stable-alpine
     ports:
