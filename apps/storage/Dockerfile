@@ -15,4 +15,4 @@ COPY /libs ./libs
 
 RUN npm run build
 
-CMD ["npm", "run", "start:prod"]
+CMD ["node", "dist/src/main"]

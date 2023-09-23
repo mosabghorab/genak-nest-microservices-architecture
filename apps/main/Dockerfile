@@ -18,4 +18,4 @@ RUN npm run build
 
 CMD ["npm", "run", "seed"]
 
-CMD ["npm", "run", "start:prod"]
+CMD ["node", "dist/src/main"]
