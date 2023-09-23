@@ -16,4 +16,4 @@ EXPOSE 3011
 
 RUN npm run build
 
-CMD ["node", "dist/apps/auth/main"]
+CMD ["node", "dist/src/main"]
