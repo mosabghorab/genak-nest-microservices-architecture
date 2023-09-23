@@ -2,3 +2,116 @@ version: "3"
 services:
   genak-admins:
     container_name: genak-admins-container
+    build:
+      context: .
+      dockerfile: ./apps/admins/Dockerfile
+    env_file:
+      - .env
+  genak-attachments:
+    build:
+      context: .
+      dockerfile: ./apps/attachments/Dockerfile
+    env_file:
+      - .env
+  genak-auth:
+    build:
+      context: .
+      dockerfile: ./apps/auth/Dockerfile
+    env_file:
+      - .env
+  genak-complains:
+    build:
+      context: .
+      dockerfile: ./apps/complains/Dockerfile
+    env_file:
+      - .env
+  genak-customers:
+    build:
+      context: .
+      dockerfile: ./apps/customers/Dockerfile
+    env_file:
+      - .env
+  genak-documents:
+    build:
+      context: .
+      dockerfile: ./apps/documents/Dockerfile
+    env_file:
+      - .env
+  genak-locations:
+    build:
+      context: .
+      dockerfile: ./apps/locations/Dockerfile
+    env_file:
+      - .env
+  genak-main:
+    build:
+      context: .
+      dockerfile: ./apps/main/Dockerfile
+    env_file:
+      - .env
+  genak-notifications:
+    build:
+      context: .
+      dockerfile: ./apps/notifications/Dockerfile
+    env_file:
+      - .env
+  genak-on-boarding-screens:
+    build:
+      context: .
+      dockerfile: ./apps/on-boarding-screens/Dockerfile
+    env_file:
+      - .env
+  genak-orders:
+    build:
+      context: .
+      dockerfile: ./apps/orders/Dockerfile
+    env_file:
+      - .env
+  genak-products:
+    build:
+      context: .
+      dockerfile: ./apps/products/Dockerfile
+    env_file:
+      - .env
+  genak-profile:
+    build:
+      context: .
+      dockerfile: ./apps/profile/Dockerfile
+    env_file:
+      - .env
+  genak-reasons:
+    build:
+      context: .
+      dockerfile: ./apps/reasons/Dockerfile
+    env_file:
+      - .env
+  genak-reports:
+    build:
+      context: .
+      dockerfile: ./apps/reports/Dockerfile
+    env_file:
+      - .env
+  genak-reviews:
+    build:
+      context: .
+      dockerfile: ./apps/reviews/Dockerfile
+    env_file:
+      - .env
+  genak-settings:
+    build:
+      context: .
+      dockerfile: ./apps/settings/Dockerfile
+    env_file:
+      - .env
+  genak-storage:
+    build:
+      context: .
+      dockerfile: ./apps/storage/Dockerfile
+    env_file:
+      - .env
+  genak-vendors:
+    build:
+      context: .
+      dockerfile: ./apps/vendors/Dockerfile
+    env_file:
+      - .env
