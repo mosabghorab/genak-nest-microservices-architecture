@@ -115,3 +115,11 @@ services:
       dockerfile: ./apps/vendors/Dockerfile
     env_file:
       - .env
+  nginx:
+    image: nginx:stable-alpine
+    ports:
+      - 80:80
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - genak-main
