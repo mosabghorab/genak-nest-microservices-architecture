@@ -21,7 +21,7 @@
     "typeorm": "node -r tsconfig-paths/register --require ts-node/register ./node_modules/typeorm/cli.js",
     "typeorm:generate-migration": "npm run typeorm migration:generate -- -d typeorm-config.ts ./migrations/$npm_config_name",
     "typeorm:migration:run": "npm run typeorm migration:run -- -d typeorm-config.ts",
-    "seed": "ts-node -r tsconfig-paths/register apps/main/src/seed.ts"
+    "seed": "ts-node -r tsconfig-paths/register src/seed.ts"
   },
   "dependencies": {
     "@faker-js/faker": "^8.0.2",
