@@ -16,6 +16,7 @@ EXPOSE 3017
 
 RUN npm run build
 
+CMD ["node", "dist/src/main"]
+
 CMD ["npm", "run", "seed"]
 
-CMD ["node", "dist/src/main"]
