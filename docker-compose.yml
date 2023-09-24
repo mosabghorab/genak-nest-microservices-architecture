@@ -162,4 +162,21 @@ services:
     volumes:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
     depends_on:
+      - genak-reasons
+      - genak-on-boarding-screens
+      - genak-products
+      - genak-locations
+      - genak-customers
+      - genak-vendors
+      - genak-documents
+      - genak-attachments
+      - genak-admins
+      - genak-notifications
+      - genak-profile
+      - genak-auth
+      - genak-orders
+      - genak-reviews
+      - genak-complains
+      - genak-reports
+      - genak-settings
       - genak-main
