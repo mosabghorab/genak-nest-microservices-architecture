@@ -113,14 +113,14 @@ services:
   #      - .env
   #    depends_on:
   #      - rabbitmq
-  genak-reports:
-    build:
-      context: .
-      dockerfile: ./apps/reports/Dockerfile
-    env_file:
-      - .env
-    depends_on:
-      - rabbitmq
+  #  genak-reports:
+  #    build:
+  #      context: .
+  #      dockerfile: ./apps/reports/Dockerfile
+  #    env_file:
+  #      - .env
+  #    depends_on:
+  #      - rabbitmq
   #  genak-reviews:
   #    build:
   #      context: .
@@ -177,6 +177,6 @@ services:
       - genak-orders
       #      - genak-reviews
       #      - genak-complains
-      - genak-reports
+      #      - genak-reports
       #      - genak-settings
       - genak-main
