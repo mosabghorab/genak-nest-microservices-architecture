@@ -70,6 +70,10 @@ export class DatabaseModule {
                 Notification,
               ],
               synchronize: true,
+              ssl: {
+                require: true,
+                rejectUnauthorized: false, // You may need to set this option to true depending on your server's SSL/TLS configuration
+              },
             };
           },
         }),
