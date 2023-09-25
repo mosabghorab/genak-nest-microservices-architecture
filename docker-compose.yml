@@ -170,7 +170,7 @@ services:
       - genak-vendors
       #      - genak-documents
       #      - genak-attachments
-      - genak-admins
+      #      - genak-admins
       #      - genak-notifications
       #      - genak-profile
       - genak-auth
