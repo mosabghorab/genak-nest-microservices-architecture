@@ -16,6 +16,7 @@ COPY /libs ./libs
 
 EXPOSE 3017
 
+#CMD [ "npm", "run" , "seed"]
+
 CMD [ "npm", "run" , "start:dev"]
 
-CMD [ "npm", "run" , "seed"]
