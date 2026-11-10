@@ -1,73 +1,84 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
-</p>
+# Genak: NestJS Microservices Architecture
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Genak is the backend of a multi-vendor ordering platform (customers, vendors and admins), built as a **microservices system in NestJS**. It is a personal architecture project: I built it to design, implement and run a realistic distributed backend end to end. It is not deployed in production.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Architecture at a glance
 
-## Description
-
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
-
-## Installation
-
-```bash
-$ npm install
+```
+                    ┌──────────────┐
+  Clients  ───────▶ │    Nginx     │  reverse proxy: one public entry point,
+ (mobile / web)     │  (port 80)   │  routes /genak-<service>/api/v1 to each service
+                    └──────┬───────┘
+                           │ HTTP (REST, URI-versioned)
+     ┌──────────┬──────────┼──────────┬──────────┬─────────┐
+     ▼          ▼          ▼          ▼          ▼         ▼
+   auth     customers   vendors    orders   products   … (19 services)
+     │          │          │          │          │         │
+     └──────────┴──────────┴────┬─────┴──────────┴─────────┘
+                                │ RPC + events (one queue per service)
+                         ┌──────▼──────┐
+                         │  RabbitMQ   │
+                         └─────────────┘
 ```
 
-## Running the app
+- **19 NestJS applications** in one monorepo, **17 of them connected over RabbitMQ**, each with its own queue.
+- Every service exposes **two interfaces**:
+  - **HTTP**: versioned REST endpoints (`/api/v1`), split by audience (`customer`, `vendor`, `admin`).
+  - **RPC**: message handlers that other services call through RabbitMQ (**50 request/response message patterns**, plus fire-and-forget events that the `notifications` service consumes for push, SMS and in-app notifications).
+- **Nginx** acts as the single public entry point and routes each path prefix to the right container.
+- **Docker**: each service has its own Dockerfile; `docker-compose.yml` starts all services together with RabbitMQ and Nginx.
+
+## Services
+
+| Domain | Services |
+|---|---|
+| Identity and users | `auth`, `customers`, `vendors`, `admins`, `profile` |
+| Commerce | `products`, `orders`, `reviews`, `complains`, `reasons` |
+| Content and files | `attachments`, `documents`, `storage`, `on-boarding-screens` |
+| Platform | `notifications` (Firebase push), `locations`, `settings`, `reports`, `main` |
+
+## Shared library (`libs/common`)
+
+Code that every service needs lives in one shared library instead of being copied:
+
+- **Typed microservice clients**: one client per service, so calling another service is a typed method, not a raw queue message.
+- **Authentication**: JWT auth guard and custom decorators.
+- **Serialisation interceptor**: DTO-based responses, so internal fields never leak to clients.
+- **Database module**: PostgreSQL through TypeORM, with migration scripts configured.
+- **Shared entities, DTOs, enums and helpers**.
+
+## Design choices
+
+- **Clean separation of concerns**: controllers → services → repositories inside each microservice; HTTP and RPC controllers are kept apart.
+- **Validation at the edge**: global `ValidationPipe` with whitelisting and transformation on every service.
+- **Versioned APIs** from day one (`VersioningType.URI`).
+- **Response compression** on every service.
+- **Versioned message patterns**: RPC patterns carry the API version (e.g. `ordersService.findOneById/v1`), so services can evolve without breaking their callers.
+- **Data seeding** with Faker (`apps/main/src/seeders`) for local development and testing.
+
+## Tech stack
+
+NestJS 10 · TypeScript · RabbitMQ (`@nestjs/microservices`, AMQP) · PostgreSQL · TypeORM · JWT · Firebase Admin · Docker / Docker Compose · Nginx
+
+## Running locally
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+cp .env.example .env        # fill in database, JWT and RabbitMQ settings
+docker compose up --build   # starts all services, RabbitMQ and Nginx
 ```
 
-## Test
+Then call any service through Nginx, for example:
+
+```
+GET http://localhost/genak-products/api/v1/...
+```
+
+Database migrations:
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+npm run typeorm:migration:run
 ```
 
-## Support
+## Author
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](LICENSE).
+Mosab Ghorab, software engineer (Flutter, NestJS)
