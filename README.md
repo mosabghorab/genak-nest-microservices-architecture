@@ -1,6 +1,6 @@
 # Genak: NestJS Microservices Architecture
 
-Genak is the backend of a multi-vendor ordering platform (customers, vendors and admins), built as a **microservices system in NestJS**. It is a personal architecture project: I built it to design, implement and run a realistic distributed backend end to end. It is not deployed in production.
+Genak is the backend of a multi-vendor ordering platform (customers, vendors and admins), built as a **microservices system in NestJS**. It is a personal architecture project: I built it to design, implement and run a realistic distributed backend end to end, and deployed it with Docker Compose on a Linux server as a test environment. It is not a production system.
 
 ## Architecture at a glance
 
